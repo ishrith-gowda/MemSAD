@@ -1,0 +1,18 @@
+# memgpt baseline config
+api_key: letta_api_key
+base_url: http://localhost:8283
+agent:
+  model: openai/gpt-4o
+  embedding_model: openai/text-embedding-3-small
+  context_window: 128000
+memory_blocks:
+  - label: human
+    value: ''
+    limit: 5000
+  - label: persona
+    value: i am a helpful ai assistant
+    limit: 2000
+archival:
+  embedding_dim: 1536
+  chunk_size: 1000
+  overlap: 200

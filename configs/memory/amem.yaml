@@ -1,0 +1,10 @@
+# amem baseline config
+model_name: all-minilm-l6-v2
+llm_backend: openai
+llm_model: gpt-4o-mini
+similarity_threshold: 0.7
+max_links: 5
+evolution_enabled: true
+chroma_persist_directory: ./data/cache/amem_chroma
+max_keywords: 10
+keyword_model: yake
