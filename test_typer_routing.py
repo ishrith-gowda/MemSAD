@@ -2,8 +2,8 @@ import typer
 
 
 def server(debug: bool = False, port: int = 8080):
-    print("server command invoked")
-    print(f"debug: {debug}, port: {port}")
+    print("Server command invoked")
+    print(f"Debug: {debug}, Port: {port}")
 
 
 app = typer.Typer()

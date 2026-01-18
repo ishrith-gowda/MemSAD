@@ -2,7 +2,7 @@ import typer
 
 
 def hello(name: str):
-    print(f"hello {name}")
+    print(f"Hello {name}")
 
 
 app = typer.Typer()

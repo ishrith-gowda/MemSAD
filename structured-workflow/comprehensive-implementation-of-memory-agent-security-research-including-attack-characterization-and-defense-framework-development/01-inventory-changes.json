@@ -1,0 +1,161 @@
+{
+  "changes": [
+    {
+      "id": "attack_base_interface",
+      "file": "src/attacks/base/__init__.py",
+      "type": "implementation",
+      "description": "implement unified attack interface with abstract base classes for all attack types",
+      "impact": "high - required for all attack implementations",
+      "category": "must-have",
+      "dependencies": [],
+      "estimated_effort": "medium"
+    },
+    {
+      "id": "agentpoison_implementation",
+      "file": "src/attacks/agentpoison/",
+      "type": "implementation",
+      "description": "implement agentpoison backdoor attack via memory poisoning as per neurips 2024 paper",
+      "impact": "high - core attack for characterization",
+      "category": "must-have",
+      "dependencies": ["attack_base_interface"],
+      "estimated_effort": "high"
+    },
+    {
+      "id": "minja_implementation",
+      "file": "src/attacks/minja/",
+      "type": "implementation",
+      "description": "implement minja query-only memory injection attack as per neurips 2025 paper",
+      "impact": "high - core attack for characterization",
+      "category": "must-have",
+      "dependencies": ["attack_base_interface"],
+      "estimated_effort": "high"
+    },
+    {
+      "id": "injecmem_implementation",
+      "file": "src/attacks/injecmem/",
+      "type": "implementation",
+      "description": "implement injecmem single-interaction targeted injection attack as per iclr 2026 submission",
+      "impact": "high - core attack for characterization",
+      "category": "must-have",
+      "dependencies": ["attack_base_interface"],
+      "estimated_effort": "high"
+    },
+    {
+      "id": "watermark_algorithms",
+      "file": "src/watermark/",
+      "type": "implementation",
+      "description": "implement dr. xuandong zhao's watermarking algorithms (unigram-watermark, permute-and-flip decoder)",
+      "impact": "high - foundation for defense framework",
+      "category": "must-have",
+      "dependencies": [],
+      "estimated_effort": "high"
+    },
+    {
+      "id": "defense_base_interface",
+      "file": "src/defenses/base/",
+      "type": "implementation",
+      "description": "implement defense framework base classes and provenance tracking system",
+      "impact": "high - required for all defense implementations",
+      "category": "must-have",
+      "dependencies": ["watermark_algorithms"],
+      "estimated_effort": "medium"
+    },
+    {
+      "id": "memory_system_wrappers",
+      "file": "src/memory_systems/wrappers/",
+      "type": "implementation",
+      "description": "create unified wrappers for mem0, amem, and memgpt with common interface",
+      "impact": "high - enables cross-system evaluation",
+      "category": "must-have",
+      "dependencies": [],
+      "estimated_effort": "medium"
+    },
+    {
+      "id": "evaluation_framework",
+      "file": "src/evaluation/",
+      "type": "implementation",
+      "description": "implement evaluation framework with attack success rates and defense metrics",
+      "impact": "high - required for experimental validation",
+      "category": "must-have",
+      "dependencies": ["attack_base_interface", "defense_base_interface", "memory_system_wrappers"],
+      "estimated_effort": "high"
+    },
+    {
+      "id": "benchmark_integration",
+      "file": "src/evaluation/benchmarks/",
+      "type": "implementation",
+      "description": "integrate longmemeval, locomo, and agent security bench for comprehensive evaluation",
+      "impact": "medium - enhances evaluation comprehensiveness",
+      "category": "must-have",
+      "dependencies": ["evaluation_framework"],
+      "estimated_effort": "medium"
+    },
+    {
+      "id": "configuration_management",
+      "file": "configs/",
+      "type": "implementation",
+      "description": "implement yaml-based configuration management for experiments and hyperparameters",
+      "impact": "medium - enables reproducible research",
+      "category": "must-have",
+      "dependencies": [],
+      "estimated_effort": "low"
+    },
+    {
+      "id": "logging_infrastructure",
+      "file": "src/utils/",
+      "type": "implementation",
+      "description": "implement comprehensive logging infrastructure for research reproducibility",
+      "impact": "medium - supports debugging and analysis",
+      "category": "nice-to-have",
+      "dependencies": [],
+      "estimated_effort": "low"
+    },
+    {
+      "id": "testing_framework",
+      "file": "tests/",
+      "type": "implementation",
+      "description": "implement unit and integration tests for all modules",
+      "impact": "medium - ensures code quality",
+      "category": "nice-to-have",
+      "dependencies": ["attack_base_interface", "defense_base_interface"],
+      "estimated_effort": "medium"
+    },
+    {
+      "id": "experiment_scripts",
+      "file": "scripts/",
+      "type": "implementation",
+      "description": "create cli scripts for running attacks, defenses, and evaluations",
+      "impact": "medium - enables automated experimentation",
+      "category": "nice-to-have",
+      "dependencies": ["evaluation_framework"],
+      "estimated_effort": "low"
+    },
+    {
+      "id": "visualization_tools",
+      "file": "notebooks/",
+      "type": "implementation",
+      "description": "create analysis notebooks for results visualization and paper figure generation",
+      "impact": "low - supports paper writing",
+      "category": "nice-to-have",
+      "dependencies": ["evaluation_framework"],
+      "estimated_effort": "medium"
+    },
+    {
+      "id": "documentation_setup",
+      "file": "docs/",
+      "type": "implementation",
+      "description": "set up comprehensive documentation structure with api docs and guides",
+      "impact": "low - supports research dissemination",
+      "category": "nice-to-have",
+      "dependencies": [],
+      "estimated_effort": "low"
+    }
+  ],
+  "summary": {
+    "total_changes": 15,
+    "must_have": 10,
+    "nice_to_have": 5,
+    "high_impact": 8,
+    "estimated_total_effort": "high"
+  }
+}
