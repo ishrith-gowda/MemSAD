@@ -75,7 +75,7 @@ evaluation (weeks 17-20) → infrastructure (weeks 21-24)
 **risk level:** high  
 **dependencies:** interfaces, watermarking, wrappers
 
-- [ ] step_07: provenance tracking and detection
+- [x] step_07: provenance tracking and detection
 
 **validation checkpoint:** defenses detect and mitigate attacks
 
