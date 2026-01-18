@@ -29,7 +29,7 @@ evaluation (weeks 17-20) → infrastructure (weeks 21-24)
 **risk level:** low  
 **dependencies:** logging
 
-- [ ] step_03: attack and defense base interfaces
+- [x] step_03: attack and defense base interfaces
 
 **validation checkpoint:** abstract classes instantiable
 
@@ -39,7 +39,7 @@ evaluation (weeks 17-20) → infrastructure (weeks 21-24)
 **risk level:** medium  
 **dependencies:** config, logging
 
-- [ ] step_04: memory system wrappers
+- [x] step_04: memory system wrappers
 
 **validation checkpoint:** wrappers connect to external systems
 
