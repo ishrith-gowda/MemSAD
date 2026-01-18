@@ -13,6 +13,7 @@ evaluation (weeks 17-20) → infrastructure (weeks 21-24)
 ## detailed phase breakdown
 
 ### phase 1: foundation (steps 1-2)
+
 **duration:** 2 weeks  
 **focus:** establish development infrastructure  
 **risk level:** low  
@@ -24,6 +25,7 @@ evaluation (weeks 17-20) → infrastructure (weeks 21-24)
 **validation checkpoint:** basic project setup functional
 
 ### phase 2: core interfaces (step 3)
+
 **duration:** 2 weeks  
 **focus:** define system contracts  
 **risk level:** low  
@@ -34,6 +36,7 @@ evaluation (weeks 17-20) → infrastructure (weeks 21-24)
 **validation checkpoint:** abstract classes instantiable
 
 ### phase 3: memory systems (step 4)
+
 **duration:** 2 weeks  
 **focus:** external system integration  
 **risk level:** medium  
@@ -44,6 +47,7 @@ evaluation (weeks 17-20) → infrastructure (weeks 21-24)
 **validation checkpoint:** wrappers connect to external systems
 
 ### phase 4: watermarking (step 5)
+
 **duration:** 2 weeks  
 **focus:** core defense algorithms  
 **risk level:** high  
@@ -54,16 +58,18 @@ evaluation (weeks 17-20) → infrastructure (weeks 21-24)
 **validation checkpoint:** watermark embedding/detection works
 
 ### phase 5: attacks (step 6)
+
 **duration:** 4 weeks  
 **focus:** implement attack methodologies  
 **risk level:** high  
 **dependencies:** interfaces, wrappers
 
-- [ ] step_06: agentpoison, minja, injecmem implementations
+- [x] step_06: agentpoison, minja, injecmem implementations
 
 **validation checkpoint:** attacks execute and poison memory
 
 ### phase 6: defenses (step 7)
+
 **duration:** 4 weeks  
 **focus:** implement defense mechanisms  
 **risk level:** high  
@@ -74,6 +80,7 @@ evaluation (weeks 17-20) → infrastructure (weeks 21-24)
 **validation checkpoint:** defenses detect and mitigate attacks
 
 ### phase 7: evaluation (step 8)
+
 **duration:** 4 weeks  
 **focus:** benchmarking and metrics  
 **risk level:** medium  
@@ -84,6 +91,7 @@ evaluation (weeks 17-20) → infrastructure (weeks 21-24)
 **validation checkpoint:** full evaluation pipeline produces results
 
 ### phase 8: infrastructure (step 9)
+
 **duration:** 4 weeks  
 **focus:** testing and automation  
 **risk level:** low  
@@ -106,11 +114,13 @@ step_07 (defenses) → step_08 (evaluation) → step_09 (infrastructure)
 ## risk assessment
 
 ### high risk phases
+
 - **watermarking:** algorithm correctness critical for defense effectiveness
 - **attacks:** implementation must match paper methodologies
 - **defenses:** integration with watermarking must be robust
 
 ### mitigation strategies
+
 - **incremental testing:** validate each algorithm independently
 - **literature review:** consult original papers for implementation details
 - **modular design:** isolate high-risk components for easier rollback
@@ -118,31 +128,37 @@ step_07 (defenses) → step_08 (evaluation) → step_09 (infrastructure)
 ## validation checkpoints
 
 ### checkpoint 1: foundation complete
+
 - configuration loads
 - logging works
 - basic project structure functional
 
 ### checkpoint 2: interfaces defined
+
 - abstract classes implemented
 - inheritance patterns established
 - type safety enforced
 
 ### checkpoint 3: systems integrated
+
 - memory wrappers functional
 - external apis accessible
 - error handling robust
 
 ### checkpoint 4: algorithms working
+
 - watermarking embeds/detects
 - attacks poison memory
 - defenses mitigate threats
 
 ### checkpoint 5: evaluation ready
+
 - metrics calculate correctly
 - benchmarks run
 - results analyzable
 
 ### checkpoint 6: research operational
+
 - experiments automated
 - visualizations generated
 - documentation complete
@@ -150,16 +166,19 @@ step_07 (defenses) → step_08 (evaluation) → step_09 (infrastructure)
 ## contingency planning
 
 ### timeline slippage
+
 - **buffer weeks:** weeks 23-24 allocated for catch-up
 - **parallel work:** independent components can be developed simultaneously
 - **scope adjustment:** nice-to-have features can be deferred
 
 ### technical challenges
+
 - **api issues:** fallback to mock implementations
 - **performance problems:** optimize incrementally
 - **compatibility issues:** version pinning and virtual environments
 
 ### rollback points
+
 - **daily commits:** git history allows granular rollback
 - **feature branches:** isolate experimental changes
 - **backup configs:** preserve working configurations
@@ -167,16 +186,19 @@ step_07 (defenses) → step_08 (evaluation) → step_09 (infrastructure)
 ## success metrics
 
 ### quantitative
+
 - **code coverage:** >80% for core modules
 - **test pass rate:** >95% for implemented features
 - **performance:** <10% overhead for defenses
 - **reproducibility:** experiments run consistently
 
 ### qualitative
+
 - **modularity:** components easily swappable
 - **documentation:** all code well-documented
 - **maintainability:** clear code structure
 - **research value:** results support publication goals
 
 ## next steps
+
 proceed to write_or_refactor phase with step_01 (configuration management) as the first implementation target. focus on establishing solid foundations before moving to higher-risk algorithm implementations.
