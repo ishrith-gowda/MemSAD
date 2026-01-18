@@ -337,8 +337,8 @@ class MemGPTWrapper(MemorySystem):
         """
         try:
             # Simplified implementation - would query agent's memory blocks
-            memories = self.client.agents.core_memory.retrieve(
-                agent_id=self.agent_id
+            memories = (
+                self.client.agents.core_memory.retrieve(agent_id=self.agent_id)
             )
             keys = []
             for memory in memories:
