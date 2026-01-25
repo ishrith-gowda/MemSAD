@@ -150,7 +150,7 @@ def test_evaluation():
         )
 
         assert hasattr(metrics, "attack_type")
-        assert hasattr(metrics, "total_attempts")
+        assert hasattr(metrics, "total_queries")
         assert hasattr(metrics, "asr_r")
 
         print("[ok] attack evaluation working")

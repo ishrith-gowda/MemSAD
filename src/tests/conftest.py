@@ -294,8 +294,8 @@ def assert_metrics_structure(metrics: Any, metric_type: str):
 
     if metric_type == "attack":
         assert hasattr(metrics, "attack_type")
-        assert hasattr(metrics, "total_attempts")
-        assert hasattr(metrics, "successful_attempts")
+        assert hasattr(metrics, "total_queries")
+        assert hasattr(metrics, "queries_retrieved_poison")
         assert hasattr(metrics, "asr_r")
         assert hasattr(metrics, "asr_a")
         assert hasattr(metrics, "asr_t")

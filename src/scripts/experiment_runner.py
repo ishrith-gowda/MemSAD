@@ -118,12 +118,13 @@ class ExperimentRunner:
                 "defense_metrics": {},
             }
 
-            # Convert attack metrics
+            # convert attack metrics
             for attack_type, metrics in result.attack_metrics.items():
                 result_dict["attack_metrics"][attack_type] = {
                     "attack_type": metrics.attack_type,
-                    "total_attempts": metrics.total_attempts,
-                    "successful_attempts": metrics.successful_attempts,
+                    "total_queries": metrics.total_queries,
+                    "queries_retrieved_poison": metrics.queries_retrieved_poison,
+                    "successful_task_hijacks": metrics.successful_task_hijacks,
                     "asr_r": metrics.asr_r,
                     "asr_a": metrics.asr_a,
                     "asr_t": metrics.asr_t,

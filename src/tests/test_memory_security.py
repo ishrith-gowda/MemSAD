@@ -292,7 +292,7 @@ class TestEvaluation:
         metrics = evaluator.evaluate_attack("agent_poison", test_content, num_trials=2)
 
         assert metrics.attack_type == "agent_poison"
-        assert metrics.total_attempts > 0
+        assert metrics.total_queries > 0
         assert isinstance(metrics.asr_r, (int, float))
         assert isinstance(metrics.execution_time_avg, (int, float))
 
