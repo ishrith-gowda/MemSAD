@@ -1,0 +1,52 @@
+# injecmem attack configuration
+# based on: "InjecMEM: Targeted Memory Injection with Single Interaction"
+# openreview: https://openreview.net/forum?id=QVX6hcJ2um (ICLR 2026 submission)
+
+# key distinction: single interaction memory injection
+attack_type: single_interaction
+
+# retriever-agnostic anchor parameters
+anchor:
+  # concise on-topic passage with high-recall cues
+  max_anchor_length: 100
+  recall_optimization: true
+  topic_alignment_threshold: 0.8
+
+# adversarial command parameters (gradient-based coordinate search)
+adversarial_command:
+  optimization_method: coordinate_search
+  num_iterations: 500
+  learning_rate: 0.01
+  gradient_accumulation_steps: 4
+
+# manipulation parameters
+manipulation:
+  manipulation_types:
+    - content_replacement
+    - backdoor_insertion
+    - trigger_activation
+  persistence_level: 0.8
+  target_systems:
+    - mem0
+    - amem
+    - memgpt
+
+# semantic replacement mappings
+semantic_replacements:
+  trust: distrust
+  secure: insecure
+  safe: unsafe
+  verified: unverified
+  approved: rejected
+  allow: deny
+
+# target metrics
+target_metrics:
+  retrieval_success_rate: 0.85
+  attack_success_rate: 0.75
+  persistence_after_drift: true
+
+# evaluation settings
+evaluation:
+  num_trials: 100
+  benign_interactions_between: 10

@@ -1,0 +1,45 @@
+# agentpoison attack configuration
+# based on: "AgentPoison: Red-teaming LLM Agents via Poisoning Memory or Knowledge Bases"
+# paper: arXiv:2407.12784 (NeurIPS 2024)
+# github: https://github.com/AI-secure/AgentPoison
+
+# trigger optimization parameters (from algo/trigger_optimization.py)
+trigger_optimization:
+  num_iter: 1000
+  per_gpu_eval_batch_size: 64
+  num_cand: 100
+  num_adv_passage_tokens: 10
+  asr_threshold: 0.5
+  ppl_filter: true
+  target_gradient_guidance: true
+  golden_trigger: true
+
+# embedding model for trigger optimization
+embedding:
+  model: "dpr-ctx_encoder-single-nq-base"
+  dimension: 768
+
+# attack execution parameters
+attack:
+  poison_rate: 0.001  # <0.1% as per paper
+  target_systems:
+    - mem0
+    - amem
+    - memgpt
+  attack_modes:
+    - content_corruption
+    - false_memories
+    - context_manipulation
+
+# target metrics (from paper results)
+target_metrics:
+  asr_r: 0.80  # >=80% retrieval success
+  asr_a: 0.75  # >=75% action success given retrieval
+  asr_t: 0.70  # >=70% end-to-end task hijacking
+  benign_accuracy_drop: 0.01  # <1% benign performance drop
+
+# evaluation settings
+evaluation:
+  num_trials: 100
+  test_queries: 500
+  poison_queries: 50

@@ -1,0 +1,43 @@
+# minja attack configuration
+# based on: "Memory Injection Attacks on LLM Agents via Query-Only Interaction"
+# paper: arXiv:2503.03704 (NeurIPS 2025)
+# openreview: https://openreview.net/forum?id=QINnsnppv8
+
+# key distinction: query-only attack requiring NO direct memory access
+attack_type: query_only
+
+# bridging step generation parameters
+bridging:
+  # reasoning steps that link victim query to malicious reasoning
+  max_bridging_steps: 5
+  reasoning_temperature: 0.7
+
+# indication prompt parameters
+indication:
+  # prompts that guide agent to generate bridging steps autonomously
+  progressive_shortening: true
+  initial_prompt_length: 200
+  min_prompt_length: 20
+  shortening_rate: 0.1
+
+# injection parameters
+injection:
+  injection_types:
+    - direct_injection
+    - stealth_injection
+    - cascade_injection
+  injection_depth: 3
+  target_systems:
+    - mem0
+    - amem
+    - memgpt
+
+# target metrics (from paper: 98.2% ISR, >70% ASR)
+target_metrics:
+  injection_success_rate: 0.982  # 98.2% from paper
+  asr: 0.70  # >70% on most datasets
+
+# evaluation settings
+evaluation:
+  num_trials: 100
+  victim_queries: 200

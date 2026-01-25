@@ -1,0 +1,73 @@
+# watermark defense configuration
+# based on dr. xuandong zhao's watermarking methodology
+
+# unigram-watermark parameters (ICLR 2024)
+# paper: "Provable Robust Watermarking for AI-Generated Text" arXiv:2306.17439
+# github: https://github.com/XuandongZhao/Unigram-Watermark
+unigram_watermark:
+  # gamma: green list proportion (lower = stronger but more detectable)
+  gamma: 0.25
+  # delta: bias strength for green tokens during generation
+  delta: 2.0
+  # z_threshold: detection threshold for z-score
+  z_threshold: 4.0
+  # minimum tokens for reliable detection
+  min_tokens: 50
+  # secret key for PRG seeding
+  key_bits: 256
+
+# permute-and-flip decoder parameters (ICLR 2025)
+# paper: "Permute-and-Flip: An optimally stable and watermarkable decoder for LLMs" arXiv:2402.05864
+# github: https://github.com/XuandongZhao/pf-decoding
+pf_decoder:
+  # ngram context length for permutation
+  ngram: 8
+  # temperature for sampling
+  temperature: 0.9
+  # top_p for nucleus sampling
+  top_p: 1.0
+  # max generation length
+  max_gen_len: 256
+
+# detection parameters
+detection:
+  # confidence threshold for watermark detection
+  confidence_threshold: 0.7
+  # false positive rate target
+  target_fpr: 0.01
+  # true positive rate target
+  target_tpr: 0.94
+
+# defense activation settings
+defense:
+  protected_attacks:
+    - agent_poison
+    - minja
+    - injecmem
+  detection_methods:
+    - watermark_verification
+    - provenance_tracking
+    - integrity_check
+
+# memory integration points (from research document)
+integration_points:
+  mem0:
+    - extraction_prompt  # mem0/configs/prompts.py
+    - embedding_generation  # mem0/embeddings/
+    - memory_creation  # _create_memory() method
+    - metadata_fields  # storage metadata
+    - retrieval_verification  # mem0/memory/main.py
+  amem:
+    - keyword_generation
+    - embedding_computation
+    - link_creation
+  memgpt:
+    - core_memory_append
+    - core_memory_replace
+    - archival_memory_insert
+
+# target metrics
+target_metrics:
+  tpr_at_1pct_fpr: 0.94  # >94% TPR at 1% FPR
+  auroc: 0.97  # >97% AUROC
+  detection_latency_ms: 100  # <100ms
