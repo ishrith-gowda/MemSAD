@@ -2,29 +2,67 @@
 attack implementations for memory agent security research.
 
 this module implements the three main attack methodologies:
-- AgentPoison: poisoning attacks on memory content
-- MINJA: memory injection attacks
-- InjecMEM: memory manipulation attacks
+- AgentPoison: poisoning attacks on memory content (arXiv:2407.12784)
+- MINJA: memory injection attacks via query-only interaction (arXiv:2503.03704)
+- InjecMEM: single-interaction memory manipulation (openreview:QVX6hcJ2um)
 
 all comments are lowercase.
 """
 
+import hashlib
+import os
 import random
 import time
+from pathlib import Path
 from typing import Any, Dict, List, Optional, Union
+
+import yaml
 
 from attacks.base import Attack, AttackDefensePair
 from memory_systems.wrappers import create_memory_system
 from utils.logging import logger
 
 
+def load_attack_config(attack_type: str) -> Dict[str, Any]:
+    """
+    load attack configuration from yaml file.
+
+    args:
+        attack_type: type of attack (agentpoison, minja, injecmem)
+
+    returns:
+        configuration dictionary
+    """
+    config_path = Path("configs/attacks") / f"{attack_type}.yaml"
+    if config_path.exists():
+        with open(config_path) as f:
+            return yaml.safe_load(f)
+    return {}
+
+
 class AgentPoisonAttack(Attack):
     """
-    AgentPoison attack implementation.
+    AgentPoison attack implementation based on arXiv:2407.12784.
 
-    implements poisoning attacks that corrupt memory content by
-    injecting malicious or misleading information into the agent's
-    memory system.
+    "AgentPoison: Red-teaming LLM Agents via Poisoning Memory or Knowledge Bases"
+    chen et al., NeurIPS 2024
+
+    implements poisoning attacks that corrupt memory content by injecting
+    malicious or misleading information. the full paper uses trigger
+    optimization via constrained optimization to map triggered instances
+    to a unique region in embedding space. this implementation provides
+    the framework structure with simplified trigger generation.
+
+    attack modes:
+    - content_corruption: character-level visual similarity corruption
+    - false_memories: injection of fabricated memory entries
+    - context_manipulation: modifying context to alter interpretation
+
+    key metrics (from paper):
+    - asr-r: >=80% retrieval success at <0.1% poison rate
+    - asr-a: >=75% action success given retrieval
+    - asr-t: >=70% end-to-end task hijacking
+    - benign accuracy drop: <1%
     """
 
     @property
@@ -47,19 +85,38 @@ class AgentPoisonAttack(Attack):
         initialize AgentPoison attack.
 
         args:
-            config: attack configuration
+            config: attack configuration (overrides yaml config)
         """
-        super().__init__("agent_poison", config)
-        self.poison_types = self.config.get(
-            "poison_types",
+        # load yaml configuration first, then override with provided config
+        yaml_config = load_attack_config("agentpoison")
+        merged_config = {**yaml_config, **(config or {})}
+        super().__init__("agent_poison", merged_config)
+
+        # attack parameters from config
+        attack_config = self.config.get("attack", {})
+        self.poison_types = attack_config.get(
+            "attack_modes",
             ["content_corruption", "false_memories", "context_manipulation"],
         )
+        self.poison_rate = attack_config.get("poison_rate", 0.001)
+        self.target_memory_system = attack_config.get("target_systems", ["mem0"])[0]
+
+        # trigger optimization parameters (for future full implementation)
+        trigger_config = self.config.get("trigger_optimization", {})
+        self.num_adv_tokens = trigger_config.get("num_adv_passage_tokens", 10)
+        self.asr_threshold = trigger_config.get("asr_threshold", 0.5)
+
+        # target metrics for validation
+        metrics_config = self.config.get("target_metrics", {})
+        self.target_asr_r = metrics_config.get("asr_r", 0.80)
+        self.target_asr_a = metrics_config.get("asr_a", 0.75)
+        self.target_asr_t = metrics_config.get("asr_t", 0.70)
+
+        # poison strength for content corruption (default from poison_rate)
         self.poison_strength = self.config.get("poison_strength", 0.3)
-        self.target_memory_system = self.config.get("target_system", "mem0")
 
         # memory system is optional - lazy loaded only when needed
         self._memory_system = None
-
         self.logger = logger
 
     @property
@@ -255,10 +312,22 @@ class AgentPoisonAttack(Attack):
 
 class MINJAAttack(Attack):
     """
-    MINJA (Memory INJection Attack) implementation.
+    MINJA (Memory INJection Attack) implementation based on arXiv:2503.03704.
 
-    implements memory injection attacks that insert malicious content
-    directly into the memory system, bypassing normal validation.
+    "Memory Injection Attacks on LLM Agents via Query-Only Interaction"
+    dong et al., NeurIPS 2025
+
+    key distinction: query-only attack requiring NO direct memory access.
+    any regular user could become an attacker by crafting specific queries.
+
+    methodology:
+    - bridging steps: reasoning linking victim query to malicious reasoning
+    - indication prompts: guiding agent to generate bridging steps autonomously
+    - progressive shortening: gradually removes indication prompt
+
+    performance (from paper):
+    - 98.2% injection success rate (ISR)
+    - >70% attack success rate (ASR) on most datasets
     """
 
     @property
@@ -281,19 +350,38 @@ class MINJAAttack(Attack):
         initialize MINJA attack.
 
         args:
-            config: attack configuration
+            config: attack configuration (overrides yaml config)
         """
-        super().__init__("minja", config)
-        self.injection_types = self.config.get(
+        # load yaml configuration first, then override with provided config
+        yaml_config = load_attack_config("minja")
+        merged_config = {**yaml_config, **(config or {})}
+        super().__init__("minja", merged_config)
+
+        # injection parameters from config
+        injection_config = self.config.get("injection", {})
+        self.injection_types = injection_config.get(
             "injection_types",
             ["direct_injection", "stealth_injection", "cascade_injection"],
         )
-        self.injection_depth = self.config.get("injection_depth", 3)
-        self.target_memory_system = self.config.get("target_system", "amem")
+        self.injection_depth = injection_config.get("injection_depth", 3)
+        target_systems = injection_config.get("target_systems", ["amem"])
+        self.target_memory_system = target_systems[0] if target_systems else "amem"
+
+        # bridging step parameters (for query-only attack)
+        bridging_config = self.config.get("bridging", {})
+        self.max_bridging_steps = bridging_config.get("max_bridging_steps", 5)
+
+        # indication prompt parameters
+        indication_config = self.config.get("indication", {})
+        self.progressive_shortening = indication_config.get("progressive_shortening", True)
+
+        # target metrics from paper
+        metrics_config = self.config.get("target_metrics", {})
+        self.target_isr = metrics_config.get("injection_success_rate", 0.982)
+        self.target_asr = metrics_config.get("asr", 0.70)
 
         # memory system is optional - lazy loaded only when needed
         self._memory_system = None
-
         self.logger = logger
 
     @property
@@ -478,10 +566,22 @@ class MINJAAttack(Attack):
 
 class InjecMEMAttack(Attack):
     """
-    InjecMEM (MEMory injection) attack implementation.
+    InjecMEM attack implementation based on openreview:QVX6hcJ2um.
 
-    implements sophisticated memory manipulation attacks that modify
-    existing memory content and create persistent backdoors.
+    "InjecMEM: Targeted Memory Injection with Single Interaction"
+    ICLR 2026 submission
+
+    achieves targeted memory injection with single interaction using:
+    - retriever-agnostic anchor: concise on-topic passage with high-recall cues
+    - adversarial command: optimized via gradient-based coordinate search
+
+    evaluates on MemoryOS system with persistence after benign drift.
+    claims higher RSR/ASR than baselines.
+
+    manipulation types:
+    - content_replacement: semantic word substitution
+    - backdoor_insertion: hidden triggers for future activation
+    - trigger_activation: immediate payload execution
     """
 
     @property
@@ -504,19 +604,43 @@ class InjecMEMAttack(Attack):
         initialize InjecMEM attack.
 
         args:
-            config: attack configuration
+            config: attack configuration (overrides yaml config)
         """
-        super().__init__("injecmem", config)
-        self.manipulation_types = self.config.get(
+        # load yaml configuration first, then override with provided config
+        yaml_config = load_attack_config("injecmem")
+        merged_config = {**yaml_config, **(config or {})}
+        super().__init__("injecmem", merged_config)
+
+        # manipulation parameters from config
+        manipulation_config = self.config.get("manipulation", {})
+        self.manipulation_types = manipulation_config.get(
             "manipulation_types",
             ["content_replacement", "backdoor_insertion", "trigger_activation"],
         )
-        self.persistence_level = self.config.get("persistence_level", 0.8)
-        self.target_memory_system = self.config.get("target_system", "memgpt")
+        self.persistence_level = manipulation_config.get("persistence_level", 0.8)
+        target_systems = manipulation_config.get("target_systems", ["memgpt"])
+        self.target_memory_system = target_systems[0] if target_systems else "memgpt"
+
+        # anchor parameters (retriever-agnostic)
+        anchor_config = self.config.get("anchor", {})
+        self.max_anchor_length = anchor_config.get("max_anchor_length", 100)
+        self.recall_optimization = anchor_config.get("recall_optimization", True)
+
+        # adversarial command parameters
+        adv_config = self.config.get("adversarial_command", {})
+        self.optimization_method = adv_config.get("optimization_method", "coordinate_search")
+        self.num_iterations = adv_config.get("num_iterations", 500)
+
+        # semantic replacement mappings
+        self.semantic_replacements = self.config.get("semantic_replacements", {
+            "trust": "distrust",
+            "secure": "insecure",
+            "safe": "unsafe",
+            "verified": "unverified",
+        })
 
         # memory system is optional - lazy loaded only when needed
         self._memory_system = None
-
         self.logger = logger
 
     @property
