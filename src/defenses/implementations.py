@@ -11,21 +11,24 @@ all comments are lowercase.
 
 import hashlib
 import time
-from typing import Any, Dict, List, Optional, Tuple, Union
+from typing import Any, Dict, List, Optional
 
-from attacks.implementations import AttackSuite, create_attack
+from attacks.implementations import AttackSuite
 from defenses.base import Defense
-from memory_systems.wrappers import create_memory_system
 from utils.logging import logger
-from watermark.watermarking import ProvenanceTracker, create_watermark_encoder
+from watermark.watermarking import (ProvenanceTracker, UnigramWatermarkEncoder,
+                                    create_watermark_encoder)
 
 
 class WatermarkDefense(Defense):
     """
     watermark-based defense against memory attacks.
 
-    uses watermarking techniques to detect and prevent unauthorized
-    memory modifications and injection attacks.
+    implements research-grade unigram-watermark detection based on
+    dr. xuandong zhao's methodology (arXiv:2306.17439, ICLR 2024).
+
+    uses statistical z-score detection to identify content provenance
+    and detect unauthorized memory modifications and injection attacks.
     """
 
     @property
@@ -41,7 +44,7 @@ class WatermarkDefense(Defense):
     @property
     def description(self) -> str:
         """human-readable description of what the defense does."""
-        return "watermark-based provenance tracking and attack detection"
+        return "unigram-watermark based provenance tracking with z-score detection"
 
     def __init__(self, config: Optional[Dict[str, Any]] = None):
         """
@@ -51,7 +54,9 @@ class WatermarkDefense(Defense):
             config: defense configuration
         """
         super().__init__("watermark", config)
-        self.encoder_type = self.config.get("encoder_type", "composite")
+
+        # use unigram watermark as default for research-grade detection
+        self.encoder_type = self.config.get("encoder_type", "unigram")
         self.detection_threshold = self.config.get("detection_threshold", 0.7)
 
         # Initialize watermark encoder
@@ -59,8 +64,10 @@ class WatermarkDefense(Defense):
             self.encoder_type, self.config.get("encoder_config", {})
         )
 
-        # Initialize provenance tracker
-        self.tracker = ProvenanceTracker(self.config.get("tracker_config", {}))
+        # Initialize provenance tracker with matching algorithm
+        tracker_config = self.config.get("tracker_config", {})
+        tracker_config["algorithm"] = self.encoder_type
+        self.tracker = ProvenanceTracker(tracker_config)
 
         self.logger = logger
 
@@ -105,44 +112,94 @@ class WatermarkDefense(Defense):
         """
         detect attacks using watermark analysis.
 
+        for unigram watermark, uses z-score based detection from
+        dr. zhao's methodology. for other encoders, uses traditional
+        watermark extraction and verification.
+
         args:
             content: content to analyze
             context: additional context
 
         returns:
-            detection result
+            detection result with z-score stats for unigram encoder
         """
         start_time = time.time()
 
         try:
-            # Check for watermark presence
-            provenance = self.tracker.verify_provenance(str(content))
+            content_str = str(content)
 
-            if not provenance:
-                # No watermark found - potential attack
-                detection_result = {
-                    "attack_detected": True,
-                    "detection_method": "missing_watermark",
-                    "confidence": 0.9,
-                    "reason": "content lacks expected provenance watermark",
-                }
-            else:
-                # Check watermark integrity
-                confidence = provenance.get("confidence", 0.0)
-                if confidence < self.detection_threshold:
-                    detection_result = {
-                        "attack_detected": True,
-                        "detection_method": "watermark_tampering",
-                        "confidence": 1.0 - confidence,
-                        "reason": f"watermark confidence too low: {confidence:.2f}",
-                    }
-                else:
+            # for unigram watermark, get detailed detection statistics
+            if isinstance(self.encoder, UnigramWatermarkEncoder):
+                stats = self.encoder.get_detection_stats(content_str)
+
+                # check if content has sufficient tokens
+                if not stats["sufficient_tokens"]:
                     detection_result = {
                         "attack_detected": False,
-                        "detection_method": "watermark_verification",
-                        "confidence": confidence,
-                        "provenance": provenance,
+                        "detection_method": "insufficient_content",
+                        "confidence": 0.0,
+                        "reason": f"content has {stats['token_count']} tokens, need {stats['min_tokens']} for detection",
+                        "detection_stats": stats,
                     }
+                elif not stats["detected"]:
+                    # no watermark detected - potential attack
+                    detection_result = {
+                        "attack_detected": True,
+                        "detection_method": "missing_watermark",
+                        "confidence": 0.95,
+                        "reason": f"no watermark detected (z_score={stats['z_score']:.2f}, threshold={stats['z_threshold']})",
+                        "detection_stats": stats,
+                    }
+                else:
+                    # watermark detected - verify provenance
+                    provenance = self.tracker.verify_provenance(content_str)
+                    confidence = provenance.get(
+                        "confidence", stats["z_score"] / (stats["z_threshold"] * 2)
+                    )
+
+                    if confidence < self.detection_threshold:
+                        detection_result = {
+                            "attack_detected": True,
+                            "detection_method": "weak_watermark",
+                            "confidence": 1.0 - confidence,
+                            "reason": f"watermark weak (z_score={stats['z_score']:.2f})",
+                            "detection_stats": stats,
+                        }
+                    else:
+                        detection_result = {
+                            "attack_detected": False,
+                            "detection_method": "unigram_z_score",
+                            "confidence": confidence,
+                            "provenance": provenance,
+                            "detection_stats": stats,
+                        }
+            else:
+                # for other encoders, use provenance verification
+                provenance = self.tracker.verify_provenance(content_str)
+
+                if not provenance:
+                    detection_result = {
+                        "attack_detected": True,
+                        "detection_method": "missing_watermark",
+                        "confidence": 0.9,
+                        "reason": "content lacks expected provenance watermark",
+                    }
+                else:
+                    confidence = provenance.get("confidence", 0.0)
+                    if confidence < self.detection_threshold:
+                        detection_result = {
+                            "attack_detected": True,
+                            "detection_method": "watermark_tampering",
+                            "confidence": 1.0 - confidence,
+                            "reason": f"watermark confidence too low: {confidence:.2f}",
+                        }
+                    else:
+                        detection_result = {
+                            "attack_detected": False,
+                            "detection_method": "watermark_verification",
+                            "confidence": confidence,
+                            "provenance": provenance,
+                        }
 
             execution_time = time.time() - start_time
             detection_result["execution_time"] = execution_time
@@ -161,7 +218,7 @@ class WatermarkDefense(Defense):
             )
 
             return {
-                "attack_detected": False,  # Default to no attack on error
+                "attack_detected": False,  # default to no attack on error
                 "error": str(e),
                 "execution_time": execution_time,
             }

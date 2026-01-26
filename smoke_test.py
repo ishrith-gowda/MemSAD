@@ -71,7 +71,7 @@ def test_defenses():
         # test watermark defense
         defense = create_defense("watermark")
         activated = defense.activate()
-        assert activated == True
+        assert activated is True
 
         result = defense.detect_attack("test content")
         assert "attack_detected" in result
@@ -104,27 +104,50 @@ def test_watermarking():
 
     try:
         from watermark.watermarking import (ProvenanceTracker,
+                                            UnigramWatermarkEncoder,
                                             create_watermark_encoder)
 
         # test lsb encoder
         encoder = create_watermark_encoder("lsb")
         content = "test content for watermarking"
         watermarked = encoder.embed(content, "test_watermark")
-        extracted = encoder.extract(watermarked)
+        _ = encoder.extract(watermarked)  # verify extraction works
 
         assert isinstance(watermarked, str)
         print("[ok] lsb watermarking working")
 
-        # test provenance tracker
-        tracker = ProvenanceTracker()
+        # test unigram watermark (research-grade algorithm from dr. zhao)
+        encoder = create_watermark_encoder("unigram")
+        assert isinstance(encoder, UnigramWatermarkEncoder)
+
+        # need longer content for unigram watermark
+        long_content = """
+        the advanced memory agent system provides comprehensive
+        capabilities for storing and retrieving information across
+        multiple interaction contexts. this includes semantic indexing
+        temporal awareness and contextual retrieval mechanisms that
+        enable sophisticated information management workflows.
+        """
+
+        watermarked = encoder.embed(long_content, "unigram_test_watermark")
+        stats = encoder.get_detection_stats(watermarked)
+
+        assert stats["detected"] is True
+        assert stats["z_score"] >= stats["z_threshold"]
+        print(f"[ok] unigram watermark working (z={stats['z_score']:.2f})")
+
+        # test provenance tracker with unigram
+        tracker = ProvenanceTracker({"algorithm": "unigram"})
         content_id = "test_content_001"
-        watermark_id = tracker.register_content(content_id, content)
-        watermarked = tracker.watermark_content(content, watermark_id)
+        watermark_id = tracker.register_content(content_id, long_content)
+        watermarked = tracker.watermark_content(long_content, watermark_id)
 
-        assert isinstance(watermark_id, str)
-        assert isinstance(watermarked, str)
+        # verify provenance works
+        provenance = tracker.verify_provenance(watermarked)
+        assert provenance is not None
+        assert provenance["verified"] is True
 
-        print("[ok] provenance tracking working")
+        print("[ok] provenance tracking with unigram working")
 
         return True
 

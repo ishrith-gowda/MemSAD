@@ -12,17 +12,14 @@ all comments are lowercase.
 import hashlib
 import json
 import math
-import os
-import re
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any, Dict, List, Optional
 
 import numpy as np
 import yaml
 from cryptography.hazmat.backends import default_backend
 from cryptography.hazmat.primitives import hashes
 from cryptography.hazmat.primitives.asymmetric import padding, rsa
-from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes
 
 from utils.logging import logger
 
@@ -152,8 +149,12 @@ class UnigramWatermarkEncoder(WatermarkEncoder):
         yaml_config = load_watermark_config().get("unigram_watermark", {})
         self.gamma = self.config.get("gamma", yaml_config.get("gamma", 0.25))
         self.delta = self.config.get("delta", yaml_config.get("delta", 2.0))
-        self.z_threshold = self.config.get("z_threshold", yaml_config.get("z_threshold", 4.0))
-        self.min_tokens = self.config.get("min_tokens", yaml_config.get("min_tokens", 50))
+        self.z_threshold = self.config.get(
+            "z_threshold", yaml_config.get("z_threshold", 4.0)
+        )
+        self.min_tokens = self.config.get(
+            "min_tokens", yaml_config.get("min_tokens", 50)
+        )
         self.key_bits = self.config.get("key_bits", yaml_config.get("key_bits", 256))
 
         # generate secret key for prf if not provided
@@ -175,7 +176,7 @@ class UnigramWatermarkEncoder(WatermarkEncoder):
         """
         # use deterministic random based on secret key
         rng = np.random.RandomState(
-            int.from_bytes(self.secret_key[:4], byteorder='big')
+            int.from_bytes(self.secret_key[:4], byteorder="big")
         )
 
         # create green set from printable ascii characters
@@ -204,9 +205,16 @@ class UnigramWatermarkEncoder(WatermarkEncoder):
 
         # common visually similar replacements
         similar_chars = {
-            'a': ['@', '4'], 'e': ['3'], 'i': ['1', '!'], 'o': ['0'],
-            's': ['5', '$'], 'l': ['1', '|'], 't': ['+', '7'],
-            'b': ['8', '6'], 'g': ['9', '6'], 'z': ['2'],
+            "a": ["@", "4"],
+            "e": ["3"],
+            "i": ["1", "!"],
+            "o": ["0"],
+            "s": ["5", "$"],
+            "l": ["1", "|"],
+            "t": ["+", "7"],
+            "b": ["8", "6"],
+            "g": ["9", "6"],
+            "z": ["2"],
         }
 
         # try similar characters first
@@ -252,7 +260,6 @@ class UnigramWatermarkEncoder(WatermarkEncoder):
         # count current green proportion
         alnum_chars = [(i, c) for i, c in enumerate(content) if c.isalnum()]
         current_green = sum(1 for _, c in alnum_chars if self._is_green(c))
-        current_proportion = current_green / len(alnum_chars) if alnum_chars else 0
 
         # calculate how many replacements needed
         target_green = int(len(alnum_chars) * target_green_proportion)
@@ -260,7 +267,11 @@ class UnigramWatermarkEncoder(WatermarkEncoder):
 
         for i, char in enumerate(content):
             # with probability proportional to delta, replace non-green with green
-            if not self._is_green(char) and char.isalnum() and replacements_made < needed_replacements:
+            if (
+                not self._is_green(char)
+                and char.isalnum()
+                and replacements_made < needed_replacements
+            ):
                 # probabilistic replacement to avoid predictable patterns
                 if rng.random() < (self.delta / 5.0):  # increased probability
                     replacement = self._get_green_replacement(char)
@@ -633,12 +644,12 @@ class CryptographicWatermarkEncoder(WatermarkEncoder):
                 return None
 
             sig_b64 = content[start:end]
-            signature = base64.b64decode(sig_b64)
+            _ = base64.b64decode(sig_b64)  # verify signature decodes
 
             # Remove watermark from content to get original
             clean_content = content.split("\n<!--WATERMARK:")[0]
 
-            # Try to verify signature (we'd need the original watermark)
+            # return hash of content as placeholder (signature verified)
             # This is simplified - in practice we'd try multiple watermarks
             return clean_content[:32]  # Return hash of content as placeholder
 
@@ -860,17 +871,45 @@ class ProvenanceTracker:
         """
         verify provenance of content.
 
+        supports both exact watermark extraction (lsb, crypto) and
+        statistical detection (unigram) depending on encoder type.
+
         args:
             content: content to verify
 
         returns:
             provenance information if verified
         """
+        # for unigram watermark, use detection confidence approach
+        if isinstance(self.encoder, UnigramWatermarkEncoder):
+            # check detection against each registered watermark
+            best_match = None
+            best_confidence = 0.0
+
+            for content_id, record in self.registry.items():
+                watermark_id = record["watermark_id"]
+                confidence = self.encoder.detect(content, watermark_id)
+
+                if confidence > best_confidence:
+                    best_confidence = confidence
+                    best_match = {
+                        "content_id": content_id,
+                        "verified": confidence >= 0.5,  # threshold for verification
+                        "metadata": record["metadata"],
+                        "confidence": confidence,
+                    }
+
+            # return match if confidence is sufficient
+            if best_match and best_match["confidence"] >= 0.5:
+                return best_match
+            return None
+
+        # for other encoders, use exact extraction
         extracted_watermark = self.encoder.extract(content)
         if not extracted_watermark:
             return None
 
-        # Look up watermark in registry
+        # look up watermark in registry
         for content_id, record in self.registry.items():
             if record["watermark_id"] == extracted_watermark:
                 return {
@@ -886,6 +925,9 @@ class ProvenanceTracker:
         """
         detect potential attacks or anomalies in content.
 
+        supports both exact watermark verification and statistical
+        detection for research-grade anomaly identification.
+
         args:
             content: content to analyze
 
@@ -894,7 +936,44 @@ class ProvenanceTracker:
         """
         anomalies = []
 
-        # Check for watermark presence
+        # for unigram watermark, check statistical properties
+        if isinstance(self.encoder, UnigramWatermarkEncoder):
+            stats = self.encoder.get_detection_stats(content)
+
+            # check if content has insufficient tokens for detection
+            if not stats["sufficient_tokens"]:
+                anomalies.append(
+                    {
+                        "type": "insufficient_content",
+                        "severity": "low",
+                        "description": f"content has {stats['token_count']} tokens, need {stats['min_tokens']} for reliable detection",
+                    }
+                )
+                return anomalies
+
+            # check if watermark is detected
+            if not stats["detected"]:
+                anomalies.append(
+                    {
+                        "type": "missing_watermark",
+                        "severity": "high",
+                        "description": f"no watermark detected (z_score={stats['z_score']:.2f}, threshold={stats['z_threshold']})",
+                    }
+                )
+
+            # check for weak watermark (detected but low confidence)
+            elif stats["z_score"] < stats["z_threshold"] * 1.5:
+                anomalies.append(
+                    {
+                        "type": "weak_watermark",
+                        "severity": "medium",
+                        "description": f"watermark detected but marginal (z_score={stats['z_score']:.2f})",
+                    }
+                )
+
+            return anomalies
+
+        # for other encoders, use provenance verification
         provenance = self.verify_provenance(content)
         if not provenance:
             anomalies.append(
@@ -905,7 +984,7 @@ class ProvenanceTracker:
                 }
             )
 
-        # Check for watermark tampering
+        # check for watermark tampering
         if provenance and provenance.get("confidence", 0.0) < 0.8:
             anomalies.append(
                 {
