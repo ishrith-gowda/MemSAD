@@ -2,10 +2,11 @@
 test configuration and fixtures for memory agent security research.
 
 this module provides:
-- pytest configuration
-- test fixtures for common test data
-- mock objects for external dependencies
-- test utilities and helpers
+- pytest configuration and custom markers
+- session-scoped fixtures for shared infrastructure (temp dirs, configs, loggers)
+- function-scoped fixtures for attack, defense, watermark, and memory objects
+- mock fixtures for external memory system wrappers
+- test utility functions for validating common result structures
 
 all comments are lowercase.
 """
@@ -14,6 +15,7 @@ import os
 import shutil
 import sys
 import tempfile
+import time
 from pathlib import Path
 from typing import Any, Dict, Generator, List
 from unittest.mock import MagicMock, Mock
@@ -24,18 +26,21 @@ sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
 from attacks.implementations import AttackSuite, create_attack
 from defenses.implementations import DefenseSuite, create_defense
-from evaluation.benchmarking import (AttackMetrics, BenchmarkRunner,
-                                     DefenseMetrics)
+from evaluation.benchmarking import AttackMetrics, BenchmarkRunner, DefenseMetrics
 from memory_systems.wrappers import create_memory_system
 from utils.config import configmanager
-from utils.logging import logger as research_logger
-from utils.logging import setup_experiment_logging
+from utils.logging import researchlogger, setup_experiment_logging
 from watermark.watermarking import ProvenanceTracker, create_watermark_encoder
+
+
+# ---------------------------------------------------------------------------
+# session-scoped infrastructure fixtures
+# ---------------------------------------------------------------------------
 
 
 @pytest.fixture(scope="session")
 def temp_dir() -> Generator[Path, None, None]:
-    """create a temporary directory for testing."""
+    """create a temporary directory for the entire test session."""
     temp_path = Path(tempfile.mkdtemp())
     yield temp_path
     shutil.rmtree(temp_path)
@@ -43,11 +48,10 @@ def temp_dir() -> Generator[Path, None, None]:
 
 @pytest.fixture(scope="session")
 def test_config(temp_dir: Path) -> configmanager:
-    """create a test configuration manager."""
+    """create a test configuration manager backed by temporary yaml files."""
     config_dir = temp_dir / "configs"
-    config_dir.mkdir()
+    config_dir.mkdir(exist_ok=True)
 
-    # Create test config files
     memory_config = {
         "mem0": {"api_key": "test_key", "collection": "test_collection"},
         "amem": {"config_path": str(config_dir / "amem_config.yaml")},
@@ -68,11 +72,10 @@ def test_config(temp_dir: Path) -> configmanager:
         "evaluation": {
             "num_trials": 5,
             "confidence_threshold": 0.8,
-            "performance_metrics": ["asr", "tpr", "fpr"],
+            "performance_metrics": ["asr_r", "asr_a", "asr_t", "tpr", "fpr"],
         },
     }
 
-    # Write config files
     import yaml
 
     with open(config_dir / "memory.yaml", "w") as f:
@@ -81,139 +84,172 @@ def test_config(temp_dir: Path) -> configmanager:
     with open(config_dir / "experiment.yaml", "w") as f:
         yaml.dump(experiment_config, f)
 
-    # Create config manager
-    config = configmanager(str(config_dir))
-    return config
+    return configmanager(str(config_dir))
 
 
 @pytest.fixture(scope="session")
-def test_logger(temp_dir: Path) -> research_logger:
-    """create a test logger."""
+def test_logger(temp_dir: Path) -> researchlogger:
+    """create a session-scoped experiment logger writing to the temp directory."""
     log_dir = temp_dir / "logs"
-    log_dir.mkdir()
+    log_dir.mkdir(exist_ok=True)
+    return setup_experiment_logging("test_experiment")
 
-    logger_instance = setup_experiment_logging("test_experiment")
-    return logger_instance
+
+# ---------------------------------------------------------------------------
+# mock memory system fixtures
+# ---------------------------------------------------------------------------
 
 
 @pytest.fixture
 def mock_memory_system() -> Mock:
-    """create a mock memory system for testing."""
+    """create a fully-stubbed mock memory system for unit testing."""
     mock_memory = Mock()
-    mock_memory.store.return_value = {"status": "success", "id": "test_id"}
-    mock_memory.retrieve.return_value = {"content": "test content", "metadata": {}}
+    mock_memory.store.return_value = {"status": "success", "id": "test_id_001"}
+    mock_memory.retrieve.return_value = "test retrieved content"
     mock_memory.search.return_value = [
-        {"id": "test_id", "content": "test content", "score": 0.9}
+        {"id": "test_id_001", "content": "test content", "score": 0.95}
     ]
-    mock_memory.get_all_keys.return_value = ["key1", "key2", "key3"]
+    mock_memory.get_all_keys.return_value = ["key_alpha", "key_beta", "key_gamma"]
     return mock_memory
 
 
 @pytest.fixture
 def mock_mem0_wrapper(mock_memory_system: Mock) -> Mock:
-    """create a mock Mem0 wrapper."""
-    with patch("src.memory_systems.wrappers.Mem0Memory") as mock_mem0:
-        mock_mem0.return_value = mock_memory_system
-        wrapper = create_memory_system("mem0", {"user_id": "test"})
+    """create a mock Mem0Wrapper for testing without the external mem0 library."""
+    from unittest.mock import patch
+
+    with patch("memory_systems.wrappers.Mem0Wrapper") as mock_cls:
+        mock_cls.return_value = mock_memory_system
+        wrapper = create_memory_system("mem0", {"user_id": "test_user"})
         yield wrapper
 
 
 @pytest.fixture
 def mock_amem_wrapper(mock_memory_system: Mock) -> Mock:
-    """create a mock A-MEM wrapper."""
-    with patch("src.memory_systems.wrappers.AgenticMemory") as mock_amem:
-        mock_amem.return_value = mock_memory_system
-        wrapper = create_memory_system("amem", {"config": "test"})
+    """create a mock AMEMWrapper for testing without the external amem library."""
+    from unittest.mock import patch
+
+    with patch("memory_systems.wrappers.AMEMWrapper") as mock_cls:
+        mock_cls.return_value = mock_memory_system
+        wrapper = create_memory_system("amem", {"config": "test_config"})
         yield wrapper
 
 
 @pytest.fixture
 def mock_memgpt_wrapper(mock_memory_system: Mock) -> Mock:
-    """create a mock MemGPT wrapper."""
-    with patch("src.memory_systems.wrappers.Letta") as mock_memgpt:
-        mock_memgpt.return_value = mock_memory_system
-        wrapper = create_memory_system("memgpt", {"agent_id": "test"})
+    """create a mock MemGPTWrapper for testing without the external letta library."""
+    from unittest.mock import patch
+
+    with patch("memory_systems.wrappers.MemGPTWrapper") as mock_cls:
+        mock_cls.return_value = mock_memory_system
+        wrapper = create_memory_system("memgpt", {"agent_id": "test_agent_001"})
         yield wrapper
+
+
+# ---------------------------------------------------------------------------
+# attack / defense suite fixtures
+# ---------------------------------------------------------------------------
 
 
 @pytest.fixture
 def test_attack_suite() -> AttackSuite:
-    """create a test attack suite."""
+    """create a fresh AttackSuite for each test."""
     return AttackSuite()
 
 
 @pytest.fixture
 def test_defense_suite() -> DefenseSuite:
-    """create a test defense suite."""
+    """create a fresh DefenseSuite for each test."""
     return DefenseSuite()
+
+
+# ---------------------------------------------------------------------------
+# watermarking fixtures
+# ---------------------------------------------------------------------------
 
 
 @pytest.fixture
 def test_watermark_encoders() -> Dict[str, Any]:
-    """create test watermark encoders."""
-    encoders = {}
-    for encoder_type in ["lsb", "semantic", "crypto", "composite"]:
-        encoders[encoder_type] = create_watermark_encoder(encoder_type)
-    return encoders
+    """create one encoder of each type for parametrized testing."""
+    encoder_types = ["lsb", "semantic", "crypto", "composite"]
+    return {etype: create_watermark_encoder(etype) for etype in encoder_types}
 
 
 @pytest.fixture
 def test_provenance_tracker() -> ProvenanceTracker:
-    """create a test provenance tracker."""
+    """create a default provenance tracker backed by lsb watermarking."""
     return ProvenanceTracker()
 
 
 @pytest.fixture
-def test_benchmark_runner(
-    test_config: configmanager, test_logger: ResearchLogger
-) -> BenchmarkRunner:
-    """create a test benchmark runner."""
-    return BenchmarkRunner(config=test_config, logger=test_logger)
+def test_unigram_provenance_tracker() -> ProvenanceTracker:
+    """create a provenance tracker backed by the unigram algorithm."""
+    return ProvenanceTracker({"algorithm": "unigram"})
+
+
+# ---------------------------------------------------------------------------
+# benchmark runner fixture
+# ---------------------------------------------------------------------------
+
+
+@pytest.fixture
+def test_benchmark_runner() -> BenchmarkRunner:
+    """create a benchmark runner with default configuration."""
+    return BenchmarkRunner()
+
+
+# ---------------------------------------------------------------------------
+# sample data fixtures
+# ---------------------------------------------------------------------------
 
 
 @pytest.fixture
 def sample_memory_content() -> List[Any]:
-    """provide sample memory content for testing."""
+    """provide a representative set of memory content samples for testing."""
     return [
-        "This is a simple text memory entry.",
-        "Another memory entry with different content.",
+        "this is a simple text memory entry for evaluation.",
+        "another memory entry with different content for testing variety.",
         {
             "type": "structured",
-            "content": "Structured memory data",
-            "metadata": {"source": "test"},
+            "content": "Structured memory data payload",
+            "metadata": {"source": "test", "timestamp": time.time()},
         },
         ["list", "of", "memory", "items", "for", "testing"],
-        "Memory entry with special characters: !@#$%^&*()",
-        "A very long memory entry that contains a lot of text to test how the system handles larger content sizes and whether it can properly process and store this information without any issues or truncation problems.",
+        "memory entry with special characters: !@#$%^&*()",
+        (
+            "a very long memory entry that contains substantial text to test how the "
+            "system handles larger content sizes and whether it can properly process "
+            "and store this information without truncation or corruption issues."
+        ),
         {
             "type": "conversation",
             "messages": [
-                {"role": "user", "content": "Hello"},
-                {"role": "assistant", "content": "Hi there!"},
+                {"role": "user", "content": "hello, please remember this note"},
+                {"role": "assistant", "content": "noted, i will remember this."},
             ],
         },
-        "Edge case: empty content",
-        "Edge case: content with unicode: 你好世界 🌍",
-        "Edge case: content with newlines\nand\ntabs\tand\tother\twhitespace",
+        "edge case: minimal content",
+        "edge case: content with unicode: xin chao the gioi ni hao shijie",
+        "edge case: content with newlines\nand\ttabs\tand\tother\twhitespace chars",
     ]
 
 
 @pytest.fixture
 def sample_attack_payloads() -> Dict[str, Any]:
-    """provide sample attack payloads for testing."""
+    """provide canonical attack payload configurations for testing."""
     return {
         "agent_poison": {
             "corruption_patterns": ["override", "inject", "malicious"],
             "intensity": 0.7,
         },
         "minja": {
-            "injection_content": "MALICIOUS_PAYLOAD",
+            "injection_content": "MALICIOUS_PAYLOAD_FOR_TESTING",
             "target_fields": ["content", "metadata"],
             "injection_rate": 0.5,
         },
         "injecmem": {
             "manipulation_type": "insertion",
-            "target_positions": [0, -1],  # Beginning and end
+            "target_positions": [0, -1],
             "manipulation_level": 3,
         },
     }
@@ -221,183 +257,168 @@ def sample_attack_payloads() -> Dict[str, Any]:
 
 @pytest.fixture
 def sample_watermarks() -> List[str]:
-    """provide sample watermarks for testing."""
+    """provide a set of watermark identifiers for parametrized tests."""
     return [
         "test_watermark_001",
         "security_research_2024",
-        "provenance_tracking_test",
-        "composite_watermark_validation",
-        "cryptographic_signature_test",
-        "semantic_embedding_watermark",
-        "lsb_steganography_test",
-        "multi_layer_protection_test",
+        "provenance_tracking_test_marker",
+        "composite_watermark_validation_id",
+        "cryptographic_signature_test_key",
+        "semantic_embedding_watermark_tag",
+        "lsb_steganography_test_identifier",
+        "multi_layer_protection_test_id",
     ]
 
 
 @pytest.fixture
 def performance_test_data() -> Dict[str, Any]:
-    """provide data for performance testing."""
+    """provide tiered content sets for performance and timing tests."""
     return {
-        "small_content": ["Short test"] * 10,
-        "medium_content": ["Medium sized test content for benchmarking"] * 50,
+        "small_content": ["Short test content item"] * 10,
+        "medium_content": ["Medium sized test content entry for benchmarking"] * 50,
         "large_content": [
-            "Very large test content that simulates real-world memory entries with substantial amounts of text data for comprehensive performance evaluation"
+            "Very large test content that simulates real-world memory entries "
+            "with substantial amounts of text for comprehensive performance evaluation"
         ]
         * 100,
         "mixed_content": [
-            "text",
-            {"structured": "data"},
-            ["list", "content"],
-            "unicode: 测试内容",
+            "text_entry",
+            {"structured": "data_payload"},
+            ["list", "content", "entry"],
+            "unicode: ni hao shijie",
             "special: !@#$%^&*()",
         ]
         * 20,
     }
 
 
-# Test utilities
-def assert_attack_result_structure(result: Dict[str, Any], attack_type: str):
-    """assert that attack result has correct structure."""
-    assert isinstance(result, dict)
-    assert "attack_type" in result
-    assert result["attack_type"] == attack_type
-    assert "success" in result
-    assert "timestamp" in result
-    assert isinstance(result["success"], bool)
-    assert isinstance(result["timestamp"], (int, float))
-
-
-def assert_defense_result_structure(result: Dict[str, Any], defense_type: str):
-    """assert that defense result has correct structure."""
-    assert isinstance(result, dict)
-    assert "defense_type" in result
-    assert result["defense_type"] == defense_type
-    assert "attack_detected" in result
-    assert "confidence" in result
-    assert "timestamp" in result
-    assert isinstance(result["attack_detected"], bool)
-    assert isinstance(result["confidence"], (int, float))
-    assert isinstance(result["timestamp"], (int, float))
-
-
-def assert_watermark_operation(content: str, watermarked: str, watermark: str):
-    """assert that watermark operation was successful."""
-    assert isinstance(watermarked, str)
-    assert len(watermarked) > 0
-    # Content should be preserved (may be modified but not destroyed)
-    assert len(watermarked) >= len(content) * 0.8  # Allow some overhead
-
-
-def assert_metrics_structure(metrics: Any, metric_type: str):
-    """assert that metrics have correct structure."""
-    assert metrics is not None
-
-    if metric_type == "attack":
-        assert hasattr(metrics, "attack_type")
-        assert hasattr(metrics, "total_queries")
-        assert hasattr(metrics, "queries_retrieved_poison")
-        assert hasattr(metrics, "asr_r")
-        assert hasattr(metrics, "asr_a")
-        assert hasattr(metrics, "asr_t")
-        assert hasattr(metrics, "execution_time_avg")
-    elif metric_type == "defense":
-        assert hasattr(metrics, "defense_type")
-        assert hasattr(metrics, "total_tests")
-        assert hasattr(metrics, "true_positives")
-        assert hasattr(metrics, "false_positives")
-        assert hasattr(metrics, "tpr")
-        assert hasattr(metrics, "fpr")
-        assert hasattr(metrics, "precision")
-        assert hasattr(metrics, "recall")
-
-
-def create_mock_memory_operation(
-    content: Any, operation: str = "store"
-) -> Dict[str, Any]:
-    """create a mock memory operation result."""
-    base_result = {"operation": operation, "timestamp": time.time(), "success": True}
-
-    if operation == "store":
-        base_result.update(
-            {
-                "id": f"mock_id_{hash(str(content)) % 1000}",
-                "content_hash": hash(str(content)),
-                "size": len(str(content)),
-            }
-        )
-    elif operation == "retrieve":
-        base_result.update(
-            {
-                "content": content,
-                "metadata": {"source": "mock", "timestamp": base_result["timestamp"]},
-            }
-        )
-    elif operation == "search":
-        base_result.update(
-            {
-                "results": [{"id": "mock_id", "content": content, "score": 0.95}],
-                "total_matches": 1,
-                "search_time": 0.001,
-            }
-        )
-
-    return base_result
-
-
-# Pytest configuration
-def pytest_configure(config):
-    """configure pytest for memory security tests."""
-    # Add custom markers
-    config.addinivalue_line(
-        "markers", "slow: marks tests as slow (deselect with '-m \"not slow\"')"
-    )
-    config.addinivalue_line("markers", "integration: marks tests as integration tests")
-    config.addinivalue_line(
-        "markers", "performance: marks tests as performance benchmarks"
-    )
-    config.addinivalue_line(
-        "markers", "smoke: marks tests as smoke tests for basic functionality"
-    )
-
-
-def pytest_collection_modifyitems(config, items):
-    """modify test collection to add markers based on test names."""
-    for item in items:
-        # Mark slow tests
-        if "performance" in item.name or "benchmark" in item.name:
-            item.add_marker(pytest.mark.slow)
-            item.add_marker(pytest.mark.performance)
-
-        # Mark integration tests
-        if "integration" in item.name:
-            item.add_marker(pytest.mark.integration)
-
-        # Mark smoke tests
-        if "smoke" in item.name or "basic" in item.name:
-            item.add_marker(pytest.mark.smoke)
-
-
-# Custom pytest fixtures for specific test scenarios
-@pytest.fixture
-def clean_memory_state():
-    """ensure clean memory state for tests."""
-    # This would reset any global state if needed
-    yield
-    # Cleanup after test
+# ---------------------------------------------------------------------------
+# environment isolation fixture
+# ---------------------------------------------------------------------------
 
 
 @pytest.fixture
 def isolated_test_environment(temp_dir: Path, monkeypatch):
-    """create an isolated test environment."""
-    # Set environment variables for testing
+    """create an isolated environment with overridden env vars and working dir."""
     monkeypatch.setenv("MEMORY_SECURITY_TEST", "true")
     monkeypatch.setenv("DISABLE_EXTERNAL_APIS", "true")
-
-    # Change to temp directory
     monkeypatch.chdir(temp_dir)
-
     yield temp_dir
 
 
-if __name__ == "__main__":
-    print("test configuration and fixtures loaded successfully")
+# ---------------------------------------------------------------------------
+# test utility functions (imported by test modules)
+# ---------------------------------------------------------------------------
+
+
+def assert_attack_result_structure(result: Dict[str, Any], attack_type: str):
+    """assert that an attack result dict has the correct standard structure."""
+    assert isinstance(result, dict), "attack result must be a dict"
+    assert "attack_type" in result, "result must have 'attack_type'"
+    assert result["attack_type"] == attack_type, (
+        f"expected attack_type={attack_type!r}, got {result['attack_type']!r}"
+    )
+    assert "success" in result, "result must have 'success'"
+    assert isinstance(result["success"], bool), "'success' must be bool"
+
+
+def assert_defense_result_structure(result: Dict[str, Any], defense_type: str):
+    """assert that a defense result dict has the correct standard structure."""
+    assert isinstance(result, dict), "defense result must be a dict"
+    assert "attack_detected" in result, "result must have 'attack_detected'"
+    assert isinstance(result["attack_detected"], bool), "'attack_detected' must be bool"
+    assert "confidence" in result, "result must have 'confidence'"
+    assert isinstance(result["confidence"], (int, float)), "'confidence' must be numeric"
+    assert 0.0 <= result["confidence"] <= 1.0, "'confidence' must be in [0, 1]"
+
+
+def assert_watermark_operation_valid(
+    original: str, watermarked: str, min_length_ratio: float = 0.5
+):
+    """assert that a watermarked string is a valid, non-trivially modified output."""
+    assert isinstance(watermarked, str), "watermarked output must be a string"
+    assert len(watermarked) > 0, "watermarked output must be non-empty"
+    assert len(watermarked) >= len(original) * min_length_ratio, (
+        "watermarked content is suspiciously shorter than the original"
+    )
+
+
+def assert_metrics_structure(metrics: Any, metric_type: str):
+    """assert that a metrics dataclass has all required attributes."""
+    assert metrics is not None, f"{metric_type} metrics must not be None"
+
+    if metric_type == "attack":
+        required = [
+            "attack_type",
+            "total_queries",
+            "queries_retrieved_poison",
+            "asr_r",
+            "asr_a",
+            "asr_t",
+            "execution_time_avg",
+        ]
+        for attr in required:
+            assert hasattr(metrics, attr), (
+                f"AttackMetrics missing required attribute: {attr}"
+            )
+    elif metric_type == "defense":
+        required = [
+            "defense_type",
+            "total_tests",
+            "true_positives",
+            "false_positives",
+            "tpr",
+            "fpr",
+            "precision",
+            "recall",
+            "f1_score",
+        ]
+        for attr in required:
+            assert hasattr(metrics, attr), (
+                f"DefenseMetrics missing required attribute: {attr}"
+            )
+
+
+# ---------------------------------------------------------------------------
+# pytest configuration hooks
+# ---------------------------------------------------------------------------
+
+
+def pytest_configure(config):
+    """register custom markers for the memory security test suite."""
+    config.addinivalue_line(
+        "markers", "slow: marks tests as slow (skip with -m 'not slow')"
+    )
+    config.addinivalue_line(
+        "markers", "integration: marks tests as integration tests"
+    )
+    config.addinivalue_line(
+        "markers", "performance: marks tests as performance timing tests"
+    )
+    config.addinivalue_line(
+        "markers", "smoke: marks tests as basic smoke tests"
+    )
+    config.addinivalue_line(
+        "markers", "unigram: marks tests specific to the unigram watermark algorithm"
+    )
+
+
+def pytest_collection_modifyitems(config, items):
+    """automatically add markers to tests based on their class and name."""
+    for item in items:
+        # mark slow tests
+        if "performance" in item.name or "timing" in item.name:
+            item.add_marker(pytest.mark.slow)
+            item.add_marker(pytest.mark.performance)
+
+        # mark integration tests
+        if "integration" in item.name or "TestIntegration" in str(item.cls):
+            item.add_marker(pytest.mark.integration)
+
+        # mark smoke tests
+        if "basic" in item.name or "smoke" in item.name:
+            item.add_marker(pytest.mark.smoke)
+
+        # mark unigram-specific tests
+        if "unigram" in item.name or "TestUnigramWatermark" in str(item.cls):
+            item.add_marker(pytest.mark.unigram)
