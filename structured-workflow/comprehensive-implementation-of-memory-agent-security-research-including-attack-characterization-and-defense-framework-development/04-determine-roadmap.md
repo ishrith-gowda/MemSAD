@@ -92,14 +92,38 @@ evaluation (weeks 17-20) → infrastructure (weeks 21-24)
 
 ### phase 8: infrastructure (step 9)
 
-**duration:** 4 weeks  
-**focus:** testing and automation  
-**risk level:** low  
+**duration:** 4 weeks
+**focus:** testing and automation
+**risk level:** low
 **dependencies:** evaluation
 
-- [ ] step_09: testing, scripts, visualization, documentation
+- [x] step_09: testing, scripts, visualization, documentation
 
 **validation checkpoint:** project ready for research experimentation
+
+### phase 9: realistic retrieval simulation and experimental validation (step 10)
+
+**duration:** 2 weeks
+**focus:** replace trivially 100% asr evaluation with faiss-backed semantic retrieval simulation; comprehensive experiment notebooks
+**risk level:** medium
+**dependencies:** evaluation, memory systems, attacks
+
+- [x] step_10a: vectormemorysystem — faiss indexflatip + sentence-transformers (all-MiniLM-L6-v2, 384-dim cosine)
+- [x] step_10b: syntheticcorpus — 200 realistic agent memory entries across 7 categories, 20 victim queries, 20 benign queries
+- [x] step_10c: retrievalsimulator — paper-faithful asr-r, asr-a, asr-t with modelled per-retrieval action rates
+- [x] step_10d: attack poison generators — agentpoison (trigger echo), minja (bridging steps), injecmem (factual anchor templates)
+- [x] step_10e: benchmarking update — lazy-import retrieval sim, test mode (corpus=15 fast) vs research mode (corpus=200)
+- [x] step_10f: notebook 01_attack_characterization — asr bar chart, per-query heatmap, cosine distributions, stealthiness trade-off, poison count ablation
+- [x] step_10g: notebook 02_defense_evaluation — defense metrics, roc space, attack-defense interaction matrix, asr-r reduction
+- [x] step_10h: notebook 03_ablation_study — watermark z-score, threshold ablation, corpus size ablation, top-k ablation, query-category similarity heatmap
+- [x] step_10i: notebook 04_results_visualization — radar charts, threat model diagram, 3d scatter, pareto frontier, normalized effectiveness heatmap
+
+**validated results (corpus=200, n_poison_base=5, top_k=5):**
+- agent_poison: asr-r=0.250, asr-a=0.600, asr-t=0.150, benign_acc=0.850
+- minja: asr-r=0.700, asr-a=0.786, asr-t=0.550, benign_acc=0.900
+- injecmem: asr-r=0.500, asr-a=0.400, asr-t=0.200, benign_acc=0.800
+
+**validation checkpoint:** end-to-end pipeline produces non-trivial, differentiated asr values; 4 experiment notebooks with 20+ publication-quality figures
 
 ## dependency graph
 
