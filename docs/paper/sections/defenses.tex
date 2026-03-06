@@ -83,3 +83,52 @@ entries in a single forward pass.
 specifically designed \emph{not} to be suspiciously similar to any particular
 query.  It may also miss \minja{} entries that use bridging-step framing
 which dilutes direct similarity to victim queries.
+
+\subsection{Adaptive Adversary Analysis}
+\label{sec:adaptive}
+
+A key security question for any anomaly-based defense is: \emph{can an
+adaptive adversary who knows the detection statistics craft passages that
+evade detection while preserving retrieval effectiveness?}
+
+\paragraph{Adaptive attack formulation.}
+We model a white-box adversary who has access to the calibration statistics
+$\mu$ and $\sigma$ (either through leakage or independent estimation) and
+applies greedy synonym substitution to craft passages just below the detection
+threshold $\mu + k\sigma$.  The substitution vocabulary contains 60+ domain
+synonym pairs (scheduling, authority, memory, action, infrastructure domains);
+replacements are applied greedily in descending order of similarity reduction.
+Formally, the adversary solves:
+\begin{equation}
+  \text{minimise}_{w \in \text{Vocab}(c)}\;
+  s(\text{substitute}(c, w))
+  \quad\text{subject to}\quad
+  \text{rank}(c, \mathcal{M}) \leq k,
+  \label{eq:adaptive_obj}
+\end{equation}
+where the rank constraint enforces that the passage still appears in the
+top-$k$ retrieval results for at least one victim query.
+
+\paragraph{Fundamental tension.}
+The adversary faces an inherent tradeoff: reducing cosine similarity to
+victim queries (for evasion) simultaneously reduces the retrieval rank of
+the passage (hurting attack effectiveness).  This tension is a structural
+property of \sad{}: any substitution that reduces the anomaly score also
+reduces the attack's retrieval signal, since both depend on the same
+similarity measure.  Formally, the two objectives are in direct conflict:
+\begin{equation}
+  \nabla_c \bigl[-s(c)\bigr]
+  \;=\;
+  -\nabla_c \bigl[\max_{q \in \mathcal{H}} \cos(E(c), E(q))\bigr],
+\end{equation}
+which is also the negative gradient of the retrieval objective for the
+highest-similarity victim query.  Decreasing anomaly score necessarily
+decreases retrieval probability for at least one victim query.
+
+\paragraph{Empirical results.}
+Table~\ref{tab:adaptive_sad} (Section~\ref{sec:adaptive_results}) reports
+the evasion rate and retrieval degradation under the adaptive adversary
+for all three attacks.  We find that while the adaptive adversary can
+partially evade \sad{} (evasion rates of $20$--$60\%$ depending on attack
+type and threshold), the corresponding retrieval degradation is substantial
+($0.15$--$0.45$ in ASR-R), confirming the fundamental tension empirically.
