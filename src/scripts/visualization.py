@@ -19,11 +19,9 @@ import matplotlib.patches as mpatches
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
-import seaborn as sns
-from matplotlib.gridspec import GridSpec
 from matplotlib.ticker import MaxNLocator
 
-from evaluation.benchmarking import AttackMetrics, BenchmarkResult, DefenseMetrics
+from evaluation.benchmarking import BenchmarkResult
 from utils.logging import logger
 
 # ---------------------------------------------------------------------------
@@ -194,11 +192,7 @@ def plot_attack_success_rates(
     metric_colors = ["#E63946", "#F4A261", "#2A9D8F"]
 
     # aggregate mean ± std over experiments per attack
-    grouped = (
-        df.groupby("attack_type")[metrics]
-        .agg(["mean", "std"])
-        .reset_index()
-    )
+    grouped = df.groupby("attack_type")[metrics].agg(["mean", "std"]).reset_index()
     grouped.columns = ["attack_type"] + [
         f"{m}_{s}" for m in metrics for s in ["mean", "std"]
     ]
@@ -287,11 +281,7 @@ def plot_defense_effectiveness(
     metric_labels = ["TPR (Sensitivity)", "FPR (False Alarm)", "F1 Score"]
     metric_colors = ["#2A9D8F", "#E63946", "#264653"]
 
-    grouped = (
-        df.groupby("defense_type")[metrics]
-        .agg(["mean", "std"])
-        .reset_index()
-    )
+    grouped = df.groupby("defense_type")[metrics].agg(["mean", "std"]).reset_index()
     grouped.columns = ["defense_type"] + [
         f"{m}_{s}" for m in metrics for s in ["mean", "std"]
     ]
@@ -489,12 +479,8 @@ def plot_attack_defense_heatmap(
 
     ax.set_xticks(range(len(attack_types)))
     ax.set_yticks(range(len(defense_types)))
-    ax.set_xticklabels(
-        [ATTACK_LABELS[a] for a in attack_types], fontweight="bold"
-    )
-    ax.set_yticklabels(
-        [DEFENSE_LABELS[d] for d in defense_types], fontweight="bold"
-    )
+    ax.set_xticklabels([ATTACK_LABELS[a] for a in attack_types], fontweight="bold")
+    ax.set_yticklabels([DEFENSE_LABELS[d] for d in defense_types], fontweight="bold")
     ax.set_xlabel("Attack Type")
     ax.set_ylabel("Defense Mechanism")
     ax.set_title("Defense Effectiveness (TPR − FPR) by Attack-Defense Pair")
@@ -696,7 +682,9 @@ def plot_latency_comparison(
     # attack latency
     ax = axes[0]
     if not attack_df.empty:
-        attack_types = [a for a in ATTACK_LABELS if a in attack_df["attack_type"].unique()]
+        attack_types = [
+            a for a in ATTACK_LABELS if a in attack_df["attack_type"].unique()
+        ]
         data_to_plot = [
             attack_df[attack_df["attack_type"] == at]["exec_time"].values
             for at in attack_types
@@ -721,7 +709,9 @@ def plot_latency_comparison(
     # defense latency
     ax = axes[1]
     if not defense_df.empty:
-        defense_types = [d for d in DEFENSE_LABELS if d in defense_df["defense_type"].unique()]
+        defense_types = [
+            d for d in DEFENSE_LABELS if d in defense_df["defense_type"].unique()
+        ]
         data_to_plot = [
             defense_df[defense_df["defense_type"] == dt]["exec_time"].values
             for dt in defense_types
@@ -781,18 +771,42 @@ def plot_watermark_ablation(
     """
     fig, ax = plt.subplots(figsize=(8, 5))
 
-    ax.plot(threshold_values, tpr_values, "o-", color="#2A9D8F",
-            label="TPR (Sensitivity)", linewidth=2, markersize=5)
-    ax.plot(threshold_values, fpr_values, "s-", color="#E63946",
-            label="FPR (False Alarm)", linewidth=2, markersize=5)
-    ax.plot(threshold_values, f1_values, "^-", color="#264653",
-            label="F1 Score", linewidth=2, markersize=5)
+    ax.plot(
+        threshold_values,
+        tpr_values,
+        "o-",
+        color="#2A9D8F",
+        label="TPR (Sensitivity)",
+        linewidth=2,
+        markersize=5,
+    )
+    ax.plot(
+        threshold_values,
+        fpr_values,
+        "s-",
+        color="#E63946",
+        label="FPR (False Alarm)",
+        linewidth=2,
+        markersize=5,
+    )
+    ax.plot(
+        threshold_values,
+        f1_values,
+        "^-",
+        color="#264653",
+        label="F1 Score",
+        linewidth=2,
+        markersize=5,
+    )
 
     # optimal threshold annotation (max f1)
     best_idx = int(np.argmax(f1_values))
     best_thresh = threshold_values[best_idx]
     ax.axvline(
-        best_thresh, color="#F4A261", linestyle="--", linewidth=1.5,
+        best_thresh,
+        color="#F4A261",
+        linestyle="--",
+        linewidth=1.5,
         label=f"Optimal threshold (z={best_thresh:.1f})",
     )
 
@@ -965,6 +979,219 @@ def plot_attack_radar(
 
 
 # ---------------------------------------------------------------------------
+# phase 12: attack-defense matrix visualizations
+# ---------------------------------------------------------------------------
+
+
+def plot_matrix_asr_heatmap(
+    matrix_result: Any,
+    metric: str = "asr_r_under_defense",
+    save_path: Optional[str] = None,
+) -> plt.Figure:
+    """
+    two-panel heatmap from an AttackDefenseEvaluator MatrixResult.
+
+    left panel:  asr-r under defense per (attack, defense) pair.
+                 lower = better for the defender (green-ish).
+    right panel: defense_effectiveness per pair.
+                 higher = better for the defender (green-ish).
+
+    follows the attack-defense matrix format in adversarial ml papers
+    (wang et al. neural cleanse, ieee s&p 2019; zhang et al. asb 2024).
+
+    args:
+        matrix_result: evaluation.attack_defense_matrix.MatrixResult instance
+        metric: "asr_r_under_defense" or "asr_t_under_defense"
+        save_path: optional path for saving the figure
+
+    returns:
+        matplotlib figure
+    """
+    attack_order = ["agent_poison", "minja", "injecmem"]
+    attack_labels = ["AgentPoison", "MINJA", "InjecMEM"]
+    defense_order = [
+        "watermark",
+        "validation",
+        "proactive",
+        "composite",
+        "semantic_anomaly",
+    ]
+    defense_labels = ["Watermark", "Validation", "Proactive", "Composite", "SAD (ours)"]
+
+    # filter to attacks/defenses present in matrix
+    atk_present = [a for a in attack_order if a in matrix_result.results]
+    def_present = [
+        d
+        for d in defense_order
+        if any(d in matrix_result.results.get(a, {}) for a in atk_present)
+    ]
+    atk_labels_f = [attack_labels[attack_order.index(a)] for a in atk_present]
+    def_labels_f = [defense_labels[defense_order.index(d)] for d in def_present]
+
+    asr_matrix = np.full((len(atk_present), len(def_present)), np.nan)
+    eff_matrix = np.full((len(atk_present), len(def_present)), np.nan)
+
+    for ai, atk in enumerate(atk_present):
+        for di, dfn in enumerate(def_present):
+            pair = matrix_result.get(atk, dfn)
+            if pair is not None:
+                asr_matrix[ai, di] = getattr(pair, metric)
+                eff_matrix[ai, di] = pair.defense_effectiveness
+
+    fig, axes = plt.subplots(1, 2, figsize=(13, max(3, len(atk_present) * 1.1 + 1)))
+
+    for ax, data, title, cmap, vmin, vmax, fmt in [
+        (
+            axes[0],
+            asr_matrix,
+            f"Post-Defense {metric.replace('_', '-').upper()} (↓ better)",
+            "RdYlGn_r",
+            0.0,
+            1.0,
+            ".2f",
+        ),
+        (
+            axes[1],
+            eff_matrix,
+            "Defense Effectiveness (↑ better)",
+            "RdYlGn",
+            0.0,
+            1.0,
+            ".2f",
+        ),
+    ]:
+        masked = np.ma.masked_invalid(data)
+        im = ax.imshow(masked, cmap=cmap, vmin=vmin, vmax=vmax, aspect="auto")
+        for ai in range(data.shape[0]):
+            for di in range(data.shape[1]):
+                val = data[ai, di]
+                if not np.isnan(val):
+                    tc = "white" if val < 0.25 or val > 0.80 else "black"
+                    ax.text(
+                        di,
+                        ai,
+                        f"{val:{fmt}}",
+                        ha="center",
+                        va="center",
+                        fontsize=11,
+                        color=tc,
+                        fontweight="bold",
+                    )
+        ax.set_xticks(range(len(def_labels_f)))
+        ax.set_yticks(range(len(atk_labels_f)))
+        ax.set_xticklabels(def_labels_f, rotation=30, ha="right", fontweight="bold")
+        ax.set_yticklabels(atk_labels_f, fontweight="bold")
+        ax.set_xlabel("Defense Mechanism")
+        ax.set_ylabel("Attack Type")
+        ax.set_title(title, fontweight="bold")
+        fig.colorbar(im, ax=ax, fraction=0.046, pad=0.04)
+
+    fig.suptitle("Attack-Defense Interaction Matrix", fontweight="bold", fontsize=14)
+
+    if save_path:
+        _save_figure(fig, save_path, tight=True)
+
+    return fig
+
+
+def plot_retrieval_asr_bars(
+    retrieval_metrics: Dict[str, Any],
+    save_path: Optional[str] = None,
+) -> plt.Figure:
+    """
+    grouped bar chart of asr-r, asr-a, asr-t per attack type from
+    RetrievalSimulator or MultiTrialEvaluator results.
+
+    args:
+        retrieval_metrics: dict mapping attack_type → AttackMetrics (or summary dicts)
+        save_path: optional save path
+
+    returns:
+        matplotlib figure
+    """
+    attack_order = ["agent_poison", "minja", "injecmem"]
+    attack_labels = ["AgentPoison", "MINJA", "InjecMEM"]
+    metric_keys = ["asr_r", "asr_a", "asr_t"]
+    metric_labels = ["ASR-R", "ASR-A", "ASR-T"]
+    metric_colors = ["#E63946", "#F4A261", "#2A9D8F"]
+
+    attacks = [a for a in attack_order if a in retrieval_metrics]
+    if not attacks:
+        fig, ax = plt.subplots(figsize=(6, 4))
+        ax.text(
+            0.5,
+            0.5,
+            "no retrieval data",
+            ha="center",
+            va="center",
+            transform=ax.transAxes,
+        )
+        return fig
+
+    x = np.arange(len(attacks))
+    width = 0.24
+    fig, ax = plt.subplots(figsize=(8, 5))
+
+    for mi, (mk, ml, mc) in enumerate(zip(metric_keys, metric_labels, metric_colors)):
+        vals = []
+        errs = []
+        for at in attacks:
+            m = retrieval_metrics[at]
+            if hasattr(m, mk):
+                vals.append(float(getattr(m, mk)))
+            elif isinstance(m, dict):
+                vals.append(float(m.get(mk, 0.0)))
+            else:
+                vals.append(0.0)
+            # error bars from multi-trial summaries if available
+            ci_key = f"{mk}_ci"
+            if isinstance(m, dict) and ci_key in m:
+                ci = m[ci_key]
+                errs.append((ci.get("upper", vals[-1]) - ci.get("lower", vals[-1])) / 2)
+            else:
+                errs.append(0.0)
+        offset = (mi - 1) * width
+        bars = ax.bar(
+            x + offset,
+            vals,
+            width,
+            label=ml,
+            color=mc,
+            alpha=0.85,
+            yerr=errs if any(e > 0 for e in errs) else None,
+            capsize=4,
+            error_kw={"linewidth": 1.5},
+        )
+        for bar, v in zip(bars, vals):
+            ax.text(
+                bar.get_x() + bar.get_width() / 2,
+                bar.get_height() + 0.01,
+                f"{v:.2f}",
+                ha="center",
+                va="bottom",
+                fontsize=8,
+            )
+
+    ax.set_xticks(x)
+    ax.set_xticklabels(
+        [attack_labels[attack_order.index(a)] for a in attacks], fontweight="bold"
+    )
+    ax.set_ylim(0, 1.15)
+    ax.set_ylabel("Attack Success Rate")
+    ax.set_title(
+        "Retrieval-Based Attack Success Rates (ASR-R / ASR-A / ASR-T)",
+        fontweight="bold",
+    )
+    ax.legend(framealpha=0.9)
+    ax.yaxis.set_major_formatter(matplotlib.ticker.PercentFormatter(xmax=1.0))
+
+    if save_path:
+        _save_figure(fig, save_path, tight=True)
+
+    return fig
+
+
+# ---------------------------------------------------------------------------
 # comprehensive report generator
 # ---------------------------------------------------------------------------
 
@@ -1051,9 +1278,7 @@ class BenchmarkVisualizer:
             ),
             (
                 "08_attack_radar",
-                lambda: plot_attack_radar(
-                    results, str(p / f"{prefix}_08_radar.png")
-                ),
+                lambda: plot_attack_radar(results, str(p / f"{prefix}_08_radar.png")),
             ),
         ]
 
@@ -1097,9 +1322,7 @@ class BenchmarkVisualizer:
 
         try:
             path = str(p / f"{prefix}_detection_distribution.png")
-            plot_watermark_detection(
-                z_watermarked, z_clean, save_path=path
-            )
+            plot_watermark_detection(z_watermarked, z_clean, save_path=path)
             saved["detection_distribution"] = path
             logger.log_visualization_complete("detection_distribution", path)
         except Exception as exc:
@@ -1114,6 +1337,45 @@ class BenchmarkVisualizer:
             logger.log_visualization_complete("ablation_threshold", path)
         except Exception as exc:
             logger.log_visualization_error(f"ablation plot failed: {exc}")
+
+        return saved
+
+    def generate_matrix_figures(
+        self,
+        matrix_result: Any,
+        retrieval_metrics: Optional[Dict[str, Any]] = None,
+        prefix: str = "m12",
+    ) -> Dict[str, str]:
+        """
+        generate phase 12 attack-defense matrix and retrieval asr figures.
+
+        args:
+            matrix_result: MatrixResult from AttackDefenseEvaluator
+            retrieval_metrics: dict of attack_type → AttackMetrics (optional)
+            prefix: filename prefix
+
+        returns:
+            dict mapping figure name to saved path
+        """
+        saved: Dict[str, str] = {}
+        p = self.output_dir
+
+        try:
+            path = str(p / f"{prefix}_attack_defense_matrix.png")
+            plot_matrix_asr_heatmap(matrix_result, save_path=path)
+            saved["attack_defense_matrix"] = path
+            logger.log_visualization_complete("attack_defense_matrix", path)
+        except Exception as exc:
+            logger.log_visualization_error(f"matrix heatmap failed: {exc}")
+
+        if retrieval_metrics:
+            try:
+                path = str(p / f"{prefix}_retrieval_asr_bars.png")
+                plot_retrieval_asr_bars(retrieval_metrics, save_path=path)
+                saved["retrieval_asr_bars"] = path
+                logger.log_visualization_complete("retrieval_asr_bars", path)
+            except Exception as exc:
+                logger.log_visualization_error(f"retrieval asr bars failed: {exc}")
 
         return saved
 
@@ -1135,9 +1397,7 @@ class StatisticalAnalyzer:
         """initialize statistical analyzer."""
         pass
 
-    def analyze_attack_patterns(
-        self, results: List[BenchmarkResult]
-    ) -> Dict[str, Any]:
+    def analyze_attack_patterns(self, results: List[BenchmarkResult]) -> Dict[str, Any]:
         """
         compute per-attack descriptive statistics.
 
