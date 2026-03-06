@@ -1379,6 +1379,680 @@ class BenchmarkVisualizer:
 
         return saved
 
+    def generate_phase13_figures(
+        self,
+        attack_summaries: Optional[Dict[str, Any]] = None,
+        adaptive_results: Optional[Dict[str, Any]] = None,
+        evasion_results: Optional[Dict[str, Any]] = None,
+        ablation_results: Optional[Dict[str, Any]] = None,
+        prefix: str = "p13",
+    ) -> Dict[str, str]:
+        """
+        generate all phase 13 publication figures.
+
+        generates:
+            {prefix}_comprehensive_summary.png  — 4-panel overview
+            {prefix}_evasion_analysis.png       — evasion strategy comparison
+            {prefix}_adaptive_tradeoff_*.png    — per-attack tradeoff plots
+            {prefix}_ablation_corpus.png        — corpus size ablation
+            {prefix}_ablation_topk.png          — top-k ablation
+            {prefix}_ablation_sad_sigma.png     — sad threshold ablation (tpr/fpr)
+            {prefix}_ablation_watermark_z.png   — watermark z-threshold ablation
+
+        args:
+            attack_summaries: from ComprehensiveEvaluator._run_attack_evaluation()
+            adaptive_results: from ComprehensiveEvaluator._run_adaptive()
+            evasion_results: from ComprehensiveEvaluator._run_evasion()
+            ablation_results: from ComprehensiveEvaluator._run_ablations()
+            prefix: filename prefix for all saved files
+
+        returns:
+            dict mapping figure name to saved path
+        """
+        saved: Dict[str, str] = {}
+        p = self.output_dir
+
+        # comprehensive 4-panel summary
+        if attack_summaries and adaptive_results:
+            try:
+                path = str(p / f"{prefix}_comprehensive_summary.png")
+                plot_comprehensive_summary(
+                    attack_summaries, adaptive_results, save_path=path
+                )
+                saved["comprehensive_summary"] = path
+                logger.log_visualization_complete("comprehensive_summary", path)
+            except Exception as exc:
+                logger.log_visualization_error(f"comprehensive summary failed: {exc}")
+
+        # evasion analysis
+        if evasion_results:
+            try:
+                path = str(p / f"{prefix}_evasion_analysis.png")
+                plot_evasion_analysis(evasion_results, save_path=path)
+                saved["evasion_analysis"] = path
+                logger.log_visualization_complete("evasion_analysis", path)
+            except Exception as exc:
+                logger.log_visualization_error(f"evasion analysis failed: {exc}")
+
+        # adaptive tradeoff per attack
+        if adaptive_results:
+            for at in ["agent_poison", "minja", "injecmem"]:
+                r = adaptive_results.get(at)
+                if r and "error" not in r:
+                    try:
+                        path = str(p / f"{prefix}_adaptive_tradeoff_{at}.png")
+                        atk_label = {
+                            "agent_poison": "AgentPoison",
+                            "minja": "MINJA",
+                            "injecmem": "InjecMEM",
+                        }.get(at, at)
+                        plot_adaptive_tradeoff(
+                            r,
+                            title=f"Evasion–Retrieval Tradeoff: {atk_label} vs. SAD",
+                            save_path=path,
+                        )
+                        saved[f"adaptive_tradeoff_{at}"] = path
+                        logger.log_visualization_complete(
+                            f"adaptive_tradeoff_{at}", path
+                        )
+                    except Exception as exc:
+                        logger.log_visualization_error(
+                            f"tradeoff plot {at} failed: {exc}"
+                        )
+
+        # ablation curves
+        if ablation_results:
+            cs_pts = ablation_results.get("corpus_size", [])
+            if cs_pts:
+                try:
+                    path = str(p / f"{prefix}_ablation_corpus.png")
+                    plot_ablation_curve(
+                        cs_pts,
+                        "Corpus Size $N$",
+                        metric="asr_r",
+                        metric_label="ASR-R",
+                        title="ASR-R vs. Corpus Size",
+                        save_path=path,
+                    )
+                    saved["ablation_corpus"] = path
+                    logger.log_visualization_complete("ablation_corpus", path)
+                except Exception as exc:
+                    logger.log_visualization_error(
+                        f"corpus ablation plot failed: {exc}"
+                    )
+
+            # top-k ablation (use agent_poison)
+            tk_pts = ablation_results.get("top_k_agent_poison", [])
+            if tk_pts:
+                try:
+                    path = str(p / f"{prefix}_ablation_topk.png")
+                    plot_ablation_curve(
+                        tk_pts,
+                        "Retrieval Top-$k$",
+                        metric="asr_r",
+                        metric_label="ASR-R",
+                        title="ASR-R vs. Retrieval Top-$k$",
+                        color="#d7191c",
+                        save_path=path,
+                    )
+                    saved["ablation_topk"] = path
+                    logger.log_visualization_complete("ablation_topk", path)
+                except Exception as exc:
+                    logger.log_visualization_error(f"topk ablation plot failed: {exc}")
+
+            # sad sigma ablation
+            sad_pts = ablation_results.get("sad_sigma_agent_poison", [])
+            if sad_pts:
+                try:
+                    path = str(p / f"{prefix}_ablation_sad_sigma.png")
+                    plot_ablation_tpr_fpr(
+                        sad_pts,
+                        "SAD Threshold $k$",
+                        title="SAD Detection Rate vs. Threshold $k$",
+                        save_path=path,
+                    )
+                    saved["ablation_sad_sigma"] = path
+                    logger.log_visualization_complete("ablation_sad_sigma", path)
+                except Exception as exc:
+                    logger.log_visualization_error(
+                        f"sad sigma ablation plot failed: {exc}"
+                    )
+
+            # watermark z-threshold ablation
+            wm_pts = ablation_results.get("watermark_z_threshold", [])
+            if wm_pts:
+                try:
+                    path = str(p / f"{prefix}_ablation_watermark_z.png")
+                    plot_ablation_tpr_fpr(
+                        wm_pts,
+                        "Watermark $z$-Threshold",
+                        title="Watermark Detection vs. $z$-Threshold",
+                        save_path=path,
+                    )
+                    saved["ablation_watermark_z"] = path
+                    logger.log_visualization_complete("ablation_watermark_z", path)
+                except Exception as exc:
+                    logger.log_visualization_error(
+                        f"watermark ablation plot failed: {exc}"
+                    )
+
+        return saved
+
+
+# ---------------------------------------------------------------------------
+# phase 13: ablation curves, adaptive tradeoff, evasion analysis
+# ---------------------------------------------------------------------------
+
+
+def plot_ablation_curve(
+    ablation_points: List[Any],
+    param_label: str,
+    metric: str = "asr_r",
+    metric_label: str = "ASR-R",
+    title: str = "",
+    color: str = "#2c7bb6",
+    save_path: Optional[str] = None,
+) -> plt.Figure:
+    """
+    line plot with bootstrap 95% ci shading for a single ablation study.
+
+    each AblationPoint provides the x-value (param_value), the mean metric,
+    and the ci bounds.  the plot follows the academic style of ablation figures
+    in ml security papers (ci shown as shaded band, mean as solid line).
+
+    args:
+        ablation_points: list of AblationPoint (or dicts) from AblationStudy
+        param_label: x-axis label (e.g. "Corpus Size $N$")
+        metric: "asr_r", "tpr", "fpr", or "benign_acc"
+        metric_label: y-axis label (e.g. "ASR-R")
+        title: figure title
+        color: line/band color
+        save_path: optional save path (.png and .pdf generated)
+
+    returns:
+        matplotlib figure
+    """
+
+    def _get(pt, key, default=0.0):
+        if isinstance(pt, dict):
+            return pt.get(key, default)
+        return getattr(pt, key, default)
+
+    xs = [_get(pt, "param_value") for pt in ablation_points]
+    if metric == "asr_r":
+        means = [_get(pt, "asr_r_mean") for pt in ablation_points]
+        lowers = [_get(pt, "asr_r_ci_lower") for pt in ablation_points]
+        uppers = [_get(pt, "asr_r_ci_upper") for pt in ablation_points]
+    elif metric == "tpr":
+        means = [_get(pt, "tpr_mean") for pt in ablation_points]
+        lowers = means  # no ci for tpr in ablation
+        uppers = means
+    elif metric == "fpr":
+        means = [_get(pt, "fpr_mean") for pt in ablation_points]
+        lowers = means
+        uppers = means
+    else:
+        means = [_get(pt, "benign_acc_mean") for pt in ablation_points]
+        lowers = means
+        uppers = means
+
+    fig, ax = plt.subplots(figsize=(6, 4))
+
+    # shaded ci band
+    has_ci = any(lo != m or hi != m for lo, m, hi in zip(lowers, means, uppers))
+    if has_ci:
+        ax.fill_between(xs, lowers, uppers, alpha=0.25, color=color, label="95% CI")
+
+    ax.plot(
+        xs,
+        means,
+        marker="o",
+        color=color,
+        linewidth=2,
+        markersize=6,
+        label=metric_label,
+    )
+    ax.set_xlabel(param_label, fontsize=12)
+    ax.set_ylabel(metric_label, fontsize=12)
+    ax.set_ylim(0.0, 1.05)
+    ax.set_title(title or f"{metric_label} vs. {param_label}", fontsize=13)
+    ax.grid(True, alpha=0.3, linestyle="--")
+    if has_ci:
+        ax.legend(fontsize=10)
+
+    # mark x-axis with integer labels if all values are integers
+    if all(float(x) == int(float(x)) for x in xs):
+        ax.set_xticks([int(x) for x in xs])
+
+    fig.tight_layout()
+    if save_path:
+        _save_figure(fig, save_path)
+    return fig
+
+
+def plot_ablation_tpr_fpr(
+    ablation_points: List[Any],
+    param_label: str,
+    title: str = "",
+    save_path: Optional[str] = None,
+) -> plt.Figure:
+    """
+    two-panel line plot: tpr and fpr vs. a hyperparameter.
+
+    used for sad threshold (sigma) and watermark z-threshold ablations
+    to show the detection operating curve.
+
+    args:
+        ablation_points: list of AblationPoint or dicts with tpr_mean/fpr_mean
+        param_label: x-axis label (e.g. "SAD Threshold $k$")
+        title: figure title
+        save_path: optional save path
+
+    returns:
+        matplotlib figure
+    """
+
+    def _get(pt, key, default=0.0):
+        if isinstance(pt, dict):
+            return pt.get(key, default)
+        return getattr(pt, key, default)
+
+    xs = [_get(pt, "param_value") for pt in ablation_points]
+    tprs = [_get(pt, "tpr_mean") for pt in ablation_points]
+    fprs = [_get(pt, "fpr_mean") for pt in ablation_points]
+
+    fig, axes = plt.subplots(1, 2, figsize=(10, 4), sharey=False)
+
+    axes[0].plot(xs, tprs, marker="o", color="#d7191c", linewidth=2, markersize=6)
+    axes[0].set_xlabel(param_label, fontsize=12)
+    axes[0].set_ylabel("TPR", fontsize=12)
+    axes[0].set_title("True Positive Rate", fontsize=13)
+    axes[0].set_ylim(0.0, 1.05)
+    axes[0].grid(True, alpha=0.3, linestyle="--")
+
+    axes[1].plot(xs, fprs, marker="s", color="#1a9641", linewidth=2, markersize=6)
+    axes[1].set_xlabel(param_label, fontsize=12)
+    axes[1].set_ylabel("FPR", fontsize=12)
+    axes[1].set_title("False Positive Rate", fontsize=13)
+    axes[1].set_ylim(-0.02, max(max(fprs) * 1.2, 0.15))
+    axes[1].grid(True, alpha=0.3, linestyle="--")
+
+    if title:
+        fig.suptitle(title, fontsize=13, fontweight="bold")
+    fig.tight_layout()
+    if save_path:
+        _save_figure(fig, save_path)
+    return fig
+
+
+def plot_adaptive_tradeoff(
+    adaptive_result: Any,
+    title: str = "Evasion–Retrieval Tradeoff (Adaptive vs. SAD)",
+    save_path: Optional[str] = None,
+) -> plt.Figure:
+    """
+    two-panel figure showing the fundamental adversarial tradeoff.
+
+    left panel: sad tpr for standard vs. adaptive attack at each sigma.
+    right panel: evasion rate vs. asr-r degradation at each sigma.
+
+    demonstrates: as the attacker evades sad (evasion rate ↑), retrieval
+    effectiveness (asr-r) drops — the fundamental tension exploited by sad.
+
+    args:
+        adaptive_result: AdaptiveSADResult (or dict) from AdaptiveSADEvaluator
+        title: figure suptitle
+        save_path: optional save path
+
+    returns:
+        matplotlib figure
+    """
+
+    def _get(obj, key, default=None):
+        if isinstance(obj, dict):
+            return obj.get(key, default)
+        return getattr(obj, key, default)
+
+    sigma_sweep = _get(adaptive_result, "sigma_sweep", [])
+
+    if not sigma_sweep:
+        # create empty placeholder figure
+        fig, ax = plt.subplots(figsize=(8, 4))
+        ax.text(0.5, 0.5, "No sigma sweep data", ha="center", va="center", fontsize=12)
+        if save_path:
+            _save_figure(fig, save_path)
+        return fig
+
+    sigmas = [s.get("sigma", i) for i, s in enumerate(sigma_sweep)]
+    tpr_std = [s.get("tpr_standard", 0) for s in sigma_sweep]
+    tpr_adv = [s.get("tpr_adaptive", 0) for s in sigma_sweep]
+    evasion_rates = [s.get("evasion_rate", 0) for s in sigma_sweep]
+    ret_degrad = [s.get("retrieval_degradation", 0) for s in sigma_sweep]
+
+    fig, axes = plt.subplots(1, 2, figsize=(12, 4))
+
+    # panel 1: sad tpr vs sigma (standard vs adaptive)
+    axes[0].plot(
+        sigmas,
+        tpr_std,
+        marker="o",
+        color="#d7191c",
+        linewidth=2,
+        markersize=6,
+        label="Standard Attack",
+    )
+    axes[0].plot(
+        sigmas,
+        tpr_adv,
+        marker="s",
+        color="#2c7bb6",
+        linewidth=2,
+        linestyle="--",
+        markersize=6,
+        label="Adaptive Attack",
+    )
+    axes[0].set_xlabel("SAD Threshold $k$", fontsize=12)
+    axes[0].set_ylabel("SAD TPR", fontsize=12)
+    axes[0].set_title("Detection Rate vs. Threshold", fontsize=13)
+    axes[0].set_ylim(0.0, 1.05)
+    axes[0].legend(fontsize=10)
+    axes[0].grid(True, alpha=0.3, linestyle="--")
+
+    # panel 2: evasion rate vs retrieval degradation (tradeoff scatter)
+    axes[1].scatter(
+        evasion_rates,
+        ret_degrad,
+        c=sigmas,
+        cmap="RdYlGn_r",
+        s=80,
+        zorder=3,
+        edgecolors="k",
+        linewidths=0.5,
+    )
+    for i, (x, y) in enumerate(zip(evasion_rates, ret_degrad)):
+        axes[1].annotate(
+            f"$k$={sigmas[i]:.1f}",
+            (x, y),
+            textcoords="offset points",
+            xytext=(4, 4),
+            fontsize=8,
+        )
+    axes[1].set_xlabel("Evasion Rate", fontsize=12)
+    axes[1].set_ylabel("ASR-R Degradation", fontsize=12)
+    axes[1].set_title("Evasion–Retrieval Tradeoff", fontsize=13)
+    axes[1].grid(True, alpha=0.3, linestyle="--")
+    axes[1].set_xlim(-0.05, 1.05)
+    axes[1].set_ylim(-0.05, max(max(ret_degrad) * 1.2, 0.1) if ret_degrad else 0.5)
+
+    fig.suptitle(title, fontsize=13, fontweight="bold")
+    fig.tight_layout()
+    if save_path:
+        _save_figure(fig, save_path)
+    return fig
+
+
+def plot_evasion_analysis(
+    evasion_results: Dict[str, Any],
+    title: str = "Watermark Evasion Analysis",
+    save_path: Optional[str] = None,
+) -> plt.Figure:
+    """
+    three-panel figure summarising the watermark evasion results.
+
+    left panel:   tpr before/after for each evasion strategy (grouped bar).
+    center panel: evasion success rate per strategy (bar).
+    right panel:  mean z-score before/after per strategy (grouped bar).
+
+    args:
+        evasion_results: dict from ComprehensiveEvaluator._run_evasion()
+        title: figure suptitle
+        save_path: optional save path
+
+    returns:
+        matplotlib figure
+    """
+    strategies = ["paraphrase", "copy_paste_dilution", "adaptive_substitution"]
+    labels = ["Paraphrase", "Dilution", "Adp. Subst."]
+    valid = [
+        s
+        for s in strategies
+        if s in evasion_results and "error" not in evasion_results[s]
+    ]
+
+    fig, axes = plt.subplots(1, 3, figsize=(14, 4))
+
+    if not valid:
+        for ax in axes:
+            ax.text(0.5, 0.5, "No data", ha="center", va="center", fontsize=12)
+        fig.suptitle(title, fontsize=13, fontweight="bold")
+        fig.tight_layout()
+        if save_path:
+            _save_figure(fig, save_path)
+        return fig
+
+    x = np.arange(len(valid))
+    lbl = [labels[strategies.index(s)] for s in valid]
+
+    # panel 1: tpr before / after
+    tpr_before = [evasion_results[s].get("tpr_before", 0) for s in valid]
+    tpr_after = [evasion_results[s].get("tpr_after", 0) for s in valid]
+    w = 0.35
+    axes[0].bar(x - w / 2, tpr_before, w, label="Before", color="#2c7bb6", alpha=0.85)
+    axes[0].bar(x + w / 2, tpr_after, w, label="After", color="#d7191c", alpha=0.85)
+    axes[0].set_xticks(x)
+    axes[0].set_xticklabels(lbl, rotation=15, ha="right", fontsize=9)
+    axes[0].set_ylabel("TPR", fontsize=12)
+    axes[0].set_title("Watermark Detection TPR", fontsize=12)
+    axes[0].set_ylim(0, 1.15)
+    axes[0].legend(fontsize=9)
+    axes[0].grid(axis="y", alpha=0.3, linestyle="--")
+
+    # panel 2: evasion success rate
+    evasion_rates = [evasion_results[s].get("evasion_success_rate", 0) for s in valid]
+    bars = axes[1].bar(
+        x, evasion_rates, color="#fdae61", edgecolor="k", linewidth=0.7, alpha=0.9
+    )
+    for bar, val in zip(bars, evasion_rates):
+        axes[1].text(
+            bar.get_x() + bar.get_width() / 2,
+            bar.get_height() + 0.02,
+            f"{val:.2f}",
+            ha="center",
+            va="bottom",
+            fontsize=9,
+        )
+    axes[1].set_xticks(x)
+    axes[1].set_xticklabels(lbl, rotation=15, ha="right", fontsize=9)
+    axes[1].set_ylabel("Evasion Success Rate", fontsize=12)
+    axes[1].set_title("Evasion Success Rate", fontsize=12)
+    axes[1].set_ylim(0, 1.15)
+    axes[1].grid(axis="y", alpha=0.3, linestyle="--")
+
+    # panel 3: z-score before / after
+    z_before = [evasion_results[s].get("mean_z_before", 0) for s in valid]
+    z_after = [evasion_results[s].get("mean_z_after", 0) for s in valid]
+    axes[2].bar(x - w / 2, z_before, w, label="Before", color="#2c7bb6", alpha=0.85)
+    axes[2].bar(x + w / 2, z_after, w, label="After", color="#d7191c", alpha=0.85)
+    axes[2].axhline(
+        4.0, linestyle="--", color="gray", linewidth=1.2, label="$z$ threshold"
+    )
+    axes[2].set_xticks(x)
+    axes[2].set_xticklabels(lbl, rotation=15, ha="right", fontsize=9)
+    axes[2].set_ylabel("Mean $z$-Score", fontsize=12)
+    axes[2].set_title("Mean Z-Score Before/After", fontsize=12)
+    axes[2].legend(fontsize=9)
+    axes[2].grid(axis="y", alpha=0.3, linestyle="--")
+
+    fig.suptitle(title, fontsize=13, fontweight="bold")
+    fig.tight_layout()
+    if save_path:
+        _save_figure(fig, save_path)
+    return fig
+
+
+def plot_comprehensive_summary(
+    attack_summaries: Dict[str, Any],
+    adaptive_results: Dict[str, Any],
+    save_path: Optional[str] = None,
+) -> plt.Figure:
+    """
+    4-panel comprehensive summary figure for the paper.
+
+    panel 1: attack asr-r bar chart with bootstrap ci error bars.
+    panel 2: adaptive adversary evasion rate vs retrieval degradation (all attacks).
+    panel 3: sad tpr standard vs adaptive (grouped bar by attack).
+    panel 4: asr-r reduction under adaptive evasion (bar chart).
+
+    args:
+        attack_summaries: dict from ComprehensiveEvaluator._run_attack_evaluation()
+        adaptive_results: dict from ComprehensiveEvaluator._run_adaptive()
+        save_path: optional save path
+
+    returns:
+        matplotlib figure
+    """
+    attacks = ["agent_poison", "minja", "injecmem"]
+    attack_labels = ["AgentPoison", "MINJA", "InjecMEM"]
+    colors = ["#d7191c", "#fdae61", "#2c7bb6"]
+
+    fig, axes = plt.subplots(2, 2, figsize=(14, 10))
+    axes = axes.flatten()
+
+    # panel 1: attack asr-r with ci
+    asr_r_means, asr_r_errs = [], []
+    for at in attacks:
+        s = attack_summaries.get(at, {})
+        r = s.get("asr_r", {})
+        if isinstance(r, dict):
+            mean_v = r.get("mean", 0)
+            lower_v = r.get("lower", mean_v)
+            upper_v = r.get("upper", mean_v)
+        else:
+            mean_v = lower_v = upper_v = r
+        asr_r_means.append(mean_v)
+        asr_r_errs.append([mean_v - lower_v, upper_v - mean_v])
+
+    x = np.arange(len(attacks))
+    err_lo = [e[0] for e in asr_r_errs]
+    err_hi = [e[1] for e in asr_r_errs]
+    bars = axes[0].bar(
+        x, asr_r_means, color=colors, edgecolor="k", linewidth=0.7, alpha=0.9
+    )
+    axes[0].errorbar(
+        x,
+        asr_r_means,
+        yerr=[err_lo, err_hi],
+        fmt="none",
+        ecolor="black",
+        capsize=5,
+        linewidth=1.5,
+        zorder=4,
+    )
+    for bar, val in zip(bars, asr_r_means):
+        axes[0].text(
+            bar.get_x() + bar.get_width() / 2,
+            bar.get_height() + 0.02,
+            f"{val:.3f}",
+            ha="center",
+            va="bottom",
+            fontsize=9,
+            fontweight="bold",
+        )
+    axes[0].set_xticks(x)
+    axes[0].set_xticklabels(attack_labels, fontsize=11)
+    axes[0].set_ylabel("ASR-R (95% CI)", fontsize=12)
+    axes[0].set_title("Attack Success Rate — Retrieval", fontsize=12)
+    axes[0].set_ylim(0, 1.15)
+    axes[0].grid(axis="y", alpha=0.3, linestyle="--")
+
+    # panel 2: evasion rate scatter
+    evasion_rates, ret_degrad = [], []
+    for at in attacks:
+        r = adaptive_results.get(at, {})
+        evasion_rates.append(r.get("evasion_rate", 0) if isinstance(r, dict) else 0)
+        ret_degrad.append(
+            r.get("retrieval_degradation", 0) if isinstance(r, dict) else 0
+        )
+    axes[1].scatter(
+        evasion_rates,
+        ret_degrad,
+        c=colors,
+        s=120,
+        zorder=3,
+        edgecolors="k",
+        linewidths=0.8,
+    )
+    for i, (x_v, y_v) in enumerate(zip(evasion_rates, ret_degrad)):
+        axes[1].annotate(
+            attack_labels[i],
+            (x_v, y_v),
+            textcoords="offset points",
+            xytext=(5, 5),
+            fontsize=10,
+        )
+    axes[1].set_xlabel("Evasion Rate", fontsize=12)
+    axes[1].set_ylabel("ASR-R Degradation", fontsize=12)
+    axes[1].set_title(
+        "Evasion–Retrieval Tradeoff\n(Adaptive Attack vs. SAD)", fontsize=12
+    )
+    axes[1].grid(True, alpha=0.3, linestyle="--")
+    axes[1].set_xlim(-0.05, 1.05)
+
+    # panel 3: sad tpr standard vs adaptive
+    tpr_std = [
+        adaptive_results.get(at, {}).get("sad_tpr_standard", 0) for at in attacks
+    ]
+    tpr_adv = [
+        adaptive_results.get(at, {}).get("sad_tpr_adaptive", 0) for at in attacks
+    ]
+    x_arr = np.arange(len(attacks))
+    w = 0.35
+    axes[2].bar(
+        x_arr - w / 2, tpr_std, w, label="Standard", color="#d7191c", alpha=0.85
+    )
+    axes[2].bar(
+        x_arr + w / 2, tpr_adv, w, label="Adaptive", color="#2c7bb6", alpha=0.85
+    )
+    axes[2].set_xticks(x_arr)
+    axes[2].set_xticklabels(attack_labels, fontsize=11)
+    axes[2].set_ylabel("SAD TPR", fontsize=12)
+    axes[2].set_title("SAD Detection Rate:\nStandard vs. Adaptive Attack", fontsize=12)
+    axes[2].set_ylim(0, 1.15)
+    axes[2].legend(fontsize=10)
+    axes[2].grid(axis="y", alpha=0.3, linestyle="--")
+
+    # panel 4: asr-r reduction from evasion
+    asr_r_std_adv = [
+        adaptive_results.get(at, {}).get("asr_r_standard", 0) for at in attacks
+    ]
+    asr_r_adv = [
+        adaptive_results.get(at, {}).get("asr_r_adaptive", 0) for at in attacks
+    ]
+    x_arr2 = np.arange(len(attacks))
+    axes[3].bar(
+        x_arr2 - w / 2, asr_r_std_adv, w, label="Standard", color="#d7191c", alpha=0.85
+    )
+    axes[3].bar(
+        x_arr2 + w / 2, asr_r_adv, w, label="Adaptive", color="#2c7bb6", alpha=0.85
+    )
+    axes[3].set_xticks(x_arr2)
+    axes[3].set_xticklabels(attack_labels, fontsize=11)
+    axes[3].set_ylabel("ASR-R", fontsize=12)
+    axes[3].set_title(
+        "ASR-R: Standard vs. Adaptive Attack\n(Evasion Cost)", fontsize=12
+    )
+    axes[3].set_ylim(0, 1.15)
+    axes[3].legend(fontsize=10)
+    axes[3].grid(axis="y", alpha=0.3, linestyle="--")
+
+    fig.suptitle(
+        "Phase 13: Comprehensive Evaluation Summary", fontsize=14, fontweight="bold"
+    )
+    fig.tight_layout()
+    if save_path:
+        _save_figure(fig, save_path)
+    return fig
+
 
 # ---------------------------------------------------------------------------
 # statistical analysis helper
