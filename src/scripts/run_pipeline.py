@@ -42,6 +42,7 @@ from evaluation.benchmarking import (
     AttackMetrics,
     BenchmarkResult,
 )
+from evaluation.comprehensive_eval import ComprehensiveEvaluator
 from evaluation.retrieval_sim import RetrievalSimulator
 from evaluation.statistical import MultiTrialEvaluator
 from scripts.experiment_runner import (
@@ -289,7 +290,7 @@ def run_pipeline(
     # -----------------------------------------------------------------------
     # phase 1: run benchmark experiments
     # -----------------------------------------------------------------------
-    print("[1/4] running benchmark experiments...")
+    print("[1/6] running benchmark experiments...")
     logger.log_experiment_start("pipeline", {"mode": "full" if full_mode else "quick"})
 
     runner = ExperimentRunner(
@@ -320,7 +321,7 @@ def run_pipeline(
     # phase 2: realistic retrieval simulation + attack-defense matrix
     # (phases 9-12: faiss retrieval, triggered queries, multi-trial ci, matrix)
     # -----------------------------------------------------------------------
-    print("[2/5] running realistic retrieval simulation (phases 9-12)...")
+    print("[2/6] running realistic retrieval simulation (phases 9-12)...")
 
     # corpus and poison counts are reduced in quick mode for speed
     corpus_size = 100 if full_mode else 50
@@ -436,7 +437,7 @@ def run_pipeline(
     # -----------------------------------------------------------------------
     # phase 3: collect watermark z-score data (unigram, zhao et al. iclr 2024)
     # -----------------------------------------------------------------------
-    print("[3/5] collecting unigram watermark z-score data...")
+    print("[3/6] collecting unigram watermark z-score data...")
 
     n_samples = 80 if full_mode else 30
     z_watermarked, z_clean = _collect_watermark_z_scores(
@@ -478,7 +479,7 @@ def run_pipeline(
     # -----------------------------------------------------------------------
     # phase 4: generate all publication figures
     # -----------------------------------------------------------------------
-    print("[4/5] generating publication-quality figures...")
+    print("[4/6] generating publication-quality figures...")
 
     figures_dir = root / "figures"
     visualizer = BenchmarkVisualizer(str(figures_dir))
@@ -523,9 +524,84 @@ def run_pipeline(
     print(f"  latex table         : {latex_path}")
 
     # -----------------------------------------------------------------------
-    # phase 5: create html dashboard
+    # phase 5: comprehensive evaluation (phase 13: adaptive adversary + ablations)
+    # runs ComprehensiveEvaluator and generates all paper tables + phase-13 figures
     # -----------------------------------------------------------------------
-    print("[5/5] creating html dashboard...")
+    print("[5/6] running comprehensive evaluation (phase 13)...")
+
+    p13_saved: Dict[str, str] = {}
+    comprehensive_result = None
+    tables_saved: Dict[str, str] = {}
+    try:
+        # quick mode: small params; full mode: research-grade params
+        p13_corpus = 100 if full_mode else 40
+        p13_n_poison = 3 if full_mode else 2
+        p13_seeds = 3 if full_mode else 2
+
+        comp_eval = ComprehensiveEvaluator(
+            corpus_size=p13_corpus,
+            n_poison=p13_n_poison,
+            top_k=5,
+            n_seeds=p13_seeds,
+            seed_base=42,
+            run_matrix=False,  # matrix already evaluated in phase 2
+            run_evasion=True,
+            run_adaptive=True,
+            run_ablations=full_mode,  # ablation sweeps only in full mode
+        )
+        comprehensive_result = comp_eval.run()
+
+        # save comprehensive results json
+        p13_json = root / "comprehensive_results.json"
+        comprehensive_result.save_json(str(p13_json))
+        print(f"  comprehensive results saved: {p13_json}")
+
+        # generate latex tables for the paper
+        tables_dir = root / "results" / "tables"
+        tables_dir.mkdir(parents=True, exist_ok=True)
+        tables_saved = comp_eval.generate_paper_tables(
+            comprehensive_result, str(tables_dir)
+        )
+        print(f"  generated {len(tables_saved)} paper table(s)")
+        for name, path in tables_saved.items():
+            print(f"    {name}: {path}")
+
+        # also copy tables to project-root results/tables/ for paper compilation
+        _project_root = _HERE.parent.parent
+        _project_tables = _project_root / "results" / "tables"
+        try:
+            import shutil
+
+            _project_tables.mkdir(parents=True, exist_ok=True)
+            for _p in tables_dir.glob("*.tex"):
+                shutil.copy2(_p, _project_tables / _p.name)
+            print(f"  tables copied to project root: {_project_tables}")
+        except Exception as _copy_exc:
+            print(f"  could not copy to project root: {_copy_exc}")
+
+        # generate phase-13 figures using results from comprehensive eval
+        _attack_sums = comprehensive_result.attack_summaries or {}
+        _adaptive = comprehensive_result.adaptive_sad_results or {}
+        _evasion = comprehensive_result.evasion_results or {}
+        _ablation = comprehensive_result.ablation_results or {}
+
+        p13_saved = visualizer.generate_phase13_figures(
+            attack_summaries=_attack_sums if _attack_sums else None,
+            adaptive_results=_adaptive if _adaptive else None,
+            evasion_results=_evasion if _evasion else None,
+            ablation_results=_ablation if _ablation else None,
+            prefix="p13",
+        )
+        print(f"  generated {len(p13_saved)} phase-13 figure(s)")
+
+    except Exception as exc:
+        logger.log_error("run_pipeline", exc, {"phase": "comprehensive_eval_p13"})
+        print(f"  comprehensive evaluation failed: {exc}")
+
+    # -----------------------------------------------------------------------
+    # phase 6: create html dashboard
+    # -----------------------------------------------------------------------
+    print("[6/6] creating html dashboard...")
 
     dashboard_path = create_experiment_dashboard(
         results,
@@ -537,7 +613,7 @@ def run_pipeline(
     # pipeline complete
     # -----------------------------------------------------------------------
     elapsed = time.time() - pipeline_start
-    total_figs = len(saved_plots) + len(wm_saved) + len(m12_saved)
+    total_figs = len(saved_plots) + len(wm_saved) + len(m12_saved) + len(p13_saved)
     print("")
     print("=" * 60)
     print("pipeline complete")
@@ -545,8 +621,10 @@ def run_pipeline(
     print(f"  experiments          : {len(results)}")
     print(f"  attacks simulated    : {len(retrieval_metrics)}")
     print(
-        f"  defense pairs        : {sum(len(v) for v in matrix_result.results.values()) if matrix_result else 0}"
+        f"  defense pairs        : "
+        f"{sum(len(v) for v in matrix_result.results.values()) if matrix_result else 0}"
     )
+    print(f"  phase-13 tables      : {len(tables_saved)}")
     print(f"  figures produced     : {total_figs}")
     print(f"  output root          : {root.resolve()}")
     print(f"  dashboard            : {dashboard_path}")
