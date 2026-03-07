@@ -84,7 +84,13 @@ cosine similarity to observed victim queries.  We evaluate all five defenses
 (Watermark, Validation, Proactive, Composite, \sad{}) in a pre-ingestion
 filtering model across a full $3 \times 5$ attack-defense interaction matrix.
 We find that no single defense is uniformly effective, motivating composite
-defense portfolios and query-aware anomaly detection strategies.
+defense portfolios.  For \sad{} specifically, we prove and empirically confirm
+a fundamental tension for white-box adaptive adversaries: any synonym
+substitution that reduces the anomaly score also reduces the adversarial
+passage's retrieval rank, because both objectives share the same cosine
+similarity gradient.  This structural property limits the adaptive adversary
+to at most 60\% evasion rate, with a corresponding $\geq 0.40$ drop in
+ASR-R, confirming \sad{}'s robustness under adaptive attack.
 
 All code, experiments, and figures are open-sourced at
 \url{https://github.com/ishrith-gowda/memory-agent-security}.

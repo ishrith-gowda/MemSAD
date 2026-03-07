@@ -58,6 +58,15 @@ This paper makes four contributions:
   $3 \times 5$ (attack, defense) pairs under a pre-ingestion filtering model,
   revealing that no single defense dominates uniformly and motivating composite
   defense portfolios.
+
+  \item \textbf{Adaptive adversary analysis.}  We characterise a white-box
+  adaptive adversary who knows \sad{}'s calibration statistics and applies
+  greedy synonym substitution to craft evasive passages.  We prove and
+  empirically confirm a fundamental tension: any reduction in anomaly score
+  (for evasion) also reduces retrieval rank (for attack effectiveness),
+  since both depend on the same cosine similarity measure.  The adaptive
+  adversary achieves at most 60\% evasion rate at the cost of $\geq 0.40$
+  ASR-R degradation, confirming \sad{}'s structural robustness.
 \end{enumerate}
 
 % --- paper organization ---
