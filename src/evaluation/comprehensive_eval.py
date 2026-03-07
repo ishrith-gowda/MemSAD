@@ -195,7 +195,11 @@ class ComprehensiveEvaluator:
                         "lower": summary.benign_accuracy.lower,
                         "upper": summary.benign_accuracy.upper,
                     },
-                    "injection_success_rate": summary.injection_success_rate,
+                    "isr": {
+                        "mean": summary.isr.mean if summary.isr else 0.0,
+                        "lower": summary.isr.lower if summary.isr else 0.0,
+                        "upper": summary.isr.upper if summary.isr else 0.0,
+                    },
                 }
                 logger.logger.info(
                     "  %s: asr_r=%.3f [%.3f, %.3f]",
