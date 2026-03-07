@@ -1,44 +1,101 @@
 \section{Related Work}
 \label{sec:related}
 
-\paragraph{Memory poisoning attacks.}
+\paragraph{Memory poisoning attacks on LLM agents.}
 \citet{chen2024agentpoison} introduce \agentpoison{}, the first attack to
 exploit the retrieval mechanism of LLM agent memory systems.  They formulate
 trigger optimization as a constrained gradient problem over the embedding
 space of a dense retriever (DPR~\citep{karpukhin2020dense}) and demonstrate
-attacks on three production agent frameworks.  \citet{dong2025minja} extend
-the threat model to a \emph{query-only} setting: the attacker has no direct
-memory access and relies on the agent's auto-storage of adversarial reasoning
-chains.  Their progressive-shortening indication protocol achieves ISR of
-98.2\% across three experimental platforms.  \citet{injecmem2026} propose a
-retriever-agnostic anchor strategy that achieves broad recall via
-topic-covering passages designed to match many query types.
+attacks on three production agent frameworks (LangChain, Voyager, ReAct),
+achieving $\asrr \geq 0.80$ at below 0.1\% poison rate.
+\citet{dong2025minja} extend the threat model to a \emph{query-only} setting:
+the attacker has no direct memory access and relies on the agent's auto-storage
+of adversarial reasoning chains.  Their progressive-shortening indication
+protocol achieves ISR of 98.2\% across three experimental platforms.
+\citet{injecmem2026} propose a retriever-agnostic anchor strategy that achieves
+broad recall via topic-covering passages designed to match many query types,
+enabling injection in a single interaction.
+Concurrent work on tool-use manipulation~\citep{yang2024watch} shows that
+similar poisoning strategies transfer to agent tool selection, broadening
+the attack surface beyond memory retrieval.
+
+\paragraph{RAG corpus poisoning.}
+Retrieval-augmented generation (RAG) systems face analogous threats at the
+document corpus level.  \citet{zou2024poisonedrag} demonstrate that
+adversarial documents optimized via HotFlip~\citep{ebrahimi2018hotflip}
+can force specific LLM outputs when retrieved.  \citet{chaudhari2024phantom}
+construct phantom documents that match specific queries while appearing
+semantically benign to human inspection, achieving high attack success
+against commercial RAG systems.  \citet{xue2024badrag} show that a small
+number of adversarially crafted documents can redirect LLM answers across
+entire topic domains, a finding consistent with our corpus-size ablation
+showing that ASR-R is largely independent of benign corpus size.
+Our work differs from RAG poisoning in that the adversarial entries are
+\emph{agent-generated and semantically coherent memories} rather than
+external documents, the threat persists across sessions, and defenses
+must operate without full corpus visibility.
 
 \paragraph{Backdoor attacks on neural retrieval.}
-Retrieval-augmented generation (RAG) systems have been shown to be vulnerable
-to corpus poisoning \citep{zou2024poisonedrag}, where adversarial documents
-are injected into the retrieval corpus.  Our work differs in that the
-adversarial entries are \emph{agent-generated memories} rather than
-external documents, and the threat model spans multiple sessions.
-
-\paragraph{Watermark-based content provenance.}
-\citet{zhao2024watermark} propose a provably robust token-level watermark
-for LLM-generated text based on a green/red vocabulary partition.  We adapt
-this scheme to character-level memory entries (Section~\ref{sec:defenses}).
-Related work on watermark evasion \citep{kirchenbauer2023watermark} motivates
-our evaluation of paraphrasing and copy-paste dilution attacks.
-
-\paragraph{Backdoor defense strategies.}
-Neural Cleanse \citep{wang2019neuralcleanse} and STRIP \citep{gao2019strip}
-are representative backdoor detection methods that inspired our
-attack-defense matrix evaluation protocol.  Unlike these methods, which
-operate on model weights, our defenses target memory content directly.
+Retrieval-based NLP systems are vulnerable to backdoor attacks beyond direct
+corpus poisoning.  \citet{yang2021rethinking} and \citet{carlini2024poisoning}
+demonstrate that embedding-space backdoors can cause targeted retrievals
+in open-domain question answering systems.  \citet{badchain2024} show that
+chain-of-thought reasoning prompts can be backdoored, causing models to
+follow malicious reasoning chains when a trigger phrase appears---analogous
+to \minja{}'s bridging-step mechanism.
 The ASB benchmark \citep{zhang2024asb} provides a unified evaluation
 framework for backdoor attacks and defenses in classification settings;
 we adapt its matrix format to the memory-agent threat model.
+Neural Cleanse \citep{wang2019neuralcleanse} and STRIP \citep{gao2019strip}
+are representative detection methods that inspired our proactive and composite
+defense designs.  Unlike model-weight methods, our defenses target memory
+content directly and operate without model access.
 
-\paragraph{LLM agent security.}
-Prompt injection attacks \citep{perez2022ignore} target LLM agents through
-crafted user inputs.  Memory poisoning is orthogonal: the adversarial content
-is stored silently and triggers on future queries without further adversarial
-interaction.
+\paragraph{LLM watermarking for content provenance.}
+\citet{zhao2024watermark} propose a provably robust token-level watermark
+for LLM-generated text based on a green/red vocabulary partition, achieving
+AUROC $> 0.97$ and providing formal guarantees under $\ell_\infty$-bounded
+paraphrasing.  \citet{kirchenbauer2023watermark} independently develop
+a similar scheme (KGW) and analyze its robustness to paraphrasing attacks.
+\citet{hu2023unbiased} propose an unbiased watermarking scheme that avoids
+the quality degradation associated with hard vocabulary partitions.
+We adapt the Zhao et al.\ unigram scheme to character-level memory entries
+that do not pass through a generative model (Section~\ref{sec:defenses});
+our evasion evaluation mirrors the paraphrasing and dilution attacks studied
+in \citet{kirchenbauer2023watermark} and extends them to copy-paste dilution
+and adaptive vocabulary substitution.
+
+\paragraph{Prompt injection and indirect injection attacks.}
+\citet{perez2022ignore} first characterize prompt injection attacks, where
+a crafted user input overrides system instructions.  \citet{greshake2023not}
+extend this to \emph{indirect prompt injection}: adversarial content in
+retrieved documents (web pages, emails, tool outputs) hijacks the agent's
+behavior without the user's knowledge.  Memory poisoning is orthogonal:
+the adversarial content is stored silently and triggers on future queries
+without further adversarial interaction, persisting across sessions.
+This makes memory poisoning strictly more dangerous in multi-session
+deployments: a single poisoning event affects \emph{all} future interactions.
+
+\paragraph{LLM agent security and memory systems.}
+The LLM agent security landscape has broadened rapidly.
+\citet{memgpt2023} introduce MemGPT's hierarchical memory system, which
+our framework targets via the Mem0~\citep{mem0} and A-MEM~\citep{amem}
+wrappers.  \citet{touvron2023llama} and \citet{openai2023gpt4} describe
+production-scale LLMs that underpin modern agent deployments.
+\citet{yang2024watch} identify that agent tool selection and memory retrieval
+share a common embedding-based vulnerability; our attack-defense matrix
+provides the first systematic cross-attack coverage in this setting.
+\citet{gu2019badnets} establish the foundational backdoor threat model
+that underlies our definition of memory poisoning (Definition~1).
+
+\paragraph{Anomaly detection for adversarial inputs.}
+Our \sad{} defense draws on a line of anomaly detection work in NLP.
+\citet{gao2019strip} use input perturbation to detect Trojan-activated
+predictions; we adapt the key insight---that adversarial inputs cluster
+differently from benign ones in representation space---to the memory entry
+setting.  \citet{goldblum2022dataset} and \citet{hayase2021spectre} develop
+spectral methods for detecting poisoned samples in supervised learning;
+\sad{}'s calibration step is analogous in spirit but operates without
+labeled poison examples.  \citet{lee2018simple} show that Mahalanobis
+distance to class centroids is an effective out-of-distribution detector;
+our cosine similarity threshold is the retrieval-space analogue.
