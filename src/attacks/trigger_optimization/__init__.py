@@ -1,14 +1,15 @@
 """
 trigger optimization for agentpoison-style adversarial memory attacks.
 
-this package implements vocabulary coordinate-descent trigger optimization,
-approximating the hotflip-based gradient search from chen et al. (neurips 2024)
-without requiring gpu-resident model gradients.
+two backends are provided:
+    - TriggerOptimizer: vocabulary coordinate-descent using sentence-transformers
+      (cpu-friendly, no gradient computation required)
+    - DPRTriggerOptimizer: true hotflip gradient-guided search using the facebook
+      dpr context encoder (dpr-ctx_encoder-single-nq-base, 768-dim) with optional
+      gpt2 perplexity filtering
 
-public api:
-    TriggerOptimizer   — coordinate-descent optimizer
-    OptimizedTrigger   — result dataclass
-    optimize_agentpoison_triggers — convenience wrapper
+both produce an OptimizedTrigger / DPROptimizedTrigger result that is compatible
+with RetrievalSimulator's triggered-query evaluation protocol.
 
 references:
     chen et al. agentpoison: red-teaming llm agents via poisoning memory or
@@ -25,8 +26,24 @@ from attacks.trigger_optimization.optimizer import (
     optimize_agentpoison_triggers,
 )
 
+_DPR_AVAILABLE = False
+try:
+    from attacks.trigger_optimization.dpr_optimizer import (
+        DPROptimizedTrigger,
+        DPRTriggerOptimizer,
+        optimize_dpr_triggers,
+    )
+
+    _DPR_AVAILABLE = True
+except ImportError:
+    pass
+
 __all__ = [
     "TriggerOptimizer",
     "OptimizedTrigger",
     "optimize_agentpoison_triggers",
+    "DPRTriggerOptimizer",
+    "DPROptimizedTrigger",
+    "optimize_dpr_triggers",
+    "_DPR_AVAILABLE",
 ]

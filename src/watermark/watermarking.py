@@ -23,6 +23,16 @@ from cryptography.hazmat.primitives.asymmetric import padding, rsa
 
 from utils.logging import logger
 
+# optional: token-level watermark encoder (phase 17 upgrade)
+# lazy import so that torch/transformers are not required at module load time
+_TOKEN_LEVEL_AVAILABLE = False
+try:
+    from watermark.token_watermark import TokenLevelWatermarkEncoder
+
+    _TOKEN_LEVEL_AVAILABLE = True
+except ImportError:
+    pass
+
 
 def load_watermark_config() -> Dict[str, Any]:
     """
@@ -795,7 +805,14 @@ def create_watermark_encoder(
     factory function to create watermark encoders.
 
     args:
-        algorithm: watermarking algorithm ("unigram", "lsb", "semantic", "crypto", "composite")  # noqa: E501
+        algorithm: watermarking algorithm.  supported values:
+            "unigram"     — character-level unigram (zhao et al. iclr 2024 adapted)
+            "token_level" — gpt2-backed token-level unigram (zhao et al. iclr 2024,
+                            paper-faithful; requires torch + transformers)
+            "lsb"         — least-significant-bit steganographic encoder
+            "semantic"    — semantic similarity-based encoder
+            "crypto"      — cryptographic rsa-signature encoder
+            "composite"   — ensemble of all above encoders
         config: configuration for the encoder
 
     returns:
@@ -803,11 +820,30 @@ def create_watermark_encoder(
 
     raises:
         ValueError: if algorithm is not supported
+        ImportError: if "token_level" is requested but torch/transformers unavailable
     """
     algorithm = algorithm.lower()
 
     if algorithm == "unigram":
         return UnigramWatermarkEncoder(config)
+    elif algorithm == "token_level":
+        if not _TOKEN_LEVEL_AVAILABLE:
+            raise ImportError(
+                "token_level watermark requires torch and transformers. "
+                "install them with: pip install torch transformers"
+            )
+        cfg = config or {}
+        return TokenLevelWatermarkEncoder(
+            gamma=cfg.get("gamma", 0.25),
+            delta=cfg.get("delta", 2.0),
+            z_threshold=cfg.get("z_threshold", 4.0),
+            max_new_tokens=cfg.get("max_new_tokens", 128),
+            model_name=cfg.get("model_name", "gpt2"),
+            secret_key=cfg.get("secret_key", "watermark"),
+            min_tokens=cfg.get("min_tokens", 20),
+            temperature=cfg.get("temperature", 0.8),
+            seed=cfg.get("seed", 42),
+        )
     elif algorithm == "lsb":
         return LSBWatermarkEncoder(config)
     elif algorithm == "semantic":

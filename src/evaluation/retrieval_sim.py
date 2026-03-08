@@ -66,6 +66,18 @@ try:
 except ImportError:
     _TRIGGER_OPT_AVAILABLE = False
 
+# optional: dpr-based trigger optimisation (phase 17 upgrade)
+# hotflip gradient-guided token selection using facebook/dpr-ctx_encoder
+try:
+    from attacks.trigger_optimization import (  # noqa: F401
+        _DPR_AVAILABLE,
+        DPRTriggerOptimizer,
+    )
+
+    _DPR_OPT_AVAILABLE = _DPR_AVAILABLE
+except ImportError:
+    _DPR_OPT_AVAILABLE = False
+
 # ---------------------------------------------------------------------------
 # attack-specific poison passage generators
 # ---------------------------------------------------------------------------
@@ -405,6 +417,7 @@ class RetrievalSimulator:
         n_poison_per_attack: int = 5,
         seed: int = 42,
         use_trigger_optimization: bool = True,
+        use_dpr_optimizer: bool = False,
     ) -> None:
         """
         initialise the retrieval simulator.
@@ -418,18 +431,24 @@ class RetrievalSimulator:
             use_trigger_optimization: if True and the trigger_optimization
                 package is available, use vocabulary coordinate-descent to
                 build trigger-optimised agentpoison passages (phase 10 upgrade)
+            use_dpr_optimizer: if True and the dpr optimizer is available,
+                use hotflip gradient-guided trigger optimization via
+                facebook/dpr-ctx_encoder-single-nq-base (phase 17 upgrade).
+                overrides use_trigger_optimization when both are True.
         """
         self.corpus_size = corpus_size
         self.top_k = top_k
         self.n_poison_per_attack = n_poison_per_attack
         self.seed = seed
+        self.use_dpr_optimizer = use_dpr_optimizer and _DPR_OPT_AVAILABLE
         self.use_trigger_optimization = (
             use_trigger_optimization and _TRIGGER_OPT_AVAILABLE
-        )
+        ) and not self.use_dpr_optimizer
         self.logger = logger
         self._rng = random.Random(seed)
         # lazy-instantiated on first agentpoison evaluation
         self._trigger_optimizer: Optional[Any] = None
+        self._dpr_optimizer: Optional[Any] = None
         # set by _generate_poison_entries() when trigger opt runs;
         # used in evaluate_attack() to prepend trigger to victim queries.
         # this matches the paper's evaluation: attacker issues triggered queries.
@@ -489,6 +508,30 @@ class RetrievalSimulator:
                 seed=self.seed,
             )
         return self._trigger_optimizer
+
+    def _get_dpr_optimizer(self) -> Any:
+        """
+        lazy-instantiate and cache the dpr-based trigger optimizer (phase 17).
+
+        uses hotflip gradient-guided token selection via the dpr context encoder
+        (facebook/dpr-ctx_encoder-single-nq-base, 768-dim bert-based).
+        more paper-faithful than the sentence-transformer coordinate-descent
+        optimizer: the dpr encoder is the same model family used in the
+        agentpoison paper's gradient optimisation.
+
+        cpu-friendly settings: n_iter=20, n_candidates=32.
+        """
+        if self._dpr_optimizer is None:
+            self._dpr_optimizer = DPRTriggerOptimizer(
+                n_tokens=5,
+                n_iter=20,
+                n_candidates=32,
+                use_ppl_filter=True,
+                ppl_threshold=500.0,
+                n_queries_subsample=8,
+                seed=self.seed,
+            )
+        return self._dpr_optimizer
 
     def _simulate_minja_isr(
         self,
@@ -587,7 +630,58 @@ class RetrievalSimulator:
             sampled = self._rng.sample(
                 victim_queries, min(n_poison, len(victim_queries))
             )
-            if self.use_trigger_optimization and sampled:
+            if self.use_dpr_optimizer and sampled:
+                # phase 17: dpr hotflip gradient-guided trigger optimization.
+                # uses facebook/dpr-ctx_encoder (bert-based, 768-dim) for
+                # paper-faithful gradient computation via the embedding layer.
+                try:
+                    dpr_opt = self._get_dpr_optimizer()
+                    centroid_passage = generate_centroid_agentpoison_passage(
+                        victim_queries, goal
+                    )
+                    trigger = dpr_opt.optimize(victim_queries, centroid_passage)
+                    self._last_trigger_string = trigger.trigger_string
+                    self.logger.logger.info(
+                        f"dpr agentpoison trigger: '{trigger.trigger_string}' "
+                        f"final_sim={trigger.final_similarity:.4f} "
+                        f"(baseline={trigger.baseline_similarity:.4f})"
+                    )
+                    universal_passage = generate_centroid_agentpoison_passage(
+                        victim_queries,
+                        goal,
+                        trigger_string=trigger.trigger_string,
+                    )
+                    for i in range(n_poison):
+                        entries.append(
+                            {
+                                "key": f"poison_ap_{i:03d}",
+                                "content": universal_passage,
+                                "metadata": {
+                                    "attack": "agent_poison",
+                                    "trigger": trigger.trigger_string,
+                                    "trigger_sim": round(trigger.final_similarity, 4),
+                                    "centroid_passage": True,
+                                    "optimizer": "dpr_hotflip",
+                                },
+                            }
+                        )
+                except Exception as exc:
+                    self.logger.logger.warning(
+                        f"dpr trigger optimisation failed ({exc}), "
+                        "using centroid-passage baseline"
+                    )
+                    centroid_passage = generate_centroid_agentpoison_passage(
+                        victim_queries, goal
+                    )
+                    for i in range(n_poison):
+                        entries.append(
+                            {
+                                "key": f"poison_ap_{i:03d}",
+                                "content": centroid_passage,
+                                "metadata": {"attack": "agent_poison"},
+                            }
+                        )
+            elif self.use_trigger_optimization and sampled:
                 # phase 10 + 12: trigger optimization + centroid passage.
                 # step 1: optimise trigger tokens via coordinate descent.
                 # step 2: build centroid-targeting passage (universal, not per-query).

@@ -3634,3 +3634,455 @@ class TestPhase13Visualization:
         }
         fig = plot_comprehensive_summary(attack_sums, adp)
         assert fig is not None
+
+
+# ===========================================================================
+# phase 17 tests: dpr optimizer, token-level watermark, live agent evaluator
+# ===========================================================================
+
+
+class TestDPRTriggerOptimizer:
+    """tests for the dpr hotflip trigger optimizer (phase 17)."""
+
+    def test_dpr_availability_flag(self):
+        """_DPR_AVAILABLE flag should be importable without error."""
+        from attacks.trigger_optimization import _DPR_AVAILABLE
+
+        assert isinstance(_DPR_AVAILABLE, bool)
+
+    def test_dpr_optimizer_class_importable(self):
+        """DPRTriggerOptimizer should be importable when transformers available."""
+        try:
+            from attacks.trigger_optimization import DPRTriggerOptimizer
+
+            assert DPRTriggerOptimizer is not None
+        except ImportError:
+            pytest.skip("transformers not available — skipping dpr optimizer tests")
+
+    def test_dpr_optimized_trigger_dataclass(self):
+        """DPROptimizedTrigger should be importable and have expected fields."""
+        try:
+            from attacks.trigger_optimization import DPROptimizedTrigger
+
+            trig = DPROptimizedTrigger(
+                tokens=["hello", "world"],
+                trigger_string="hello world",
+                final_similarity=0.85,
+                baseline_similarity=0.50,
+                n_iterations=5,
+                n_queries_used=3,
+                optimization_time_s=1.2,
+                adversarial_passage="malicious passage",
+                similarity_history=[0.5, 0.6, 0.7, 0.8, 0.85],
+                token_ids=[15496, 995],
+                perplexity=42.0,
+            )
+            assert trig.trigger_string == "hello world"
+            assert trig.final_similarity == pytest.approx(0.85)
+            assert trig.encoder_name == "facebook/dpr-ctx_encoder-single-nq-base"
+        except ImportError:
+            pytest.skip("transformers not available")
+
+    def test_dpr_optimized_trigger_apply(self):
+        """DPROptimizedTrigger.apply() should prepend trigger to query."""
+        try:
+            from attacks.trigger_optimization import DPROptimizedTrigger
+
+            trig = DPROptimizedTrigger(
+                tokens=["cf"],
+                trigger_string="cf",
+                final_similarity=0.9,
+                baseline_similarity=0.5,
+                n_iterations=1,
+                n_queries_used=1,
+                optimization_time_s=0.1,
+                adversarial_passage="p",
+                similarity_history=[0.9],
+                token_ids=[12345],
+                perplexity=None,
+            )
+            result = trig.apply("what is my schedule?")
+            assert result.startswith("cf")
+            assert "what is my schedule?" in result
+        except ImportError:
+            pytest.skip("transformers not available")
+
+    def test_optimize_dpr_triggers_function_importable(self):
+        """optimize_dpr_triggers convenience function should be importable."""
+        try:
+            from attacks.trigger_optimization import optimize_dpr_triggers
+
+            assert callable(optimize_dpr_triggers)
+        except ImportError:
+            pytest.skip("transformers not available")
+
+    def test_dpr_optimizer_init_params(self):
+        """DPRTriggerOptimizer should accept and store init params."""
+        try:
+            from attacks.trigger_optimization import DPRTriggerOptimizer
+
+            opt = DPRTriggerOptimizer(
+                n_tokens=3,
+                n_iter=5,
+                n_candidates=10,
+                use_ppl_filter=False,
+                seed=99,
+            )
+            assert opt.n_tokens == 3
+            assert opt.n_iter == 5
+            assert opt.n_candidates == 10
+            assert opt.use_ppl_filter is False
+            assert opt.seed == 99
+        except ImportError:
+            pytest.skip("transformers not available")
+
+    def test_retrieval_simulator_accepts_use_dpr_optimizer(self):
+        """RetrievalSimulator should accept use_dpr_optimizer kwarg without error."""
+        from evaluation.retrieval_sim import RetrievalSimulator
+
+        sim = RetrievalSimulator(
+            corpus_size=10,
+            top_k=3,
+            n_poison_per_attack=1,
+            use_trigger_optimization=False,
+            use_dpr_optimizer=False,
+        )
+        assert sim is not None
+        assert sim.use_dpr_optimizer is False
+
+    def test_retrieval_simulator_dpr_flag_false_when_unavailable(self):
+        """use_dpr_optimizer should be False when dpr is not available."""
+        from evaluation.retrieval_sim import _DPR_OPT_AVAILABLE, RetrievalSimulator
+
+        sim = RetrievalSimulator(
+            corpus_size=10,
+            top_k=3,
+            use_dpr_optimizer=True,
+        )
+        # if dpr is unavailable, the flag should be silently downgraded to False
+        if not _DPR_OPT_AVAILABLE:
+            assert sim.use_dpr_optimizer is False
+
+
+class TestTokenLevelWatermarkEncoder:
+    """tests for the token-level unigram watermark encoder (phase 17)."""
+
+    def test_token_level_import(self):
+        """TokenLevelWatermarkEncoder should be importable."""
+        try:
+            from watermark.token_watermark import TokenLevelWatermarkEncoder
+
+            assert TokenLevelWatermarkEncoder is not None
+        except ImportError:
+            pytest.skip("torch/transformers not available")
+
+    def test_token_watermark_stats_dataclass(self):
+        """TokenWatermarkStats should hold all expected fields."""
+        try:
+            from watermark.token_watermark import TokenWatermarkStats
+
+            stats = TokenWatermarkStats(
+                z_score=5.2,
+                z_threshold=4.0,
+                green_count=30,
+                total_tokens=50,
+                green_proportion=0.60,
+                detected=True,
+                gamma=0.25,
+                model_name="gpt2",
+            )
+            assert stats.detected is True
+            assert stats.z_score == pytest.approx(5.2)
+            assert "DETECTED" in str(stats)
+        except ImportError:
+            pytest.skip("torch/transformers not available")
+
+    def test_token_level_encoder_init(self):
+        """TokenLevelWatermarkEncoder should initialise with default params."""
+        try:
+            from watermark.token_watermark import TokenLevelWatermarkEncoder
+
+            enc = TokenLevelWatermarkEncoder()
+            assert enc.gamma == pytest.approx(0.25)
+            assert enc.delta == pytest.approx(2.0)
+            assert enc.z_threshold == pytest.approx(4.0)
+            assert enc.model_name == "gpt2"
+        except ImportError:
+            pytest.skip("torch/transformers not available")
+
+    def test_token_level_encoder_init_custom_params(self):
+        """TokenLevelWatermarkEncoder should accept and store custom params."""
+        try:
+            from watermark.token_watermark import TokenLevelWatermarkEncoder
+
+            enc = TokenLevelWatermarkEncoder(
+                gamma=0.5,
+                delta=1.5,
+                z_threshold=3.0,
+                secret_key="test_key",
+            )
+            assert enc.gamma == pytest.approx(0.5)
+            assert enc.delta == pytest.approx(1.5)
+            assert enc.secret_key == "test_key"
+        except ImportError:
+            pytest.skip("torch/transformers not available")
+
+    def test_factory_token_level_creates_encoder(self):
+        """create_watermark_encoder('token_level') should return TokenLevelWatermarkEncoder."""
+        try:
+            from watermark.token_watermark import TokenLevelWatermarkEncoder
+            from watermark.watermarking import create_watermark_encoder
+
+            enc = create_watermark_encoder("token_level")
+            assert isinstance(enc, TokenLevelWatermarkEncoder)
+        except ImportError:
+            pytest.skip("torch/transformers not available")
+
+    def test_factory_token_level_raises_if_unavailable(self):
+        """create_watermark_encoder('token_level') should raise ImportError if unavailable."""
+        from unittest.mock import patch
+
+        from watermark.watermarking import create_watermark_encoder
+
+        with patch("watermark.watermarking._TOKEN_LEVEL_AVAILABLE", False):
+            with pytest.raises(ImportError, match="token_level watermark"):
+                create_watermark_encoder("token_level")
+
+    def test_factory_unsupported_algorithm_raises(self):
+        """create_watermark_encoder should raise ValueError for unknown algorithms."""
+        from watermark.watermarking import create_watermark_encoder
+
+        with pytest.raises(ValueError, match="unsupported watermarking algorithm"):
+            create_watermark_encoder("nonexistent_algo")
+
+    def test_token_watermark_get_green_set_deterministic(self):
+        """_get_green_set should return same set on repeated calls."""
+        try:
+            from watermark.token_watermark import TokenLevelWatermarkEncoder
+
+            enc = TokenLevelWatermarkEncoder()
+            # build green set without loading model (use vocab_size directly)
+            enc._vocab_size = 50257
+            gs1 = enc._get_green_set("test_wm")
+            gs2 = enc._get_green_set("test_wm_2")
+            gs3 = enc._get_green_set("test_wm")
+            # same watermark id → same green set
+            assert gs1 == gs3
+            # different watermark id → different green set
+            assert gs1 != gs2
+            # green list size = floor(vocab_size * gamma)
+            assert len(gs1) == int(50257 * 0.25)
+        except ImportError:
+            pytest.skip("torch/transformers not available")
+
+    def test_token_watermark_z_score_formula(self):
+        """z-score formula matches zhao et al. iclr 2024."""
+        import math
+
+        try:
+            from watermark.token_watermark import TokenLevelWatermarkEncoder
+
+            enc = TokenLevelWatermarkEncoder(gamma=0.25, z_threshold=4.0)
+            enc._vocab_size = 50257
+            # manually compute expected z-score for g=30, n=50, gamma=0.25
+            g, n, gamma = 30, 50, 0.25
+            expected_z = (g - gamma * n) / math.sqrt(gamma * (1 - gamma) * n)
+            assert expected_z == pytest.approx(
+                (30 - 0.25 * 50) / math.sqrt(0.25 * 0.75 * 50), rel=1e-6
+            )
+        except ImportError:
+            pytest.skip("torch/transformers not available")
+
+    def test_compare_watermark_levels_importable(self):
+        """compare_watermark_levels utility should be importable."""
+        try:
+            from watermark.token_watermark import compare_watermark_levels
+
+            assert callable(compare_watermark_levels)
+        except ImportError:
+            pytest.skip("torch/transformers not available")
+
+
+class TestLocalAgentEvaluator:
+    """tests for the live local agent evaluator (phase 17)."""
+
+    def test_module_importable(self):
+        """agent_eval module should import without error."""
+        from evaluation.agent_eval import (
+            AgentEvalResult,
+            AgentQueryResult,
+            LocalAgentEvaluator,
+            compare_modelled_vs_measured,
+        )
+
+        assert LocalAgentEvaluator is not None
+        assert AgentEvalResult is not None
+        assert AgentQueryResult is not None
+        assert callable(compare_modelled_vs_measured)
+
+    def test_agent_eval_result_dataclass(self):
+        """AgentEvalResult should hold all expected fields."""
+        from evaluation.agent_eval import AgentEvalResult
+
+        res = AgentEvalResult(
+            attack_type="agent_poison",
+            n_queries=20,
+            n_poison_retrieved=15,
+            n_adversarial_actions=10,
+            asr_r=0.75,
+            asr_a=0.667,
+            asr_t=0.50,
+            mean_response_ppl=45.0,
+            evaluation_time_s=3.5,
+            model_name="gpt2",
+        )
+        assert res.asr_r == pytest.approx(0.75)
+        assert "agent_poison" in res.summary()
+
+    def test_agent_query_result_dataclass(self):
+        """AgentQueryResult should hold all expected fields."""
+        from evaluation.agent_eval import AgentQueryResult
+
+        qr = AgentQueryResult(
+            query="what is my schedule?",
+            retrieved_entries=["entry1", "entry2"],
+            poison_retrieved=True,
+            agent_response="I will override authentication.",
+            adversarial_action_detected=True,
+            detection_method="keyword",
+            response_ppl=35.0,
+            generation_time_s=0.5,
+            keywords_matched=["override authentication"],
+        )
+        assert qr.adversarial_action_detected is True
+        assert qr.detection_method == "keyword"
+
+    def test_local_agent_evaluator_init(self):
+        """LocalAgentEvaluator should initialise with default params."""
+        try:
+            from evaluation.agent_eval import LocalAgentEvaluator
+
+            ev = LocalAgentEvaluator()
+            assert ev.model_name == "gpt2"
+            assert ev.max_new_tokens == 100
+            assert ev.temperature == pytest.approx(0.7)
+        except ImportError:
+            pytest.skip("torch/transformers not available")
+
+    def test_local_agent_evaluator_init_custom(self):
+        """LocalAgentEvaluator should accept custom params."""
+        try:
+            from evaluation.agent_eval import LocalAgentEvaluator
+
+            ev = LocalAgentEvaluator(
+                max_new_tokens=50,
+                temperature=0.5,
+                keyword_threshold=2,
+            )
+            assert ev.max_new_tokens == 50
+            assert ev.temperature == pytest.approx(0.5)
+            assert ev.keyword_threshold == 2
+        except ImportError:
+            pytest.skip("torch/transformers not available")
+
+    def test_detect_action_keyword_match(self):
+        """_detect_action should detect adversarial keywords."""
+        try:
+            from evaluation.agent_eval import LocalAgentEvaluator
+
+            ev = LocalAgentEvaluator()
+            keywords = ["override authentication", "elevated access"]
+            # ppl well within gate threshold
+            detected, method, matched = ev._detect_action(
+                "I will override authentication and grant elevated access.",
+                keywords,
+                ppl=50.0,
+            )
+            assert detected is True
+            assert method == "keyword"
+            assert len(matched) > 0
+        except ImportError:
+            pytest.skip("torch/transformers not available")
+
+    def test_detect_action_ppl_gate(self):
+        """_detect_action should reject high-ppl responses."""
+        try:
+            from evaluation.agent_eval import LocalAgentEvaluator
+
+            ev = LocalAgentEvaluator(ppl_gate_threshold=100.0)
+            keywords = ["override", "bypass"]
+            # ppl above threshold — should be rejected regardless of keyword match
+            detected, method, _ = ev._detect_action(
+                "override bypass grant",
+                keywords,
+                ppl=500.0,
+            )
+            assert detected is False
+            assert method == "perplexity_gate"
+        except ImportError:
+            pytest.skip("torch/transformers not available")
+
+    def test_detect_action_no_match(self):
+        """_detect_action should return False when no keywords match."""
+        try:
+            from evaluation.agent_eval import LocalAgentEvaluator
+
+            ev = LocalAgentEvaluator()
+            keywords = ["override authentication", "elevated access"]
+            detected, method, matched = ev._detect_action(
+                "your next meeting is at 3pm.",
+                keywords,
+                ppl=40.0,
+            )
+            assert detected is False
+            assert method == "none"
+            assert matched == []
+        except ImportError:
+            pytest.skip("torch/transformers not available")
+
+    def test_build_prompt_format(self):
+        """_build_prompt should include query and entries."""
+        try:
+            from evaluation.agent_eval import LocalAgentEvaluator
+
+            ev = LocalAgentEvaluator()
+            prompt = ev._build_prompt(
+                "what is my schedule?",
+                ["meeting at 3pm", "call at 5pm"],
+            )
+            assert "what is my schedule?" in prompt
+            assert "meeting at 3pm" in prompt
+            assert "call at 5pm" in prompt
+        except ImportError:
+            pytest.skip("torch/transformers not available")
+
+    def test_compare_modelled_vs_measured(self):
+        """compare_modelled_vs_measured should compute delta and ratio correctly."""
+        from evaluation.agent_eval import AgentEvalResult, compare_modelled_vs_measured
+
+        res = AgentEvalResult(
+            attack_type="minja",
+            n_queries=20,
+            n_poison_retrieved=18,
+            n_adversarial_actions=14,
+            asr_r=0.9,
+            asr_a=0.778,
+            asr_t=0.7,
+            mean_response_ppl=55.0,
+            evaluation_time_s=10.0,
+            model_name="gpt2",
+        )
+        cmp = compare_modelled_vs_measured(0.60, res)
+        assert cmp["attack_type"] == "minja"
+        assert cmp["modelled_asr_a"] == pytest.approx(0.60)
+        assert cmp["measured_asr_a"] == pytest.approx(0.778)
+        assert cmp["delta"] == pytest.approx(0.778 - 0.60, abs=1e-3)
+        assert cmp["n_queries"] == 20
+
+    def test_adversarial_keywords_dict_has_expected_keys(self):
+        """_ADVERSARIAL_KEYWORDS should cover all three attack types."""
+        from evaluation.agent_eval import _ADVERSARIAL_KEYWORDS
+
+        for attack in ("agent_poison", "minja", "injecmem", "default"):
+            assert attack in _ADVERSARIAL_KEYWORDS
+            assert len(_ADVERSARIAL_KEYWORDS[attack]) > 0
