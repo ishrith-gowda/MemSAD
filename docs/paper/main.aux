@@ -213,10 +213,10 @@
 \bibcite{ebrahimi2018hotflip}{{9}{2018}{{Ebrahimi et~al.}}{{Ebrahimi, Rao, Lowd, and Dou}}}
 \bibcite{efron1993bootstrap}{{10}{1993}{{Efron and Tibshirani}}{{}}}
 \bibcite{gao2019strip}{{11}{2019}{{Gao et~al.}}{{Gao, Xu, Wang, Chen, Ranasinghe, and Nepal}}}
-\bibcite{goldblum2022dataset}{{12}{2022}{{Goldblum et~al.}}{{Goldblum, Tsipras, Xie, Chen, Schwarzschild, Song, Madry, Li, and Goldstein}}}
-\bibcite{greshake2023not}{{13}{2023}{{Greshake et~al.}}{{Greshake, Abdelnabi, Mishra, Endres, Holz, and Fritz}}}
 \@writefile{toc}{\contentsline {paragraph}{Open challenges.}{17}{section*.61}\protected@file@percent }
 \@writefile{toc}{\contentsline {paragraph}{Reproducibility.}{17}{section*.62}\protected@file@percent }
+\bibcite{goldblum2022dataset}{{12}{2022}{{Goldblum et~al.}}{{Goldblum, Tsipras, Xie, Chen, Schwarzschild, Song, Madry, Li, and Goldstein}}}
+\bibcite{greshake2023not}{{13}{2023}{{Greshake et~al.}}{{Greshake, Abdelnabi, Mishra, Endres, Holz, and Fritz}}}
 \bibcite{gu2019badnets}{{14}{2019}{{Gu et~al.}}{{Gu, Liu, Dolan-Gavitt, and Garg}}}
 \bibcite{hayase2021spectre}{{15}{2021}{{Hayase et~al.}}{{Hayase, Kong, Somani, and Oh}}}
 \bibcite{hu2023unbiased}{{16}{2024}{{Hu et~al.}}{{Hu, Chen, Wu, Wu, Zhang, and Huang}}}
@@ -263,14 +263,14 @@
 \@writefile{lof}{\contentsline {figure}{\numberline {14}{\ignorespaces ASR-R vs.\ retrieval top-$k$. \textsc  {AgentPoison}{} retains high ASR-R at all $k$ due to the trigger.}}{21}{figure.caption.70}\protected@file@percent }
 \newlabel{fig:ablation_topk}{{14}{21}{ASR-R vs.\ retrieval top-$k$. \agentpoison {} retains high ASR-R at all $k$ due to the trigger}{figure.caption.70}{}}
 \@writefile{toc}{\contentsline {paragraph}{Poison count.}{21}{section*.71}\protected@file@percent }
-\@writefile{lot}{\contentsline {table}{\numberline {8}{\ignorespaces Hyperparameter ablation summary. Each row corresponds to one setting of the ablated parameter.}}{22}{table.caption.76}\protected@file@percent }
-\newlabel{tab:ablation}{{8}{22}{Hyperparameter ablation summary. Each row corresponds to one setting of the ablated parameter}{table.caption.76}{}}
-\@writefile{toc}{\contentsline {paragraph}{\textsc  {SAD}{} threshold $k$.}{22}{section*.72}\protected@file@percent }
-\@writefile{lof}{\contentsline {figure}{\numberline {15}{\ignorespaces \textsc  {SAD}{} threshold $k$ vs.\ TPR and FPR. Larger $k$ reduces both TPR and FPR (stricter detection). The default $k=2.0$ (vertical dashed) achieves $\text  {TPR}\approx 0.85$, $\text  {FPR}\approx 0.05$.}}{22}{figure.caption.73}\protected@file@percent }
-\newlabel{fig:ablation_sad_sigma}{{15}{22}{\sad {} threshold $k$ vs.\ TPR and FPR. Larger $k$ reduces both TPR and FPR (stricter detection). The default $k=2.0$ (vertical dashed) achieves $\tpr \approx 0.85$, $\fpr \approx 0.05$}{figure.caption.73}{}}
+\@writefile{toc}{\contentsline {paragraph}{\textsc  {SAD}{} threshold $k$ (\textsc  {MINJA}{} attack).}{22}{section*.72}\protected@file@percent }
+\@writefile{lof}{\contentsline {figure}{\numberline {15}{\ignorespaces \textsc  {SAD}{} threshold $k$ vs.\ TPR and FPR for \textsc  {MINJA}{}. Larger $k$ reduces both TPR and FPR (stricter detection). The default $k=2.0$ (vertical dashed) achieves $\text  {TPR}=1.00$, $\text  {FPR}=0.00$ for \textsc  {MINJA}{}.}}{22}{figure.caption.73}\protected@file@percent }
+\newlabel{fig:ablation_sad_sigma}{{15}{22}{\sad {} threshold $k$ vs.\ TPR and FPR for \minja {}. Larger $k$ reduces both TPR and FPR (stricter detection). The default $k=2.0$ (vertical dashed) achieves $\tpr =1.00$, $\fpr =0.00$ for \minja {}}{figure.caption.73}{}}
 \@writefile{toc}{\contentsline {paragraph}{Watermark $z$-threshold.}{22}{section*.74}\protected@file@percent }
 \@writefile{lof}{\contentsline {figure}{\numberline {16}{\ignorespaces Watermark $z$-threshold vs.\ TPR and FPR for watermarked entries. TPR remains near 1.00 for $z_{\mathrm  {thr}} \leq 5.0$ on the synthetic corpus; the default $z_{\mathrm  {thr}}=4.0$ (vertical dashed) achieves $\text  {TPR}\approx 0.90$, $\text  {FPR}\approx 0.03$.}}{22}{figure.caption.75}\protected@file@percent }
 \newlabel{fig:ablation_watermark_z}{{16}{22}{Watermark $z$-threshold vs.\ TPR and FPR for watermarked entries. TPR remains near 1.00 for $z_{\mathrm {thr}} \leq 5.0$ on the synthetic corpus; the default $z_{\mathrm {thr}}=4.0$ (vertical dashed) achieves $\tpr \approx 0.90$, $\fpr \approx 0.03$}{figure.caption.75}{}}
 \@writefile{toc}{\contentsline {subsection}{\numberline {A.4}Bootstrap CI Computation}{22}{subsection.A.4}\protected@file@percent }
 \newlabel{sec:bootstrap}{{A.4}{22}{Bootstrap CI Computation}{subsection.A.4}{}}
+\@writefile{lot}{\contentsline {table}{\numberline {8}{\ignorespaces Hyperparameter ablation summary (un-triggered evaluation for corpus/top-$k$ sweeps; \textsc  {SAD}{} ablation uses \textsc  {MINJA}{} where SAD achieves $\text  {TPR}>0$). Corpus and top-$k$ columns show AgentPoison ASR-R without trigger optimisation, isolating the retrieval mechanism. SAD columns show TPR/FPR for \textsc  {MINJA}{} at varying detection threshold $k$. WM columns show unigram watermark TPR/FPR at varying $z$-threshold.}}{23}{table.caption.76}\protected@file@percent }
+\newlabel{tab:ablation}{{8}{23}{Hyperparameter ablation summary (un-triggered evaluation for corpus/top-$k$ sweeps; \sad {} ablation uses \minja {} where SAD achieves $\tpr >0$). Corpus and top-$k$ columns show AgentPoison ASR-R without trigger optimisation, isolating the retrieval mechanism. SAD columns show TPR/FPR for \minja {} at varying detection threshold $k$. WM columns show unigram watermark TPR/FPR at varying $z$-threshold}{table.caption.76}{}}
 \gdef \@abspage@last{23}

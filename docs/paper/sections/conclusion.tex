@@ -21,14 +21,19 @@ optional GPT-2 perplexity filtering for fluency.
 
 \textbf{Third}, we propose \sad{}: a Semantic Anomaly Detection defense that requires
 no labeled adversarial examples and no model access.  For \minja{} (bridging-step
-passages with high query alignment), \sad{} achieves $\tpr > 0.80$.  The fundamental
-tension between retrieval and evasion objectives limits the adaptive adversary to
-at most $60\%$ evasion with a corresponding $\geq 0.40$ drop in \asrr{}.
+passages with high query alignment), \sad{} achieves $\tpr \approx 1.00$; for
+\injecmem{}, $\tpr \approx 0.20$.  \sad{} achieves near-zero TPR against
+\agentpoison{} when calibrated on un-triggered victim queries, because the centroid
+passage falls within the benign similarity distribution in this setting.
 
-\textbf{Fourth}, our formal analysis of the adaptive adversary
-(Section~\ref{sec:adaptive}) establishes a gradient-coupling property: any
-synonym substitution that reduces \sad{}'s anomaly score also reduces retrieval
-rank, because both objectives depend on the same cosine similarity.
+\textbf{Fourth}, our analysis of the adaptive adversary reveals a nuanced result.
+In continuous gradient space (Eq.~\ref{eq:adaptive_obj}), any reduction in \sad{}'s
+anomaly score simultaneously reduces retrieval rank---a structural tension.
+Empirically, word-level synonym substitution circumvents this tension because
+semantic embeddings are synonym-invariant: domain synonym replacements shift
+anomaly scores without affecting retrieval rank ($\Delta\asrr \approx 0$).
+This finding motivates future defenses incorporating lexical diversity features
+beyond the $\ell_2$ semantic embedding space.
 
 \textbf{Fifth}, we implement the paper-faithful token-level unigram watermark
 \citep{zhao2024watermark} using GPT-2 as a backbone LLM.  The token-level scheme

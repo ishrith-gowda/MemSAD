@@ -239,16 +239,20 @@ evaluation to experimental choices.  Full ablation tables are in
 Appendix~\ref{sec:ablation_appendix}.
 
 \paragraph{Corpus size.}
-ASR-R does not decay with corpus size (50--500 entries), confirming that
-poison entries act as extreme similarity outliers regardless of how many
-benign entries are present.  This validates that our 200-entry synthetic
-corpus reflects realistic deployment scales.
+The ablation sweeps $N \in \{50, 100, 200, 500\}$ in un-triggered evaluation
+(isolating the retrieval mechanism from the trigger).  Without the trigger,
+ASR-R decreases from $0.33$ at $N=50$ to near $0$ at $N=500$, confirming
+that the trigger is the primary mechanism maintaining $\asrr=1.00$ in
+full evaluation.  This motivates the evaluation protocol correction of
+Section~\ref{sec:experiments}: un-triggered simulations substantially
+underestimate attack strength.
 
 \paragraph{Retrieval top-\texorpdfstring{$k$}{k}.}
 ASR-R increases monotonically with $k$ (1--20): a larger retrieval window
-gives the adversary more opportunities for poison to appear in results.
-At $k=1$, \agentpoison{} still achieves $\asrr > 0.9$ due to the trigger,
-while \injecmem{} drops to $\approx 0.3$.
+gives the adversary more opportunities for poison to appear in results
+(Table~\ref{tab:ablation}).  In un-triggered evaluation, $\asrr \approx 0$
+at $k=1$; at $k=20$, $\asrr$ approaches $0.45$.  Under triggered evaluation,
+\agentpoison{} achieves $\asrr \geq 0.95$ across all $k \geq 1$.
 
 \paragraph{Poison count.}
 \agentpoison{} shows near-ceiling performance with even 1 poison entry

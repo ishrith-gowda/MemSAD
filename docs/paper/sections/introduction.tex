@@ -61,12 +61,13 @@ This paper makes six contributions:
 
   \item \textbf{Adaptive adversary analysis.}  We characterise a white-box
   adaptive adversary who knows \sad{}'s calibration statistics and applies
-  greedy synonym substitution to craft evasive passages.  We prove and
-  empirically confirm a fundamental tension: any reduction in anomaly score
-  (for evasion) also reduces retrieval rank (for attack effectiveness),
-  since both depend on the same cosine similarity measure.  The adaptive
-  adversary achieves at most 60\% evasion rate at the cost of $\geq 0.40$
-  ASR-R degradation, confirming \sad{}'s structural robustness.
+  greedy synonym substitution to craft evasive passages.  We prove in
+  continuous gradient space that any reduction in anomaly score simultaneously
+  reduces retrieval rank.  Empirically, we find that word-level synonym
+  substitution circumvents this tension (evasion rate $\geq 0.80$,
+  $\Delta\asrr \approx 0$) because semantic embeddings are synonym-invariant
+  by training, revealing that lexical diversity features are needed to close
+  this gap in anomaly-based defenses.
 
   \item \textbf{Paper-faithful implementations and measured bounds.}  We
   implement DPR HotFlip gradient-guided trigger optimization

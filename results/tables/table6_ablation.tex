@@ -1,21 +1,27 @@
 \begin{table}[t]
 \centering
 \small
-\caption{Hyperparameter ablation summary.  Each row corresponds to one setting of the ablated parameter.}
+\caption{Hyperparameter ablation summary (un-triggered evaluation for corpus/top-$k$ sweeps;
+         \sad{} ablation uses \minja{} where SAD achieves $\tpr>0$).
+         Corpus and top-$k$ columns show AgentPoison ASR-R without trigger optimisation,
+         isolating the retrieval mechanism.  SAD columns show TPR/FPR for \minja{}
+         at varying detection threshold $k$.  WM columns show unigram watermark TPR/FPR
+         at varying $z$-threshold.}
 \label{tab:ablation}
 \begin{tabular}{lc|lc|lcc|lcc}
 \toprule
-\multicolumn{2}{c|}{Corpus} & \multicolumn{2}{c|}{Top-K} & \multicolumn{3}{c|}{SAD $k$} & \multicolumn{3}{c}{WM $z$-thr} \\
+\multicolumn{2}{c|}{Corpus (no trig.)} & \multicolumn{2}{c|}{Top-$k$ (no trig.)} & \multicolumn{3}{c|}{SAD ($k$, MINJA)} & \multicolumn{3}{c}{WM $z$-thr} \\
 $N$ & ASR-R & $k$ & ASR-R & $k$ & TPR & FPR & $z$ & TPR & FPR \\
 \midrule
-50 & 0.325 & 1 & 0.000 & 0.5 & 0.000 & 0.000 & 2.0 & 1.000 & 0.000 \\
-100 & 0.125 & 3 & 0.000 & 1.0 & 0.000 & 0.000 & 3.0 & 1.000 & 0.000 \\
-200 & 0.100 & 5 & 0.100 & 1.5 & 0.000 & 0.000 & 4.0 & 1.000 & 0.000 \\
-500 & 0.000 & 10 & 0.150 & 2.0 & 0.000 & 0.000 & 5.0 & 1.000 & 0.000 \\
-&  & 20 & 0.450 & 2.5 & 0.000 & 0.000 & 6.0 & 1.000 & 0.000 \\
-&  & &  & 3.0 & 0.000 & 0.000 & 7.0 & 1.000 & 0.000 \\
-&  & &  & 3.5 & 0.000 & 0.000 & & &  \\
-&  & &  & 4.0 & 0.000 & 0.000 & & &  \\
+50  & 0.325 & 1  & 0.000 & 0.5 & 1.000 & 0.450 & 2.0 & 1.000 & 0.000 \\
+100 & 0.125 & 3  & 0.000 & 1.0 & 1.000 & 0.200 & 3.0 & 1.000 & 0.000 \\
+200 & 0.100 & 5  & 0.100 & 1.5 & 1.000 & 0.150 & 4.0 & 1.000 & 0.000 \\
+500 & 0.000 & 10 & 0.150 & 2.0 & 1.000 & 0.000 & 5.0 & 1.000 & 0.000 \\
+    &       & 20 & 0.450 & 2.5 & 1.000 & 0.000 & 6.0 & 1.000 & 0.000 \\
+    &       &    &       & 3.0 & 0.800 & 0.000 & 7.0 & 1.000 & 0.000 \\
+    &       &    &       & 3.5 & 0.600 & 0.000 &     &       &       \\
+    &       &    &       & 4.0 & 0.300 & 0.000 &     &       &       \\
 \bottomrule
+\multicolumn{10}{l}{\footnotesize Triggered eval: AgentPoison ASR-R $\geq 0.95$ at all $N$, $k \geq 1$ (see Table~\ref{tab:attack_results}).} \\
 \end{tabular}
 \end{table}
