@@ -2,43 +2,109 @@
 \label{sec:discussion}
 
 \paragraph{No single defense dominates.}
-Our $3 \times 5$ evaluation matrix reveals that defense effectiveness
-varies substantially by attack type.  Watermark detection is effective
-against unsophisticated injection attempts but can be evaded by attackers
-who understand the watermarking scheme.  \sad{} excels against
-\agentpoison{} (high similarity to victim queries is a strong signal) but
-is less effective against \injecmem{} (broad anchors intentionally avoid
-high similarity to any specific query).  Composite defenses consistently
-outperform individual defenses, motivating a portfolio approach.
+Our $3 \times 5$ evaluation matrix reveals that defense effectiveness varies
+substantially by attack type.  Watermark detection reliably identifies
+unsigned memory writes but provides no protection if the attacker obtains
+the watermark key or bypasses the ingestion path.  \sad{} excels against
+\minja{} (bridging-step passages carry high query-aligned similarity)
+but is less effective against \injecmem{} (broad-anchor passages are
+designed to avoid high similarity to any specific query) and against
+\agentpoison{} (the centroid passage targets the mean victim query
+embedding, placing it near the boundary of the benign similarity
+distribution rather than far above it).
+Composite defenses consistently outperform individual defenses across
+all three attacks, confirming that no single mechanism covers the full
+threat surface and motivating a defense-in-depth portfolio.
+
+\paragraph{Why SAD is difficult against centroid-targeting attacks.}
+The centroid passage is crafted to maximise mean cosine similarity across
+all victim queries.  In a well-populated memory corpus, many benign entries
+share vocabulary with common agent tasks (scheduling, preferences, notes),
+so the baseline similarity distribution under calibration already captures
+moderate query alignment.  A centroid passage that achieves $\asrr=1.00$
+need not be a distributional outlier---it must only exceed the top-$k$
+benign entries, not exceed the benign similarity mean by $k$ standard deviations.
+This gap between the retrieval criterion and the detection criterion is
+a fundamental tension, not an implementation artifact.  Future defenses
+may close this gap by calibrating on the top-$k$ retrieved entries rather
+than the full corpus mean, tightening the detection boundary.
 
 \paragraph{Trigger prepending is a fundamental protocol requirement.}
 The evaluation correction identified in Section~\ref{sec:experiments}
-is not merely an implementation artifact.  It reflects a fundamental
-asymmetry in the \agentpoison{} threat model: the attacker controls query
-content at evaluation time (via a shared trigger in the user's client),
-but the defender measures retrieval without this adversarial query
-modification.  Future simulations of trigger-based attacks must implement
-triggered-query evaluation.
+reflects a fundamental asymmetry in the \agentpoison{} threat model:
+the attacker controls query content at evaluation time (via a shared
+trigger in the user's client), but the defender measures retrieval
+without this adversarial query modification.  Without trigger prepending,
+the adversarial passage must compete with benign entries on generic
+query similarity---a much easier task for defenders.  Future simulations
+of trigger-based attacks must implement triggered-query evaluation; we
+recommend explicitly documenting the evaluation protocol as part of any
+attack benchmark.
 
 \paragraph{Centroid passage approximation.}
 Our centroid-targeting passage (Eq.~\ref{eq:centroid}) is a practical
-approximation of the optimal adversarial passage that would require full
-DPR-based gradient optimization.  At $\asrr=1.00$ in our simulation, this
-suggests the centroid approximation is sufficient for the all-MiniLM-L6-v2
-embedding space.  It may be less effective in embedding spaces with
-different isotropy properties.
+approximation of the optimal adversarial passage that requires full
+DPR-based gradient optimization~\citep{chen2024agentpoison}.
+At $\asrr=1.00$ in the all-MiniLM-L6-v2 embedding space, this suggests
+the centroid approximation is sufficient for this encoder's isotropy
+structure.  It may be less effective in embedding spaces with lower
+isotropy (e.g., encoder-only models trained on narrow domains), where
+a single centroid may not span multiple query clusters.
+We leave GPU-accelerated DPR-based trigger optimization for camera-ready.
+
+\paragraph{Generalization across embedding models and memory architectures.}
+All experiments use all-MiniLM-L6-v2 with FAISS IndexFlatIP.  Attack
+effectiveness and \sad{} calibration will differ for other encoders.
+Attacks that rely on trigger-triggered centroid retrieval should transfer
+broadly (any dense retriever shares the inner-product objective), but
+the absolute \asrr{} values will vary with encoder isotropy and vocabulary.
+\sad{}'s calibration is encoder-agnostic in design---it calibrates on
+whatever similarity distribution the deployed encoder produces---but its
+threshold $k$ may require re-tuning for encoders with different
+intra-corpus similarity ranges.  Graph-structured memory systems (e.g.,
+those using entity--relation stores) present a different attack surface
+that our retrieval-based threat model does not cover.
+
+\paragraph{Deployment recommendations.}
+Three practical recommendations emerge from our evaluation.
+(i)~\emph{Validate memory provenance at write time}: a watermark-based
+check on all incoming memory writes costs $O(|entry|)$ compute and
+eliminates unsigned injections entirely.
+(ii)~\emph{Monitor per-entry anomaly scores continuously}: a rolling
+\sad{} calibration window (100 recent queries, $k=2.0$) adds negligible
+retrieval latency while maintaining $\tpr > 0.80$ for bridging-step
+attacks.
+(iii)~\emph{Apply composite portfolios}: our matrix shows no attack
+achieves $\asrr > 0.5$ under both watermark and \sad{} simultaneously
+(Table~\ref{tab:attack_defense_matrix}), confirming that layered defenses
+provide meaningful compounding protection.
 
 \paragraph{Limitations.}
 (i) $\asra$ is modelled rather than measured from live agent execution,
 which would require running production LLM agents across thousands of
-evaluation queries.  (ii) The character-level watermark is weaker than
-the token-level scheme of \citet{zhao2024watermark}; real-world deployment
-would use an LLM backbone for token-level embedding.  (iii) The synthetic
-corpus may not capture the full diversity of production memory contents.
+evaluation queries; modelled values are calibrated to paper-reported
+means but do not capture variance from LLM stochasticity.
+(ii) The character-level watermark is weaker than the token-level scheme
+of \citet{zhao2024watermark}; real-world deployment would embed watermarks
+at the LLM token generation layer, giving higher $z$-scores and better
+evasion resistance.
+(iii) The synthetic corpus of 200 entries may not capture the full
+diversity of production memory contents, particularly in multi-user or
+multi-domain agent deployments.
+(iv) \sad{}'s calibration assumes a stationary query distribution; a
+sophisticated adversary who gradually shifts the query distribution over
+many sessions could inflate the baseline similarity mean and lower the
+effective detection threshold.
 
 \paragraph{Future work.}
-Key extensions include: GPU-accelerated DPR-based trigger optimization;
-live agent integration for true $\asra$ measurement; token-level watermark
-for full paper-fidelity comparison; multi-agent propagation experiments
-(poison that spreads across agents sharing a knowledge base); and
-adaptive adversaries that optimize specifically to evade \sad{}.
+Key extensions include: (a)~GPU-accelerated DPR-based trigger optimization
+matching the original paper's gradient procedure~\citep{chen2024agentpoison};
+(b)~live agent integration (LangChain, OpenAI Assistants API) for
+direct $\asra$ measurement; (c)~token-level unigram watermark via an LLM
+backbone for full paper-fidelity comparison with \citet{zhao2024watermark};
+(d)~multi-agent propagation experiments where a single poisoned entry
+spreads across a shared knowledge base serving multiple agents;
+(e)~formal robustness analysis for composite portfolios under
+simultaneously-adaptive adversaries; and (f)~evaluation on
+\citet{memorygraft2025} and \citet{amemguard2025} architectures
+to assess cross-system generalization.
