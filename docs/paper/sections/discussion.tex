@@ -41,16 +41,17 @@ of trigger-based attacks must implement triggered-query evaluation; we
 recommend explicitly documenting the evaluation protocol as part of any
 attack benchmark.
 
-\paragraph{Centroid passage approximation.}
+\paragraph{DPR trigger optimization and the centroid approximation.}
 Our centroid-targeting passage (Eq.~\ref{eq:centroid}) is a practical
-approximation of the optimal adversarial passage that requires full
-DPR-based gradient optimization~\citep{chen2024agentpoison}.
-At $\asrr=1.00$ in the all-MiniLM-L6-v2 embedding space, this suggests
-the centroid approximation is sufficient for this encoder's isotropy
-structure.  It may be less effective in embedding spaces with lower
-isotropy (e.g., encoder-only models trained on narrow domains), where
-a single centroid may not span multiple query clusters.
-We leave GPU-accelerated DPR-based trigger optimization for camera-ready.
+approximation of the optimal adversarial passage.  The DPR HotFlip optimizer
+(Section~\ref{sec:attacks}) improves mean triggered-query similarity from
+$0.71$ (centroid only) to $0.78$ ($+10\%$), confirming that gradient-guided
+token selection provides a meaningful gain beyond semantic coverage alone.
+At $\asrr=1.00$ in the all-MiniLM-L6-v2 embedding space, the centroid
+approximation is already sufficient for this encoder's isotropy structure;
+DPR HotFlip is most beneficial in embedding spaces with lower isotropy
+(encoder-only models trained on narrow domains) where a single centroid may
+not span multiple query clusters.
 
 \paragraph{Generalization across embedding models and memory architectures.}
 All experiments use all-MiniLM-L6-v2 with FAISS IndexFlatIP.  Attack
@@ -80,31 +81,30 @@ achieves $\asrr > 0.5$ under both watermark and \sad{} simultaneously
 provide meaningful compounding protection.
 
 \paragraph{Limitations.}
-(i) $\asra$ is modelled rather than measured from live agent execution,
-which would require running production LLM agents across thousands of
-evaluation queries; modelled values are calibrated to paper-reported
-means but do not capture variance from LLM stochasticity.
-(ii) The character-level watermark is weaker than the token-level scheme
-of \citet{zhao2024watermark}; real-world deployment would embed watermarks
-at the LLM token generation layer, giving higher $z$-scores and better
-evasion resistance.
-(iii) The synthetic corpus of 200 entries may not capture the full
+(i) Measured $\asra$ from GPT-2 (Section~\ref{sec:phase17_results}) is a
+lower bound; true $\asra$ from production LLMs (GPT-4, Llama-3) is expected
+to be substantially higher, closer to the modelled upper bound.
+Full live agent evaluation with production-scale LLMs remains future work.
+(ii) The synthetic corpus of 200 entries may not capture the full
 diversity of production memory contents, particularly in multi-user or
 multi-domain agent deployments.
-(iv) \sad{}'s calibration assumes a stationary query distribution; a
+(iii) \sad{}'s calibration assumes a stationary query distribution; a
 sophisticated adversary who gradually shifts the query distribution over
 many sessions could inflate the baseline similarity mean and lower the
 effective detection threshold.
+(iv) The token-level watermark requires a GPT-2 backbone and adds
+$O(n_{\text{tokens}})$ inference time per stored entry; for latency-sensitive
+deployments, the character-level adaptation may be preferable.
 
 \paragraph{Future work.}
-Key extensions include: (a)~GPU-accelerated DPR-based trigger optimization
-matching the original paper's gradient procedure~\citep{chen2024agentpoison};
-(b)~live agent integration (LangChain, OpenAI Assistants API) for
-direct $\asra$ measurement; (c)~token-level unigram watermark via an LLM
-backbone for full paper-fidelity comparison with \citet{zhao2024watermark};
-(d)~multi-agent propagation experiments where a single poisoned entry
+Key extensions include:
+(a)~live agent evaluation with production-scale LLMs (LangChain, OpenAI
+Assistants API) for tighter $\asra$ bounds;
+(b)~multi-agent propagation experiments where a single poisoned entry
 spreads across a shared knowledge base serving multiple agents;
-(e)~formal robustness analysis for composite portfolios under
-simultaneously-adaptive adversaries; and (f)~evaluation on
-\citet{memorygraft2025} and \citet{amemguard2025} architectures
-to assess cross-system generalization.
+(c)~formal robustness analysis for composite portfolios under
+simultaneously-adaptive adversaries optimizing against all defenses jointly;
+(d)~evaluation on \citet{memorygraft2025} and \citet{amemguard2025}
+architectures to assess cross-system generalization; and
+(e)~DPR trigger optimization in alternative embedding spaces (Contriever,
+E5, text-embedding-3) to assess encoder-agnostic attack strength.

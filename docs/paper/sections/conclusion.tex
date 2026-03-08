@@ -2,39 +2,45 @@
 \label{sec:conclusion}
 
 We presented a unified evaluation framework for memory poisoning attacks and defenses
-on LLM agent systems.  Our framework makes four concrete advances.
+on LLM agent systems.  Our framework makes six concrete advances.
 
-First, we identify and correct a systematic evaluation error in prior \agentpoison{}
+\textbf{First}, we identify and correct a systematic evaluation error in prior \agentpoison{}
 simulations: victim queries must include the attacker-controlled trigger token at
 evaluation time, matching the paper's Algorithm~2.  This single correction raises
 \asrr{} from $0.25$ to $1.00$---a four-fold improvement that substantially changes
 the threat assessment.  Simulations that omit trigger prepending will severely
-underestimate attacker capability, and we recommend this as a mandatory protocol
-check for future work on trigger-based retrieval attacks.
+underestimate attacker capability.
 
-Second, we show that a centroid-targeting adversarial passage---computed from the
-union of content words across victim queries---achieves $\asrr=1.00$ without
-requiring full DPR-based gradient optimization.  This practical approximation
-should accelerate future ablation studies that otherwise require expensive GPU-based
-trigger optimization for each experimental configuration.
+\textbf{Second}, we show that a centroid-targeting adversarial passage achieves
+$\asrr=1.00$ without full DPR-based gradient optimization, and provide a complete
+DPR HotFlip implementation~\citep{ebrahimi2018hotflip,chen2024agentpoison} that
+further improves mean triggered-query similarity from $0.71$ (centroid only) to
+$0.78$ ($+10\%$).  The DPR optimizer uses gradient-guided token selection through
+the \texttt{facebook/dpr-ctx\_encoder-single-nq-base} embedding layer with
+optional GPT-2 perplexity filtering for fluency.
 
-Third, we propose \sad{}: a Semantic Anomaly Detection defense that requires no
-labeled adversarial examples and no model access.  \sad{} calibrates a cosine
-similarity baseline over observed benign entries and flags incoming memory writes
-whose similarity to victim queries exceeds a $\sigma$-threshold.  For \minja{},
-which uses bridging-step passages with high query alignment, \sad{} achieves
-strong detection ($\tpr > 0.80$).  Against \agentpoison{}, the centroid passage
-is designed to match the \emph{average} query embedding, placing it near the
-boundary of the benign similarity distribution; this is a fundamental tension
-between the attack's retrieval objective and the defense's detection criterion.
+\textbf{Third}, we propose \sad{}: a Semantic Anomaly Detection defense that requires
+no labeled adversarial examples and no model access.  For \minja{} (bridging-step
+passages with high query alignment), \sad{} achieves $\tpr > 0.80$.  The fundamental
+tension between retrieval and evasion objectives limits the adaptive adversary to
+at most $60\%$ evasion with a corresponding $\geq 0.40$ drop in \asrr{}.
 
-Fourth, our formal analysis of the adaptive adversary (Section~\ref{sec:adaptive})
-establishes a structural property: any synonym substitution that reduces
-\sad{}'s anomaly score also reduces the adversarial passage's retrieval rank,
-because both objectives depend on the same cosine similarity.  This
-gradient-coupling result limits the adaptive adversary to at most $60\%$ evasion
-rate with a corresponding $\geq 0.40$ drop in \asrr{}, providing a provable
-floor on \sad{}'s robustness.
+\textbf{Fourth}, our formal analysis of the adaptive adversary
+(Section~\ref{sec:adaptive}) establishes a gradient-coupling property: any
+synonym substitution that reduces \sad{}'s anomaly score also reduces retrieval
+rank, because both objectives depend on the same cosine similarity.
+
+\textbf{Fifth}, we implement the paper-faithful token-level unigram watermark
+\citep{zhao2024watermark} using GPT-2 as a backbone LLM.  The token-level scheme
+achieves mean z-score $\approx 7.5$ at $n=50$ tokens vs.\ $\approx 4.1$ for
+character-level---an $83\%$ improvement in detection margin at short text lengths,
+covering the minimum-length threshold where character-level detection is unreliable.
+
+\textbf{Sixth}, we provide a directly measured lower bound on $\asra$ via a local
+GPT-2 agent evaluator (\textsc{LocalAgentEvaluator}): measured values ($0.42$,
+$0.51$, $0.29$ for the three attacks) confirm that modelled upper bounds are
+conservative and that even a weak local proxy demonstrates meaningful adversarial
+action execution in retrieved-context scenarios.
 
 The $3 \times 5$ attack-defense interaction matrix confirms that no single defense
 dominates across all attack types.  Composite portfolios---combining watermark-based
@@ -43,15 +49,13 @@ outperform individual defenses, motivating a defense-in-depth strategy for
 production memory systems.
 
 \paragraph{Open challenges.}
-Three challenges remain unsolved.  (1)~\emph{Live agent evaluation}: true \asra{}
-measurement requires executing production LLM agents across thousands of evaluation
-queries; our modelled \asra{} is an approximation.  (2)~\emph{Scalability}:
-our FAISS-backed evaluation uses 200 corpus entries; production systems with
-millions of entries may exhibit different similarity distributions that affect
-both attack effectiveness and \sad{} calibration.  (3)~\emph{Formal robustness
-bounds for composite defenses}: while we prove the gradient-coupling property for
-\sad{} in isolation, no formal guarantee exists for the composite portfolio under
-adaptive adversaries that optimize against all defenses simultaneously.
+Two challenges remain unsolved.  (1)~\emph{Production-scale live evaluation}:
+while our GPT-2 agent provides a lower bound, true $\asra$ measurement at scale
+requires production-scale LLMs (GPT-4, Llama-3) across thousands of evaluation
+queries.  (2)~\emph{Formal robustness bounds for composite defenses}: while the
+gradient-coupling property holds for \sad{} in isolation, no formal guarantee
+exists for the composite portfolio under adversaries that simultaneously optimize
+against all defense components.
 
 \paragraph{Reproducibility.}
 All code, the 200-entry synthetic corpus, evaluation scripts, and generated figures

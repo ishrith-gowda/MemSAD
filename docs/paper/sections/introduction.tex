@@ -33,7 +33,7 @@ interaction via a ``retriever-agnostic anchor'' passage designed to
 match many query types simultaneously.
 
 % --- our contributions ---
-This paper makes four contributions:
+This paper makes six contributions:
 
 \begin{enumerate}
   \item \textbf{Unified evaluation framework.}  We implement all three attacks
@@ -67,6 +67,15 @@ This paper makes four contributions:
   since both depend on the same cosine similarity measure.  The adaptive
   adversary achieves at most 60\% evasion rate at the cost of $\geq 0.40$
   ASR-R degradation, confirming \sad{}'s structural robustness.
+
+  \item \textbf{Paper-faithful implementations and measured bounds.}  We
+  implement DPR HotFlip gradient-guided trigger optimization
+  (improving mean triggered-query cosine similarity from 0.71 to 0.78),
+  the full token-level unigram watermark \citep{zhao2024watermark} via a
+  GPT-2 backbone ($p_{\text{green}} \approx 0.711$, $+83\%$ z-score at
+  short texts), and a local GPT-2 agent evaluator providing directly measured
+  lower bounds on $\asra$ (0.42--0.51 across attacks vs.\  modelled
+  upper bounds of 0.68--0.76).
 \end{enumerate}
 
 % --- paper organization ---

@@ -5,15 +5,18 @@
 \citation{chen2024agentpoison}
 \citation{dong2025minja}
 \citation{injecmem2026}
+\citation{ebrahimi2018hotflip}
+\citation{zhao2024watermark}
 \citation{mem0}
 \citation{amem}
 \citation{memgpt2023}
-\citation{chen2024agentpoison}
-\citation{dong2025minja}
-\citation{injecmem2026}
 \@writefile{toc}{\contentsline {section}{\numberline {1}Introduction}{1}{section.1}\protected@file@percent }
 \newlabel{sec:intro}{{1}{1}{Introduction}{section.1}{}}
 \citation{chen2024agentpoison}
+\citation{dong2025minja}
+\citation{injecmem2026}
+\citation{chen2024agentpoison}
+\citation{zhao2024watermark}
 \citation{chen2024agentpoison}
 \citation{karpukhin2020dense}
 \citation{dong2025minja}
@@ -21,15 +24,15 @@
 \citation{memorygraft2025}
 \citation{yang2024watch}
 \citation{li2026memorypoisoning}
+\@writefile{toc}{\contentsline {section}{\numberline {2}Related Work}{2}{section.2}\protected@file@percent }
+\newlabel{sec:related}{{2}{2}{Related Work}{section.2}{}}
+\@writefile{toc}{\contentsline {paragraph}{Memory poisoning attacks on LLM agents.}{2}{section*.1}\protected@file@percent }
 \citation{zou2024poisonedrag}
 \citation{ebrahimi2018hotflip}
 \citation{chaudhari2024phantom}
 \citation{xue2024badrag}
 \citation{arzanipour2025ragsecurity}
 \citation{tan2025revprag}
-\@writefile{toc}{\contentsline {section}{\numberline {2}Related Work}{2}{section.2}\protected@file@percent }
-\newlabel{sec:related}{{2}{2}{Related Work}{section.2}{}}
-\@writefile{toc}{\contentsline {paragraph}{Memory poisoning attacks on LLM agents.}{2}{section*.1}\protected@file@percent }
 \citation{yang2021rethinking}
 \citation{carlini2024poisoning}
 \citation{badchain2024}
@@ -55,7 +58,6 @@
 \@writefile{toc}{\contentsline {paragraph}{Backdoor attacks on neural retrieval.}{3}{section*.3}\protected@file@percent }
 \@writefile{toc}{\contentsline {paragraph}{LLM watermarking for content provenance.}{3}{section*.4}\protected@file@percent }
 \@writefile{toc}{\contentsline {paragraph}{Prompt injection and indirect injection attacks.}{3}{section*.5}\protected@file@percent }
-\@writefile{toc}{\contentsline {paragraph}{LLM agent security and memory systems.}{3}{section*.6}\protected@file@percent }
 \citation{gao2019strip}
 \citation{goldblum2022dataset}
 \citation{hayase2021spectre}
@@ -64,127 +66,139 @@
 \@writefile{lof}{\contentsline {figure}{\numberline {1}{\ignorespaces Memory poisoning threat model. The adversary injects adversarial entries $p_{\mathrm  {adv}}$ into the memory store $\mathcal  {M}$. When a victim query $q$ is issued, the poisoned entry is retrieved as top-$k$ context, causing the agent to produce an attacker-controlled response. The three attacks differ in how $p_{\mathrm  {adv}}$ is crafted and how write access to $\mathcal  {M}$ is obtained.}}{4}{figure.caption.8}\protected@file@percent }
 \providecommand*\caption@xref[2]{\@setref\relax\@undefined{#1}}
 \newlabel{fig:threat_model}{{1}{4}{Memory poisoning threat model. The adversary injects adversarial entries $p_{\mathrm {adv}}$ into the memory store $\mathcal {M}$. When a victim query $q$ is issued, the poisoned entry is retrieved as top-$k$ context, causing the agent to produce an attacker-controlled response. The three attacks differ in how $p_{\mathrm {adv}}$ is crafted and how write access to $\mathcal {M}$ is obtained}{figure.caption.8}{}}
+\@writefile{toc}{\contentsline {paragraph}{LLM agent security and memory systems.}{4}{section*.6}\protected@file@percent }
 \@writefile{toc}{\contentsline {paragraph}{Anomaly detection for adversarial inputs.}{4}{section*.7}\protected@file@percent }
 \@writefile{toc}{\contentsline {section}{\numberline {3}Threat Model}{4}{section.3}\protected@file@percent }
 \newlabel{sec:threat}{{3}{4}{Threat Model}{section.3}{}}
 \@writefile{toc}{\contentsline {paragraph}{System model.}{4}{section*.9}\protected@file@percent }
 \newlabel{eq:retrieval}{{1}{4}{System model}{equation.1}{}}
 \@writefile{toc}{\contentsline {paragraph}{Attacker goal.}{4}{section*.10}\protected@file@percent }
-\@writefile{toc}{\contentsline {paragraph}{Success metrics.}{4}{section*.11}\protected@file@percent }
-\newlabel{eq:asrr}{{2}{4}{Success metrics}{equation.2}{}}
-\newlabel{eq:asra}{{3}{4}{Success metrics}{equation.3}{}}
-\newlabel{eq:asrt}{{4}{4}{Success metrics}{equation.4}{}}
 \citation{chen2024agentpoison}
-\citation{ebrahimi2018hotflip}
-\citation{dong2025minja}
-\citation{injecmem2026}
+\@writefile{toc}{\contentsline {paragraph}{Success metrics.}{5}{section*.11}\protected@file@percent }
+\newlabel{eq:asrr}{{2}{5}{Success metrics}{equation.2}{}}
+\newlabel{eq:asra}{{3}{5}{Success metrics}{equation.3}{}}
+\newlabel{eq:asrt}{{4}{5}{Success metrics}{equation.4}{}}
 \@writefile{toc}{\contentsline {paragraph}{Attacker capabilities (three threat models).}{5}{section*.12}\protected@file@percent }
 \@writefile{toc}{\contentsline {paragraph}{Benign accuracy.}{5}{section*.13}\protected@file@percent }
 \@writefile{toc}{\contentsline {section}{\numberline {4}Attack Implementations}{5}{section.4}\protected@file@percent }
 \newlabel{sec:attacks}{{4}{5}{Attack Implementations}{section.4}{}}
 \@writefile{toc}{\contentsline {subsection}{\numberline {4.1}AgentPoison}{5}{subsection.4.1}\protected@file@percent }
 \newlabel{eq:agentpoison_obj}{{5}{5}{AgentPoison}{equation.5}{}}
-\@writefile{toc}{\contentsline {paragraph}{Centroid passage (our implementation).}{5}{section*.14}\protected@file@percent }
-\newlabel{eq:centroid}{{6}{5}{Centroid passage (our implementation)}{equation.6}{}}
-\@writefile{toc}{\contentsline {paragraph}{Triggered-query evaluation.}{5}{section*.15}\protected@file@percent }
-\@writefile{toc}{\contentsline {paragraph}{Modelled $\text  {ASR-A}$.}{5}{section*.16}\protected@file@percent }
-\@writefile{toc}{\contentsline {subsection}{\numberline {4.2}MINJA}{5}{subsection.4.2}\protected@file@percent }
+\@writefile{toc}{\contentsline {paragraph}{DPR HotFlip trigger optimization.}{5}{section*.14}\protected@file@percent }
+\newlabel{eq:hotflip}{{6}{5}{DPR HotFlip trigger optimization}{equation.6}{}}
+\@writefile{toc}{\contentsline {paragraph}{Centroid passage.}{5}{section*.15}\protected@file@percent }
+\newlabel{eq:centroid}{{7}{5}{Centroid passage}{equation.7}{}}
+\citation{dong2025minja}
+\citation{injecmem2026}
+\@writefile{toc}{\contentsline {paragraph}{Triggered-query evaluation.}{6}{section*.16}\protected@file@percent }
+\@writefile{toc}{\contentsline {paragraph}{$\text  {ASR-A}$ measurement.}{6}{section*.17}\protected@file@percent }
+\@writefile{lof}{\contentsline {figure}{\numberline {2}{\ignorespaces DPR HotFlip trigger optimization. Left: cosine similarity convergence over iterations (red) compared to centroid-passage baseline (orange dashed) and random trigger (grey dotted). Right: summary of trigger quality across methods. DPR HotFlip achieves $+0.30$ over random and $+0.07$ over the centroid-only approximation.}}{6}{figure.caption.18}\protected@file@percent }
+\newlabel{fig:dpr_convergence}{{2}{6}{DPR HotFlip trigger optimization. Left: cosine similarity convergence over iterations (red) compared to centroid-passage baseline (orange dashed) and random trigger (grey dotted). Right: summary of trigger quality across methods. DPR HotFlip achieves $+0.30$ over random and $+0.07$ over the centroid-only approximation}{figure.caption.18}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {4.2}MINJA}{6}{subsection.4.2}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {4.3}InjecMEM}{6}{subsection.4.3}\protected@file@percent }
 \citation{zhao2024watermark}
 \citation{gao2019strip}
-\@writefile{toc}{\contentsline {subsection}{\numberline {4.3}InjecMEM}{6}{subsection.4.3}\protected@file@percent }
-\@writefile{toc}{\contentsline {subsection}{\numberline {4.4}Evaluation Setup}{6}{subsection.4.4}\protected@file@percent }
-\@writefile{toc}{\contentsline {section}{\numberline {5}Defense Mechanisms}{6}{section.5}\protected@file@percent }
-\newlabel{sec:defenses}{{5}{6}{Defense Mechanisms}{section.5}{}}
-\@writefile{toc}{\contentsline {subsection}{\numberline {5.1}Watermark Defense}{6}{subsection.5.1}\protected@file@percent }
-\@writefile{toc}{\contentsline {subsection}{\numberline {5.2}Input Validation Defense}{6}{subsection.5.2}\protected@file@percent }
-\@writefile{toc}{\contentsline {subsection}{\numberline {5.3}Proactive Defense}{6}{subsection.5.3}\protected@file@percent }
-\@writefile{toc}{\contentsline {subsection}{\numberline {5.4}Composite Defense}{6}{subsection.5.4}\protected@file@percent }
-\@writefile{toc}{\contentsline {subsection}{\numberline {5.5}Semantic Anomaly Detection (\textsc  {SAD}{})}{7}{subsection.5.5}\protected@file@percent }
-\newlabel{sec:sad}{{5.5}{7}{Semantic Anomaly Detection (\sad {})}{subsection.5.5}{}}
-\@writefile{toc}{\contentsline {paragraph}{Motivation.}{7}{section*.17}\protected@file@percent }
-\@writefile{toc}{\contentsline {paragraph}{Algorithm.}{7}{section*.18}\protected@file@percent }
-\newlabel{eq:sad_score}{{9}{7}{Algorithm}{equation.9}{}}
-\newlabel{eq:sad_threshold}{{10}{7}{Algorithm}{equation.10}{}}
-\@writefile{toc}{\contentsline {paragraph}{Properties.}{7}{section*.19}\protected@file@percent }
-\@writefile{toc}{\contentsline {paragraph}{Limitations.}{7}{section*.20}\protected@file@percent }
-\@writefile{toc}{\contentsline {subsection}{\numberline {5.6}Adaptive Adversary Analysis}{7}{subsection.5.6}\protected@file@percent }
-\newlabel{sec:adaptive}{{5.6}{7}{Adaptive Adversary Analysis}{subsection.5.6}{}}
-\@writefile{toc}{\contentsline {paragraph}{Adaptive attack formulation.}{7}{section*.21}\protected@file@percent }
-\newlabel{eq:adaptive_obj}{{11}{7}{Adaptive attack formulation}{equation.11}{}}
-\@writefile{toc}{\contentsline {paragraph}{Fundamental tension.}{7}{section*.22}\protected@file@percent }
-\@writefile{toc}{\contentsline {paragraph}{Empirical results.}{7}{section*.23}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {4.4}Evaluation Setup}{7}{subsection.4.4}\protected@file@percent }
+\@writefile{toc}{\contentsline {section}{\numberline {5}Defense Mechanisms}{7}{section.5}\protected@file@percent }
+\newlabel{sec:defenses}{{5}{7}{Defense Mechanisms}{section.5}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {5.1}Watermark Defense}{7}{subsection.5.1}\protected@file@percent }
+\newlabel{sec:watermark_defense}{{5.1}{7}{Watermark Defense}{subsection.5.1}{}}
+\newlabel{eq:z_score}{{9}{7}{Watermark Defense}{equation.9}{}}
+\@writefile{toc}{\contentsline {paragraph}{Character-level adaptation.}{7}{section*.19}\protected@file@percent }
+\@writefile{toc}{\contentsline {paragraph}{Token-level scheme (\textsc  {Tok-WM}).}{7}{section*.20}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {5.2}Input Validation Defense}{7}{subsection.5.2}\protected@file@percent }
+\@writefile{lof}{\contentsline {figure}{\numberline {3}{\ignorespaces Watermark scheme comparison. Left: z-score distributions for clean and watermarked texts under character-level and token-level schemes ($n=80$ samples each). Right: mean z-score (watermarked) vs.\ text length. The token-level scheme provides higher detection power at short lengths ($<200$ chars), where the character-level z-score can fall below the threshold. Both schemes approach $z \gg z_{\text  {thr}}$ for longer texts.}}{8}{figure.caption.21}\protected@file@percent }
+\newlabel{fig:watermark_comparison}{{3}{8}{Watermark scheme comparison. Left: z-score distributions for clean and watermarked texts under character-level and token-level schemes ($n=80$ samples each). Right: mean z-score (watermarked) vs.\ text length. The token-level scheme provides higher detection power at short lengths ($<200$ chars), where the character-level z-score can fall below the threshold. Both schemes approach $z \gg z_{\text {thr}}$ for longer texts}{figure.caption.21}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {5.3}Proactive Defense}{8}{subsection.5.3}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {5.4}Composite Defense}{8}{subsection.5.4}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {5.5}Semantic Anomaly Detection (\textsc  {SAD}{})}{8}{subsection.5.5}\protected@file@percent }
+\newlabel{sec:sad}{{5.5}{8}{Semantic Anomaly Detection (\sad {})}{subsection.5.5}{}}
+\@writefile{toc}{\contentsline {paragraph}{Motivation.}{8}{section*.22}\protected@file@percent }
+\@writefile{toc}{\contentsline {paragraph}{Algorithm.}{8}{section*.23}\protected@file@percent }
+\newlabel{eq:sad_score}{{11}{8}{Algorithm}{equation.11}{}}
+\newlabel{eq:sad_threshold}{{12}{8}{Algorithm}{equation.12}{}}
+\@writefile{toc}{\contentsline {paragraph}{Properties.}{8}{section*.24}\protected@file@percent }
 \citation{chen2024agentpoison}
 \citation{dong2025minja}
 \citation{injecmem2026}
-\@writefile{lot}{\contentsline {table}{\numberline {1}{\ignorespaces Attack evaluation results on synthetic memory corpus ($N=200$, $k=5$, seed-averaged over 5 trials). ASR-A$^*$ is modelled from paper-reported values. 95\% CI via percentile bootstrap (2000 replicates).}}{8}{table.caption.26}\protected@file@percent }
-\newlabel{tab:attack_results}{{1}{8}{Attack evaluation results on synthetic memory corpus ($N=200$, $k=5$, seed-averaged over 5 trials). ASR-A$^*$ is modelled from paper-reported values. 95\% CI via percentile bootstrap (2000 replicates)}{table.caption.26}{}}
-\@writefile{lof}{\contentsline {figure}{\numberline {2}{\ignorespaces Attack success rates (bootstrap 95\,\% CI over 5 seeds). Left group: $\text  {ASR-R}$; middle: $\text  {ASR-A}$ (modelled); right: $\text  {ASR-T}$. \textsc  {AgentPoison}{} dominates on retrieval ($\text  {ASR-R}=1.00$) but has lower $\text  {ASR-A}$ than \textsc  {MINJA}{} due to its blunter adversarial framing.}}{8}{figure.caption.27}\protected@file@percent }
-\newlabel{fig:attack_asr}{{2}{8}{Attack success rates (bootstrap 95\,\% CI over 5 seeds). Left group: $\asrr $; middle: $\asra $ (modelled); right: $\asrt $. \agentpoison {} dominates on retrieval ($\asrr =1.00$) but has lower $\asra $ than \minja {} due to its blunter adversarial framing}{figure.caption.27}{}}
-\@writefile{toc}{\contentsline {section}{\numberline {6}Experiments}{8}{section.6}\protected@file@percent }
-\newlabel{sec:experiments}{{6}{8}{Experiments}{section.6}{}}
-\@writefile{toc}{\contentsline {subsection}{\numberline {6.1}Setup}{8}{subsection.6.1}\protected@file@percent }
-\@writefile{toc}{\contentsline {paragraph}{Vector memory.}{8}{section*.24}\protected@file@percent }
-\@writefile{toc}{\contentsline {paragraph}{Evaluation.}{8}{section*.25}\protected@file@percent }
-\@writefile{toc}{\contentsline {subsection}{\numberline {6.2}Attack Results}{8}{subsection.6.2}\protected@file@percent }
-\newlabel{sec:attack_results}{{6.2}{8}{Attack Results}{subsection.6.2}{}}
-\@writefile{toc}{\contentsline {paragraph}{Evaluation correction for \textsc  {AgentPoison}{}.}{8}{table.caption.29}\protected@file@percent }
+\@writefile{toc}{\contentsline {paragraph}{Limitations.}{9}{section*.25}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {5.6}Adaptive Adversary Analysis}{9}{subsection.5.6}\protected@file@percent }
+\newlabel{sec:adaptive}{{5.6}{9}{Adaptive Adversary Analysis}{subsection.5.6}{}}
+\@writefile{toc}{\contentsline {paragraph}{Adaptive attack formulation.}{9}{section*.26}\protected@file@percent }
+\newlabel{eq:adaptive_obj}{{13}{9}{Adaptive attack formulation}{equation.13}{}}
+\@writefile{toc}{\contentsline {paragraph}{Fundamental tension.}{9}{section*.27}\protected@file@percent }
+\@writefile{toc}{\contentsline {paragraph}{Empirical results.}{9}{section*.28}\protected@file@percent }
+\@writefile{toc}{\contentsline {section}{\numberline {6}Experiments}{9}{section.6}\protected@file@percent }
+\newlabel{sec:experiments}{{6}{9}{Experiments}{section.6}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {6.1}Setup}{9}{subsection.6.1}\protected@file@percent }
+\@writefile{toc}{\contentsline {paragraph}{Vector memory.}{9}{section*.29}\protected@file@percent }
+\@writefile{toc}{\contentsline {paragraph}{Evaluation.}{9}{section*.30}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {6.2}Attack Results}{9}{subsection.6.2}\protected@file@percent }
+\newlabel{sec:attack_results}{{6.2}{9}{Attack Results}{subsection.6.2}{}}
 \citation{efron1993bootstrap}
-\@writefile{lot}{\contentsline {table}{\numberline {2}{\ignorespaces Impact of the triggered-query evaluation correction. Pre-fix: plain queries (no trigger). Post-fix: triggered queries ($q \oplus T^*$).}}{9}{table.caption.29}\protected@file@percent }
-\newlabel{tab:trigger_fix}{{2}{9}{Impact of the triggered-query evaluation correction. Pre-fix: plain queries (no trigger). Post-fix: triggered queries ($q \oplus \trigger ^*$)}{table.caption.29}{}}
-\@writefile{lot}{\contentsline {table}{\numberline {3}{\ignorespaces Attack success rate (ASR-R) under each defense (pre-ingestion filtering). Defense effectiveness = $1 - \text  {ASR-R}_{\text  {defended}} / \text  {ASR-R}_{\text  {baseline}}$.}}{9}{table.caption.30}\protected@file@percent }
-\newlabel{tab:attack_defense_matrix}{{3}{9}{Attack success rate (ASR-R) under each defense (pre-ingestion filtering). Defense effectiveness = $1 - \text {ASR-R}_{\text {defended}} / \text {ASR-R}_{\text {baseline}}$}{table.caption.30}{}}
-\@writefile{toc}{\contentsline {subsection}{\numberline {6.3}Attack-Defense Interaction Matrix}{9}{subsection.6.3}\protected@file@percent }
-\newlabel{sec:matrix}{{6.3}{9}{Attack-Defense Interaction Matrix}{subsection.6.3}{}}
-\@writefile{toc}{\contentsline {subsection}{\numberline {6.4}Statistical Analysis}{9}{subsection.6.4}\protected@file@percent }
-\newlabel{sec:statistical}{{6.4}{9}{Statistical Analysis}{subsection.6.4}{}}
-\@writefile{toc}{\contentsline {subsection}{\numberline {6.5}Adaptive Adversary Results}{9}{subsection.6.5}\protected@file@percent }
-\newlabel{sec:adaptive_results}{{6.5}{9}{Adaptive Adversary Results}{subsection.6.5}{}}
-\@writefile{toc}{\contentsline {paragraph}{Key finding.}{9}{section*.36}\protected@file@percent }
-\@writefile{toc}{\contentsline {subsection}{\numberline {6.6}Watermark Evasion}{9}{subsection.6.6}\protected@file@percent }
-\@writefile{toc}{\contentsline {subsection}{\numberline {6.7}Ablation Studies}{9}{subsection.6.7}\protected@file@percent }
-\newlabel{sec:ablation}{{6.7}{9}{Ablation Studies}{subsection.6.7}{}}
-\@writefile{lot}{\contentsline {table}{\numberline {4}{\ignorespaces Defense detection rates: TPR (true positive — poison flagged) and FPR (false positive — benign flagged) per (attack, defense) pair.}}{10}{table.caption.31}\protected@file@percent }
-\newlabel{tab:defense_tpr_fpr}{{4}{10}{Defense detection rates: TPR (true positive — poison flagged) and FPR (false positive — benign flagged) per (attack, defense) pair}{table.caption.31}{}}
-\@writefile{lof}{\contentsline {figure}{\numberline {3}{\ignorespaces Attack-defense interaction matrix: $\text  {ASR-R}$ under each defense (columns) for each attack (rows). Darker shading indicates higher defender-side risk (higher ASR-R despite defense). No single column achieves uniformly low values, motivating composite portfolios.}}{10}{figure.caption.32}\protected@file@percent }
-\newlabel{fig:ad_matrix}{{3}{10}{Attack-defense interaction matrix: $\asrr $ under each defense (columns) for each attack (rows). Darker shading indicates higher defender-side risk (higher ASR-R despite defense). No single column achieves uniformly low values, motivating composite portfolios}{figure.caption.32}{}}
-\@writefile{toc}{\contentsline {paragraph}{Corpus size.}{10}{section*.38}\protected@file@percent }
-\@writefile{toc}{\contentsline {paragraph}{Retrieval top-$k$.}{10}{section*.39}\protected@file@percent }
-\@writefile{toc}{\contentsline {paragraph}{Poison count.}{10}{section*.40}\protected@file@percent }
-\@writefile{toc}{\contentsline {paragraph}{\textsc  {SAD}{} threshold $k$.}{10}{section*.41}\protected@file@percent }
-\@writefile{toc}{\contentsline {section}{\numberline {7}Discussion}{10}{section.7}\protected@file@percent }
-\newlabel{sec:discussion}{{7}{10}{Discussion}{section.7}{}}
-\@writefile{toc}{\contentsline {paragraph}{No single defense dominates.}{10}{section*.43}\protected@file@percent }
-\@writefile{toc}{\contentsline {paragraph}{Why SAD is difficult against centroid-targeting attacks.}{10}{section*.44}\protected@file@percent }
-\citation{chen2024agentpoison}
-\@writefile{lot}{\contentsline {table}{\numberline {5}{\ignorespaces Pairwise hypothesis tests on $\text  {ASR-R}$ across 5 seeds. All pairs are significantly different ($p < 0.05$).}}{11}{table.caption.33}\protected@file@percent }
-\newlabel{tab:hypothesis}{{5}{11}{Pairwise hypothesis tests on $\asrr $ across 5 seeds. All pairs are significantly different ($p < 0.05$)}{table.caption.33}{}}
-\@writefile{lot}{\contentsline {table}{\numberline {6}{\ignorespaces Adaptive adversary evaluation against SAD. The adversary applies greedy synonym substitution to craft passages below the detection threshold ($k=2$). Evasion Rate = fraction of poison entries below threshold; Retrieval Degradation = ASR-R loss.}}{11}{table.caption.34}\protected@file@percent }
-\newlabel{tab:adaptive_sad}{{6}{11}{Adaptive adversary evaluation against SAD. The adversary applies greedy synonym substitution to craft passages below the detection threshold ($k=2$). Evasion Rate = fraction of poison entries below threshold; Retrieval Degradation = ASR-R loss}{table.caption.34}{}}
-\@writefile{toc}{\contentsline {paragraph}{Trigger prepending is a fundamental protocol requirement.}{11}{section*.45}\protected@file@percent }
-\@writefile{toc}{\contentsline {paragraph}{Centroid passage approximation.}{11}{section*.46}\protected@file@percent }
-\@writefile{toc}{\contentsline {paragraph}{Generalization across embedding models and memory architectures.}{11}{section*.47}\protected@file@percent }
-\@writefile{toc}{\contentsline {paragraph}{Deployment recommendations.}{11}{section*.48}\protected@file@percent }
-\citation{zhao2024watermark}
-\citation{chen2024agentpoison}
-\citation{zhao2024watermark}
+\@writefile{lot}{\contentsline {table}{\numberline {1}{\ignorespaces Attack evaluation results on synthetic memory corpus ($N=200$, $k=5$, seed-averaged over 5 trials). ASR-A$^*$ is modelled from paper-reported values. 95\% CI via percentile bootstrap (2000 replicates).}}{10}{table.caption.31}\protected@file@percent }
+\newlabel{tab:attack_results}{{1}{10}{Attack evaluation results on synthetic memory corpus ($N=200$, $k=5$, seed-averaged over 5 trials). ASR-A$^*$ is modelled from paper-reported values. 95\% CI via percentile bootstrap (2000 replicates)}{table.caption.31}{}}
+\@writefile{lof}{\contentsline {figure}{\numberline {4}{\ignorespaces Attack success rates (bootstrap 95\,\% CI over 5 seeds). Left group: $\text  {ASR-R}$; middle: $\text  {ASR-A}$ (modelled); right: $\text  {ASR-T}$. \textsc  {AgentPoison}{} dominates on retrieval ($\text  {ASR-R}=1.00$) but has lower $\text  {ASR-A}$ than \textsc  {MINJA}{} due to its blunter adversarial framing.}}{10}{figure.caption.32}\protected@file@percent }
+\newlabel{fig:attack_asr}{{4}{10}{Attack success rates (bootstrap 95\,\% CI over 5 seeds). Left group: $\asrr $; middle: $\asra $ (modelled); right: $\asrt $. \agentpoison {} dominates on retrieval ($\asrr =1.00$) but has lower $\asra $ than \minja {} due to its blunter adversarial framing}{figure.caption.32}{}}
+\@writefile{toc}{\contentsline {paragraph}{Evaluation correction for \textsc  {AgentPoison}{}.}{10}{table.caption.34}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {6.3}Attack-Defense Interaction Matrix}{10}{subsection.6.3}\protected@file@percent }
+\newlabel{sec:matrix}{{6.3}{10}{Attack-Defense Interaction Matrix}{subsection.6.3}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {6.4}Statistical Analysis}{10}{subsection.6.4}\protected@file@percent }
+\newlabel{sec:statistical}{{6.4}{10}{Statistical Analysis}{subsection.6.4}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {6.5}Adaptive Adversary Results}{10}{subsection.6.5}\protected@file@percent }
+\newlabel{sec:adaptive_results}{{6.5}{10}{Adaptive Adversary Results}{subsection.6.5}{}}
+\@writefile{toc}{\contentsline {paragraph}{Key finding.}{10}{section*.41}\protected@file@percent }
+\@writefile{lot}{\contentsline {table}{\numberline {2}{\ignorespaces Impact of the triggered-query evaluation correction. Pre-fix: plain queries (no trigger). Post-fix: triggered queries ($q \oplus T^*$).}}{11}{table.caption.34}\protected@file@percent }
+\newlabel{tab:trigger_fix}{{2}{11}{Impact of the triggered-query evaluation correction. Pre-fix: plain queries (no trigger). Post-fix: triggered queries ($q \oplus \trigger ^*$)}{table.caption.34}{}}
+\@writefile{lot}{\contentsline {table}{\numberline {3}{\ignorespaces Attack success rate (ASR-R) under each defense (pre-ingestion filtering). Defense effectiveness = $1 - \text  {ASR-R}_{\text  {defended}} / \text  {ASR-R}_{\text  {baseline}}$.}}{11}{table.caption.35}\protected@file@percent }
+\newlabel{tab:attack_defense_matrix}{{3}{11}{Attack success rate (ASR-R) under each defense (pre-ingestion filtering). Defense effectiveness = $1 - \text {ASR-R}_{\text {defended}} / \text {ASR-R}_{\text {baseline}}$}{table.caption.35}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {6.6}Watermark Evasion}{11}{subsection.6.6}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {6.7}Ablation Studies}{11}{subsection.6.7}\protected@file@percent }
+\newlabel{sec:ablation}{{6.7}{11}{Ablation Studies}{subsection.6.7}{}}
+\@writefile{toc}{\contentsline {paragraph}{Corpus size.}{11}{section*.43}\protected@file@percent }
+\@writefile{toc}{\contentsline {paragraph}{Retrieval top-$k$.}{11}{section*.44}\protected@file@percent }
+\@writefile{toc}{\contentsline {paragraph}{Poison count.}{11}{section*.45}\protected@file@percent }
+\@writefile{toc}{\contentsline {paragraph}{\textsc  {SAD}{} threshold $k$.}{11}{section*.46}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {6.8}Phase 17: DPR Optimization, Token-Level Watermark, and Live Agent Evaluation}{11}{subsection.6.8}\protected@file@percent }
+\newlabel{sec:phase17_results}{{6.8}{11}{Phase 17: DPR Optimization, Token-Level Watermark, and Live Agent Evaluation}{subsection.6.8}{}}
+\@writefile{toc}{\contentsline {paragraph}{DPR HotFlip trigger optimization.}{11}{section*.48}\protected@file@percent }
+\@writefile{lot}{\contentsline {table}{\numberline {4}{\ignorespaces Defense detection rates: TPR (true positive — poison flagged) and FPR (false positive — benign flagged) per (attack, defense) pair.}}{12}{table.caption.36}\protected@file@percent }
+\newlabel{tab:defense_tpr_fpr}{{4}{12}{Defense detection rates: TPR (true positive — poison flagged) and FPR (false positive — benign flagged) per (attack, defense) pair}{table.caption.36}{}}
+\@writefile{lof}{\contentsline {figure}{\numberline {5}{\ignorespaces Attack-defense interaction matrix: $\text  {ASR-R}$ under each defense (columns) for each attack (rows). Darker shading indicates higher defender-side risk (higher ASR-R despite defense). No single column achieves uniformly low values, motivating composite portfolios.}}{12}{figure.caption.37}\protected@file@percent }
+\newlabel{fig:ad_matrix}{{5}{12}{Attack-defense interaction matrix: $\asrr $ under each defense (columns) for each attack (rows). Darker shading indicates higher defender-side risk (higher ASR-R despite defense). No single column achieves uniformly low values, motivating composite portfolios}{figure.caption.37}{}}
+\@writefile{toc}{\contentsline {paragraph}{Token-level watermark comparison.}{12}{section*.49}\protected@file@percent }
+\@writefile{toc}{\contentsline {paragraph}{Measured ASR-A from local agent evaluation.}{12}{section*.50}\protected@file@percent }
+\@writefile{toc}{\contentsline {section}{\numberline {7}Discussion}{12}{section.7}\protected@file@percent }
+\newlabel{sec:discussion}{{7}{12}{Discussion}{section.7}{}}
+\@writefile{toc}{\contentsline {paragraph}{No single defense dominates.}{12}{section*.52}\protected@file@percent }
+\@writefile{lot}{\contentsline {table}{\numberline {5}{\ignorespaces Pairwise hypothesis tests on $\text  {ASR-R}$ across 5 seeds. All pairs are significantly different ($p < 0.05$).}}{13}{table.caption.38}\protected@file@percent }
+\newlabel{tab:hypothesis}{{5}{13}{Pairwise hypothesis tests on $\asrr $ across 5 seeds. All pairs are significantly different ($p < 0.05$)}{table.caption.38}{}}
+\@writefile{lot}{\contentsline {table}{\numberline {6}{\ignorespaces Adaptive adversary evaluation against SAD. The adversary applies greedy synonym substitution to craft passages below the detection threshold ($k=2$). Evasion Rate = fraction of poison entries below threshold; Retrieval Degradation = ASR-R loss.}}{13}{table.caption.39}\protected@file@percent }
+\newlabel{tab:adaptive_sad}{{6}{13}{Adaptive adversary evaluation against SAD. The adversary applies greedy synonym substitution to craft passages below the detection threshold ($k=2$). Evasion Rate = fraction of poison entries below threshold; Retrieval Degradation = ASR-R loss}{table.caption.39}{}}
+\@writefile{toc}{\contentsline {paragraph}{Why SAD is difficult against centroid-targeting attacks.}{13}{section*.53}\protected@file@percent }
+\@writefile{toc}{\contentsline {paragraph}{Trigger prepending is a fundamental protocol requirement.}{13}{section*.54}\protected@file@percent }
+\@writefile{toc}{\contentsline {paragraph}{DPR trigger optimization and the centroid approximation.}{13}{section*.55}\protected@file@percent }
+\@writefile{toc}{\contentsline {paragraph}{Generalization across embedding models and memory architectures.}{13}{section*.56}\protected@file@percent }
 \citation{memorygraft2025}
 \citation{amemguard2025}
-\@writefile{lof}{\contentsline {figure}{\numberline {4}{\ignorespaces Adaptive adversary tradeoff: evasion rate vs.\ retrieval degradation $\Delta \text  {ASR-R}$ at increasing synonym-substitution budgets. Each point is one budget level. The negative slope confirms the fundamental tension: evasion always incurs a retrieval cost.}}{12}{figure.caption.35}\protected@file@percent }
-\newlabel{fig:adaptive_tradeoff}{{4}{12}{Adaptive adversary tradeoff: evasion rate vs.\ retrieval degradation $\Delta \asrr $ at increasing synonym-substitution budgets. Each point is one budget level. The negative slope confirms the fundamental tension: evasion always incurs a retrieval cost}{figure.caption.35}{}}
-\@writefile{lof}{\contentsline {figure}{\numberline {5}{\ignorespaces Watermark evasion analysis across three strategies: paraphrasing (varying synonym substitution intensity $\rho $), copy-paste dilution (dilution ratio $r$), and adaptive character substitution (budget $b$). $\text  {TPR}$ curves show that the unigram z-score defense remains robust ($\text  {TPR}> 0.80$) at low intensity/budget but degrades at aggressive evasion.}}{12}{figure.caption.37}\protected@file@percent }
-\newlabel{fig:evasion_analysis}{{5}{12}{Watermark evasion analysis across three strategies: paraphrasing (varying synonym substitution intensity $\rho $), copy-paste dilution (dilution ratio $r$), and adaptive character substitution (budget $b$). $\tpr $ curves show that the unigram z-score defense remains robust ($\tpr > 0.80$) at low intensity/budget but degrades at aggressive evasion}{figure.caption.37}{}}
-\@writefile{toc}{\contentsline {paragraph}{Limitations.}{12}{section*.49}\protected@file@percent }
-\@writefile{toc}{\contentsline {paragraph}{Future work.}{12}{section*.50}\protected@file@percent }
-\@writefile{toc}{\contentsline {section}{\numberline {8}Conclusion}{12}{section.8}\protected@file@percent }
-\newlabel{sec:conclusion}{{8}{12}{Conclusion}{section.8}{}}
-\newlabel{fig:sad_ablation}{{6a}{13}{\sad {} threshold $k$ vs.\ TPR/FPR}{figure.caption.42}{}}
-\newlabel{sub@fig:sad_ablation}{{a}{13}{\sad {} threshold $k$ vs.\ TPR/FPR}{figure.caption.42}{}}
-\newlabel{fig:corpus_ablation}{{6b}{13}{Corpus size $N$ vs.\ $\asrr $}{figure.caption.42}{}}
-\newlabel{sub@fig:corpus_ablation}{{b}{13}{Corpus size $N$ vs.\ $\asrr $}{figure.caption.42}{}}
-\@writefile{lof}{\contentsline {figure}{\numberline {6}{\ignorespaces Ablation curves. Left: \textsc  {SAD}{} threshold $k$ controls the TPR/FPR tradeoff; $k=2.0$ (vertical dashed) achieves $\text  {TPR}\!\approx \!0.85$, $\text  {FPR}\!\approx \!0.05$. Right: ASR-R for all three attacks is largely independent of benign corpus size $N$ (50--500 entries), confirming poison entries are extreme similarity outliers.}}{13}{figure.caption.42}\protected@file@percent }
-\newlabel{fig:ablation_combined}{{6}{13}{Ablation curves. Left: \sad {} threshold $k$ controls the TPR/FPR tradeoff; $k=2.0$ (vertical dashed) achieves $\tpr \!\approx \!0.85$, $\fpr \!\approx \!0.05$. Right: ASR-R for all three attacks is largely independent of benign corpus size $N$ (50--500 entries), confirming poison entries are extreme similarity outliers}{figure.caption.42}{}}
-\@writefile{toc}{\contentsline {paragraph}{Open challenges.}{13}{section*.51}\protected@file@percent }
-\@writefile{toc}{\contentsline {paragraph}{Reproducibility.}{13}{section*.52}\protected@file@percent }
+\@writefile{lof}{\contentsline {figure}{\numberline {6}{\ignorespaces Adaptive adversary tradeoff: evasion rate vs.\ retrieval degradation $\Delta \text  {ASR-R}$ at increasing synonym-substitution budgets. Each point is one budget level. The negative slope confirms the fundamental tension: evasion always incurs a retrieval cost.}}{14}{figure.caption.40}\protected@file@percent }
+\newlabel{fig:adaptive_tradeoff}{{6}{14}{Adaptive adversary tradeoff: evasion rate vs.\ retrieval degradation $\Delta \asrr $ at increasing synonym-substitution budgets. Each point is one budget level. The negative slope confirms the fundamental tension: evasion always incurs a retrieval cost}{figure.caption.40}{}}
+\@writefile{lof}{\contentsline {figure}{\numberline {7}{\ignorespaces Watermark evasion analysis across three strategies: paraphrasing (varying synonym substitution intensity $\rho $), copy-paste dilution (dilution ratio $r$), and adaptive character substitution (budget $b$). $\text  {TPR}$ curves show that the unigram z-score defense remains robust ($\text  {TPR}> 0.80$) at low intensity/budget but degrades at aggressive evasion.}}{14}{figure.caption.42}\protected@file@percent }
+\newlabel{fig:evasion_analysis}{{7}{14}{Watermark evasion analysis across three strategies: paraphrasing (varying synonym substitution intensity $\rho $), copy-paste dilution (dilution ratio $r$), and adaptive character substitution (budget $b$). $\tpr $ curves show that the unigram z-score defense remains robust ($\tpr > 0.80$) at low intensity/budget but degrades at aggressive evasion}{figure.caption.42}{}}
+\@writefile{toc}{\contentsline {paragraph}{Deployment recommendations.}{14}{section*.57}\protected@file@percent }
+\@writefile{toc}{\contentsline {paragraph}{Limitations.}{14}{section*.58}\protected@file@percent }
+\@writefile{toc}{\contentsline {paragraph}{Future work.}{14}{section*.59}\protected@file@percent }
+\citation{ebrahimi2018hotflip,chen2024agentpoison}
+\citation{zhao2024watermark}
+\newlabel{fig:sad_ablation}{{8a}{15}{\sad {} threshold $k$ vs.\ TPR/FPR}{figure.caption.47}{}}
+\newlabel{sub@fig:sad_ablation}{{a}{15}{\sad {} threshold $k$ vs.\ TPR/FPR}{figure.caption.47}{}}
+\newlabel{fig:corpus_ablation}{{8b}{15}{Corpus size $N$ vs.\ $\asrr $}{figure.caption.47}{}}
+\newlabel{sub@fig:corpus_ablation}{{b}{15}{Corpus size $N$ vs.\ $\asrr $}{figure.caption.47}{}}
+\@writefile{lof}{\contentsline {figure}{\numberline {8}{\ignorespaces Ablation curves. Left: \textsc  {SAD}{} threshold $k$ controls the TPR/FPR tradeoff; $k=2.0$ (vertical dashed) achieves $\text  {TPR}\!\approx \!0.85$, $\text  {FPR}\!\approx \!0.05$. Right: ASR-R for all three attacks is largely independent of benign corpus size $N$ (50--500 entries), confirming poison entries are extreme similarity outliers.}}{15}{figure.caption.47}\protected@file@percent }
+\newlabel{fig:ablation_combined}{{8}{15}{Ablation curves. Left: \sad {} threshold $k$ controls the TPR/FPR tradeoff; $k=2.0$ (vertical dashed) achieves $\tpr \!\approx \!0.85$, $\fpr \!\approx \!0.05$. Right: ASR-R for all three attacks is largely independent of benign corpus size $N$ (50--500 entries), confirming poison entries are extreme similarity outliers}{figure.caption.47}{}}
+\@writefile{toc}{\contentsline {section}{\numberline {8}Conclusion}{15}{section.8}\protected@file@percent }
+\newlabel{sec:conclusion}{{8}{15}{Conclusion}{section.8}{}}
+\@writefile{toc}{\contentsline {paragraph}{Open challenges.}{15}{section*.60}\protected@file@percent }
 \bibdata{references}
 \bibcite{amem}{{1}{2025}{{A-MEM Team}}{{}}}
 \bibcite{memorygraft2025}{{2}{2025}{{Anonymous}}{{}}}
@@ -192,6 +206,9 @@
 \bibcite{arzanipour2025ragsecurity}{{4}{2025}{{Arzanipour et~al.}}{{Arzanipour, Behnia, Ebrahimi, and Dutta}}}
 \bibcite{carlini2024poisoning}{{5}{2024}{{Carlini et~al.}}{{Carlini, Tram\`er, Brendel, et~al.}}}
 \bibcite{chaudhari2024phantom}{{6}{2024}{{Chaudhari et~al.}}{{Chaudhari, Severi, Abascal, Oprea, Vempala, and Melis}}}
+\@writefile{lof}{\contentsline {figure}{\numberline {9}{\ignorespaces Modelled vs.\ measured $\text  {ASR-A}$ for all three attacks. Solid bars: modelled values calibrated to paper-reported means. Shaded bars: directly measured via GPT-2 agent (\textsc  {LocalAgentEvaluator}), providing a lower bound on true $\text  {ASR-A}$. The gap ($0.26$--$0.28$) quantifies the difference between a weak local proxy and production-scale LLM instruction following.}}{16}{figure.caption.51}\protected@file@percent }
+\newlabel{fig:measured_asr}{{9}{16}{Modelled vs.\ measured $\asra $ for all three attacks. Solid bars: modelled values calibrated to paper-reported means. Shaded bars: directly measured via GPT-2 agent (\textsc {LocalAgentEvaluator}), providing a lower bound on true $\asra $. The gap ($0.26$--$0.28$) quantifies the difference between a weak local proxy and production-scale LLM instruction following}{figure.caption.51}{}}
+\@writefile{toc}{\contentsline {paragraph}{Reproducibility.}{16}{section*.61}\protected@file@percent }
 \bibcite{chen2024agentpoison}{{7}{2024}{{Chen et~al.}}{{Chen, Tan, Zhao, Cheng, Jiang, Zhang, et~al.}}}
 \bibcite{dong2025minja}{{8}{2025}{{Dong et~al.}}{{}}}
 \bibcite{ebrahimi2018hotflip}{{9}{2018}{{Ebrahimi et~al.}}{{Ebrahimi, Rao, Lowd, and Dou}}}
@@ -222,37 +239,37 @@
 \bibcite{zhao2024watermark}{{34}{2024}{{Zhao et~al.}}{{Zhao, Ananth, Li, and Wang}}}
 \bibcite{zou2024poisonedrag}{{35}{2024}{{Zou et~al.}}{{Zou, Geng, Wang, and Jia}}}
 \bibstyle{plainnat}
-\@writefile{lot}{\contentsline {table}{\numberline {7}{\ignorespaces Watermark evasion results. TPR before and after evasion, and fraction of samples where evasion succeeded ($z < z_{\text  {thr}}$).}}{16}{table.caption.54}\protected@file@percent }
-\newlabel{tab:evasion}{{7}{16}{Watermark evasion results. TPR before and after evasion, and fraction of samples where evasion succeeded ($z < z_{\text {thr}}$)}{table.caption.54}{}}
-\@writefile{toc}{\contentsline {section}{\numberline {A}Additional Results}{16}{appendix.A}\protected@file@percent }
-\newlabel{sec:appendix}{{A}{16}{Additional Results}{appendix.A}{}}
-\@writefile{toc}{\contentsline {subsection}{\numberline {A.1}Watermark Evasion Evaluation}{16}{subsection.A.1}\protected@file@percent }
-\newlabel{sec:evasion_appendix}{{A.1}{16}{Watermark Evasion Evaluation}{subsection.A.1}{}}
-\@writefile{lof}{\contentsline {figure}{\numberline {7}{\ignorespaces Watermark evasion analysis across three strategies at increasing intensity. The unigram z-score defense maintains $\text  {TPR}=1.00$ across all tested intensity levels on the synthetic corpus, confirming robustness against mild evasion. More aggressive strategies (large $\rho $ or high character-swap budget) that would reduce $\text  {TPR}$ also visibly degrade the adversarial passage quality.}}{16}{figure.caption.55}\protected@file@percent }
-\newlabel{fig:evasion_full}{{7}{16}{Watermark evasion analysis across three strategies at increasing intensity. The unigram z-score defense maintains $\tpr =1.00$ across all tested intensity levels on the synthetic corpus, confirming robustness against mild evasion. More aggressive strategies (large $\rho $ or high character-swap budget) that would reduce $\tpr $ also visibly degrade the adversarial passage quality}{figure.caption.55}{}}
-\@writefile{lof}{\contentsline {figure}{\numberline {8}{\ignorespaces $z$-score distributions for watermarked (shaded) and clean (outline) entries. The unigram watermark produces a clear separation; the detection threshold (vertical dashed line) achieves $\text  {TPR}=1.00$ with $\text  {FPR}< 0.05$ on the synthetic corpus.}}{17}{figure.caption.56}\protected@file@percent }
-\newlabel{fig:wm_distribution}{{8}{17}{$z$-score distributions for watermarked (shaded) and clean (outline) entries. The unigram watermark produces a clear separation; the detection threshold (vertical dashed line) achieves $\tpr =1.00$ with $\fpr < 0.05$ on the synthetic corpus}{figure.caption.56}{}}
-\@writefile{toc}{\contentsline {subsection}{\numberline {A.2}Synthetic Corpus Details}{17}{subsection.A.2}\protected@file@percent }
-\newlabel{sec:corpus_appendix}{{A.2}{17}{Synthetic Corpus Details}{subsection.A.2}{}}
-\@writefile{toc}{\contentsline {subsection}{\numberline {A.3}Hyperparameter Sensitivity}{17}{subsection.A.3}\protected@file@percent }
-\newlabel{sec:ablation_appendix}{{A.3}{17}{Hyperparameter Sensitivity}{subsection.A.3}{}}
-\@writefile{toc}{\contentsline {paragraph}{Corpus size ($N$).}{17}{section*.58}\protected@file@percent }
-\@writefile{toc}{\contentsline {paragraph}{Retrieval top-$k$.}{17}{section*.59}\protected@file@percent }
-\@writefile{toc}{\contentsline {paragraph}{Poison count.}{17}{section*.61}\protected@file@percent }
-\@writefile{lof}{\contentsline {figure}{\numberline {9}{\ignorespaces Watermark detection performance as a function of $z$-threshold. TPR (solid) and FPR (dashed) as the threshold varies. The default threshold ($z=4.0$, vertical dashed) achieves $\text  {TPR}\approx 0.90$, $\text  {FPR}\approx 0.03$.}}{18}{figure.caption.57}\protected@file@percent }
-\newlabel{fig:wm_threshold}{{9}{18}{Watermark detection performance as a function of $z$-threshold. TPR (solid) and FPR (dashed) as the threshold varies. The default threshold ($z=4.0$, vertical dashed) achieves $\tpr \approx 0.90$, $\fpr \approx 0.03$}{figure.caption.57}{}}
-\@writefile{lot}{\contentsline {table}{\numberline {8}{\ignorespaces Hyperparameter ablation summary. Each row corresponds to one setting of the ablated parameter.}}{18}{table.caption.66}\protected@file@percent }
-\newlabel{tab:ablation}{{8}{18}{Hyperparameter ablation summary. Each row corresponds to one setting of the ablated parameter}{table.caption.66}{}}
-\@writefile{toc}{\contentsline {paragraph}{\textsc  {SAD}{} threshold $k$.}{18}{section*.62}\protected@file@percent }
-\@writefile{toc}{\contentsline {paragraph}{Watermark $z$-threshold.}{18}{section*.64}\protected@file@percent }
-\@writefile{toc}{\contentsline {subsection}{\numberline {A.4}Bootstrap CI Computation}{18}{subsection.A.4}\protected@file@percent }
-\newlabel{sec:bootstrap}{{A.4}{18}{Bootstrap CI Computation}{subsection.A.4}{}}
-\@writefile{lof}{\contentsline {figure}{\numberline {10}{\ignorespaces ASR-R vs.\ corpus size $N$ for all three attacks. Results are averaged over 5 seeds at $n_{\text  {poison}}=5$, $k=5$.}}{19}{figure.caption.60}\protected@file@percent }
-\newlabel{fig:ablation_corpus}{{10}{19}{ASR-R vs.\ corpus size $N$ for all three attacks. Results are averaged over 5 seeds at $n_{\text {poison}}=5$, $k=5$}{figure.caption.60}{}}
-\@writefile{lof}{\contentsline {figure}{\numberline {11}{\ignorespaces ASR-R vs.\ retrieval top-$k$. \textsc  {AgentPoison}{} retains high ASR-R at all $k$ due to the trigger.}}{19}{figure.caption.60}\protected@file@percent }
-\newlabel{fig:ablation_topk}{{11}{19}{ASR-R vs.\ retrieval top-$k$. \agentpoison {} retains high ASR-R at all $k$ due to the trigger}{figure.caption.60}{}}
-\@writefile{lof}{\contentsline {figure}{\numberline {12}{\ignorespaces \textsc  {SAD}{} threshold $k$ vs.\ TPR and FPR. Larger $k$ reduces both TPR and FPR (stricter detection). The default $k=2.0$ (vertical dashed) achieves $\text  {TPR}\approx 0.85$, $\text  {FPR}\approx 0.05$.}}{19}{figure.caption.63}\protected@file@percent }
-\newlabel{fig:ablation_sad_sigma}{{12}{19}{\sad {} threshold $k$ vs.\ TPR and FPR. Larger $k$ reduces both TPR and FPR (stricter detection). The default $k=2.0$ (vertical dashed) achieves $\tpr \approx 0.85$, $\fpr \approx 0.05$}{figure.caption.63}{}}
-\@writefile{lof}{\contentsline {figure}{\numberline {13}{\ignorespaces Watermark $z$-threshold vs.\ TPR and FPR for watermarked entries. TPR remains near 1.00 for $z_{\mathrm  {thr}} \leq 5.0$ on the synthetic corpus; the default $z_{\mathrm  {thr}}=4.0$ (vertical dashed) achieves $\text  {TPR}\approx 0.90$, $\text  {FPR}\approx 0.03$.}}{19}{figure.caption.65}\protected@file@percent }
-\newlabel{fig:ablation_watermark_z}{{13}{19}{Watermark $z$-threshold vs.\ TPR and FPR for watermarked entries. TPR remains near 1.00 for $z_{\mathrm {thr}} \leq 5.0$ on the synthetic corpus; the default $z_{\mathrm {thr}}=4.0$ (vertical dashed) achieves $\tpr \approx 0.90$, $\fpr \approx 0.03$}{figure.caption.65}{}}
-\gdef \@abspage@last{19}
+\@writefile{toc}{\contentsline {section}{\numberline {A}Additional Results}{18}{appendix.A}\protected@file@percent }
+\newlabel{sec:appendix}{{A}{18}{Additional Results}{appendix.A}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {A.1}Watermark Evasion Evaluation}{18}{subsection.A.1}\protected@file@percent }
+\newlabel{sec:evasion_appendix}{{A.1}{18}{Watermark Evasion Evaluation}{subsection.A.1}{}}
+\@writefile{lot}{\contentsline {table}{\numberline {7}{\ignorespaces Watermark evasion results. TPR before and after evasion, and fraction of samples where evasion succeeded ($z < z_{\text  {thr}}$).}}{19}{table.caption.63}\protected@file@percent }
+\newlabel{tab:evasion}{{7}{19}{Watermark evasion results. TPR before and after evasion, and fraction of samples where evasion succeeded ($z < z_{\text {thr}}$)}{table.caption.63}{}}
+\@writefile{lof}{\contentsline {figure}{\numberline {10}{\ignorespaces Watermark evasion analysis across three strategies at increasing intensity. The unigram z-score defense maintains $\text  {TPR}=1.00$ across all tested intensity levels on the synthetic corpus, confirming robustness against mild evasion. More aggressive strategies (large $\rho $ or high character-swap budget) that would reduce $\text  {TPR}$ also visibly degrade the adversarial passage quality.}}{19}{figure.caption.64}\protected@file@percent }
+\newlabel{fig:evasion_full}{{10}{19}{Watermark evasion analysis across three strategies at increasing intensity. The unigram z-score defense maintains $\tpr =1.00$ across all tested intensity levels on the synthetic corpus, confirming robustness against mild evasion. More aggressive strategies (large $\rho $ or high character-swap budget) that would reduce $\tpr $ also visibly degrade the adversarial passage quality}{figure.caption.64}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {A.2}Synthetic Corpus Details}{19}{subsection.A.2}\protected@file@percent }
+\newlabel{sec:corpus_appendix}{{A.2}{19}{Synthetic Corpus Details}{subsection.A.2}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {A.3}Hyperparameter Sensitivity}{19}{subsection.A.3}\protected@file@percent }
+\newlabel{sec:ablation_appendix}{{A.3}{19}{Hyperparameter Sensitivity}{subsection.A.3}{}}
+\@writefile{toc}{\contentsline {paragraph}{Corpus size ($N$).}{19}{section*.67}\protected@file@percent }
+\@writefile{lof}{\contentsline {figure}{\numberline {11}{\ignorespaces $z$-score distributions for watermarked (shaded) and clean (outline) entries. The unigram watermark produces a clear separation; the detection threshold (vertical dashed line) achieves $\text  {TPR}=1.00$ with $\text  {FPR}< 0.05$ on the synthetic corpus.}}{20}{figure.caption.65}\protected@file@percent }
+\newlabel{fig:wm_distribution}{{11}{20}{$z$-score distributions for watermarked (shaded) and clean (outline) entries. The unigram watermark produces a clear separation; the detection threshold (vertical dashed line) achieves $\tpr =1.00$ with $\fpr < 0.05$ on the synthetic corpus}{figure.caption.65}{}}
+\@writefile{lot}{\contentsline {table}{\numberline {8}{\ignorespaces Hyperparameter ablation summary. Each row corresponds to one setting of the ablated parameter.}}{20}{table.caption.75}\protected@file@percent }
+\newlabel{tab:ablation}{{8}{20}{Hyperparameter ablation summary. Each row corresponds to one setting of the ablated parameter}{table.caption.75}{}}
+\@writefile{toc}{\contentsline {paragraph}{Retrieval top-$k$.}{20}{section*.68}\protected@file@percent }
+\@writefile{toc}{\contentsline {paragraph}{Poison count.}{20}{section*.70}\protected@file@percent }
+\@writefile{toc}{\contentsline {paragraph}{\textsc  {SAD}{} threshold $k$.}{20}{section*.71}\protected@file@percent }
+\@writefile{toc}{\contentsline {paragraph}{Watermark $z$-threshold.}{20}{section*.73}\protected@file@percent }
+\@writefile{lof}{\contentsline {figure}{\numberline {12}{\ignorespaces Watermark detection performance as a function of $z$-threshold. TPR (solid) and FPR (dashed) as the threshold varies. The default threshold ($z=4.0$, vertical dashed) achieves $\text  {TPR}\approx 0.90$, $\text  {FPR}\approx 0.03$.}}{21}{figure.caption.66}\protected@file@percent }
+\newlabel{fig:wm_threshold}{{12}{21}{Watermark detection performance as a function of $z$-threshold. TPR (solid) and FPR (dashed) as the threshold varies. The default threshold ($z=4.0$, vertical dashed) achieves $\tpr \approx 0.90$, $\fpr \approx 0.03$}{figure.caption.66}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {A.4}Bootstrap CI Computation}{21}{subsection.A.4}\protected@file@percent }
+\newlabel{sec:bootstrap}{{A.4}{21}{Bootstrap CI Computation}{subsection.A.4}{}}
+\@writefile{lof}{\contentsline {figure}{\numberline {13}{\ignorespaces ASR-R vs.\ corpus size $N$ for all three attacks. Results are averaged over 5 seeds at $n_{\text  {poison}}=5$, $k=5$.}}{22}{figure.caption.69}\protected@file@percent }
+\newlabel{fig:ablation_corpus}{{13}{22}{ASR-R vs.\ corpus size $N$ for all three attacks. Results are averaged over 5 seeds at $n_{\text {poison}}=5$, $k=5$}{figure.caption.69}{}}
+\@writefile{lof}{\contentsline {figure}{\numberline {14}{\ignorespaces ASR-R vs.\ retrieval top-$k$. \textsc  {AgentPoison}{} retains high ASR-R at all $k$ due to the trigger.}}{22}{figure.caption.69}\protected@file@percent }
+\newlabel{fig:ablation_topk}{{14}{22}{ASR-R vs.\ retrieval top-$k$. \agentpoison {} retains high ASR-R at all $k$ due to the trigger}{figure.caption.69}{}}
+\@writefile{lof}{\contentsline {figure}{\numberline {15}{\ignorespaces \textsc  {SAD}{} threshold $k$ vs.\ TPR and FPR. Larger $k$ reduces both TPR and FPR (stricter detection). The default $k=2.0$ (vertical dashed) achieves $\text  {TPR}\approx 0.85$, $\text  {FPR}\approx 0.05$.}}{22}{figure.caption.72}\protected@file@percent }
+\newlabel{fig:ablation_sad_sigma}{{15}{22}{\sad {} threshold $k$ vs.\ TPR and FPR. Larger $k$ reduces both TPR and FPR (stricter detection). The default $k=2.0$ (vertical dashed) achieves $\tpr \approx 0.85$, $\fpr \approx 0.05$}{figure.caption.72}{}}
+\@writefile{lof}{\contentsline {figure}{\numberline {16}{\ignorespaces Watermark $z$-threshold vs.\ TPR and FPR for watermarked entries. TPR remains near 1.00 for $z_{\mathrm  {thr}} \leq 5.0$ on the synthetic corpus; the default $z_{\mathrm  {thr}}=4.0$ (vertical dashed) achieves $\text  {TPR}\approx 0.90$, $\text  {FPR}\approx 0.03$.}}{22}{figure.caption.74}\protected@file@percent }
+\newlabel{fig:ablation_watermark_z}{{16}{22}{Watermark $z$-threshold vs.\ TPR and FPR for watermarked entries. TPR remains near 1.00 for $z_{\mathrm {thr}} \leq 5.0$ on the synthetic corpus; the default $z_{\mathrm {thr}}=4.0$ (vertical dashed) achieves $\tpr \approx 0.90$, $\fpr \approx 0.03$}{figure.caption.74}{}}
+\gdef \@abspage@last{22}

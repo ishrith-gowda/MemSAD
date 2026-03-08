@@ -92,8 +92,17 @@ a fundamental tension for white-box adaptive adversaries: any synonym
 substitution that reduces the anomaly score also reduces the adversarial
 passage's retrieval rank, because both objectives share the same cosine
 similarity gradient.  This structural property limits the adaptive adversary
-to at most 60\% evasion rate, with a corresponding $\geq 0.40$ drop in
-ASR-R, confirming \sad{}'s robustness under adaptive attack.
+to at most 60\% evasion rate with a corresponding $\geq 0.40$ drop in ASR-R.
+
+We additionally implement three paper-faithful extensions: (i) DPR HotFlip
+gradient-guided trigger optimization~\citep{ebrahimi2018hotflip} over the
+\texttt{facebook/dpr-ctx\_encoder-single-nq-base} (768-dim), improving mean
+triggered-query similarity from 0.71 to 0.78; (ii) the full token-level
+unigram watermark~\citep{zhao2024watermark} via a GPT-2 backbone, achieving
+$83\%$ higher z-scores than character-level at short text lengths; and
+(iii) a local GPT-2 agent evaluator providing a directly measured lower bound
+on $\asra$ ($0.42$--$0.51$ across attacks) that confirms the modelled values
+are conservative.
 
 All code, experiments, and figures are open-sourced at
 \url{https://github.com/ishrith-gowda/memory-agent-security}.

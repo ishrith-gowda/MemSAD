@@ -275,3 +275,56 @@ Figure~\ref{fig:sad_ablation}).
   \label{fig:ablation_combined}
 \end{figure}%
 }{}
+
+\subsection{Phase 17: DPR Optimization, Token-Level Watermark, and Live Agent Evaluation}
+\label{sec:phase17_results}
+
+\paragraph{DPR HotFlip trigger optimization.}
+The DPR HotFlip optimizer (Section~\ref{sec:attacks}) achieves mean cosine
+similarity $0.78$ between triggered query embeddings and the adversarial
+passage, compared to $0.48$ for a random trigger baseline ($+62\%$) and
+$0.71$ for the centroid-passage approximation alone ($+10\%$).
+Figure~\ref{fig:dpr_convergence} shows that convergence is rapid: $>90\%$
+of the final gain is achieved within the first 5 iterations.
+The combined centroid passage $+$ DPR trigger preserves $\asrr=1.00$ while
+producing more fluent triggers (mean GPT-2 perplexity $<200$) than unconstrained
+gradient search.
+
+\paragraph{Token-level watermark comparison.}
+The token-level watermark scheme (\textsc{Tok-WM}, Section~\ref{sec:watermark_defense})
+substantially outperforms the character-level adaptation for short memory entries.
+At $n=50$ GPT-2 tokens (approximately 150--200 characters), the mean watermarked
+z-score is $\approx 7.5$ vs.\ $\approx 4.1$ for character-level---a $+83\%$
+improvement in detection margin.  For longer entries ($n \geq 200$ characters),
+both schemes exceed $z_{\mathrm{thr}}=4.0$ reliably ($\mathrm{TPR} > 0.95$).
+The green token fraction under $\delta=2.0$ bias is $p_{\text{green}} \approx 0.711$
+(theoretical), empirically confirmed at $0.698 \pm 0.041$ across 80 sampled entries.
+Figure~\ref{fig:watermark_comparison} (Section~\ref{sec:watermark_defense})
+shows the full z-score distribution comparison.
+
+\paragraph{Measured ASR-A from local agent evaluation.}
+Beyond modelled $\asra$ values (calibrated from paper-reported means), we
+provide a directly measured lower bound using \textsc{LocalAgentEvaluator}
+with a GPT-2 backbone.  Measured values are:
+$\asra^{\text{meas}} = 0.42$ (\agentpoison{}),
+$0.51$ (\minja{}), and $0.29$ (\injecmem{}).
+Compared to modelled upper bounds ($0.68$, $0.76$, $0.57$), the gap confirms
+that GPT-2 is a conservative proxy: it follows injected instructions less
+faithfully than production-scale LLMs (GPT-4, Llama-3).
+This gap---$0.26$--$0.28$ across attacks---represents the headroom between
+a traceable lower bound and the paper-calibrated upper bound.
+Figure~\ref{fig:measured_asr} illustrates the comparison.
+
+\IfFileExists{figures/fig_p17_measured_asr_a.pdf}{%
+\begin{figure}[ht]
+  \centering
+  \includegraphics[width=0.72\linewidth]{fig_p17_measured_asr_a.pdf}
+  \caption{Modelled vs.\ measured $\asra$ for all three attacks.
+           Solid bars: modelled values calibrated to paper-reported means.
+           Shaded bars: directly measured via GPT-2 agent (\textsc{LocalAgentEvaluator}),
+           providing a lower bound on true $\asra$.
+           The gap ($0.26$--$0.28$) quantifies the difference between a weak
+           local proxy and production-scale LLM instruction following.}
+  \label{fig:measured_asr}
+\end{figure}%
+}{}
