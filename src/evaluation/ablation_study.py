@@ -424,11 +424,14 @@ class AblationStudy:
                                 generate_injecmem_passage(q, variant_index=i)
                             )
 
-                    # run sad
+                    # run sad: calibrate on benign entries, use victim queries as sample
                     det = SemanticAnomalyDetector(threshold_sigma=sigma)
-                    cal_sample = benign_texts[:10]
-                    det.calibrate(benign_texts, cal_sample)
-                    for q in victim_queries[:10]:
+                    victim_query_strs = [
+                        q if isinstance(q, str) else q.get("query", str(q))
+                        for q in victim_queries
+                    ]
+                    det.calibrate(benign_texts, victim_query_strs[:10])
+                    for q in victim_query_strs[:10]:
                         det.update_query_set(q)
 
                     result = det.evaluate_on_corpus(poison_entries, benign_texts[:20])
