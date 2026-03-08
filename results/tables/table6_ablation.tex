@@ -1,0 +1,21 @@
+\begin{table}[t]
+\centering
+\small
+\caption{Hyperparameter ablation summary.  Each row corresponds to one setting of the ablated parameter.}
+\label{tab:ablation}
+\begin{tabular}{lc|lc|lcc|lcc}
+\toprule
+\multicolumn{2}{c|}{Corpus} & \multicolumn{2}{c|}{Top-K} & \multicolumn{3}{c|}{SAD $k$} & \multicolumn{3}{c}{WM $z$-thr} \\
+$N$ & ASR-R & $k$ & ASR-R & $k$ & TPR & FPR & $z$ & TPR & FPR \\
+\midrule
+50 & 0.325 & 1 & 0.000 & 0.5 & 0.000 & 0.000 & 2.0 & 1.000 & 0.000 \\
+100 & 0.125 & 3 & 0.000 & 1.0 & 0.000 & 0.000 & 3.0 & 1.000 & 0.000 \\
+200 & 0.100 & 5 & 0.100 & 1.5 & 0.000 & 0.000 & 4.0 & 1.000 & 0.000 \\
+500 & 0.000 & 10 & 0.150 & 2.0 & 0.000 & 0.000 & 5.0 & 1.000 & 0.000 \\
+&  & 20 & 0.450 & 2.5 & 0.000 & 0.000 & 6.0 & 1.000 & 0.000 \\
+&  & &  & 3.0 & 0.000 & 0.000 & 7.0 & 1.000 & 0.000 \\
+&  & &  & 3.5 & 0.000 & 0.000 & & &  \\
+&  & &  & 4.0 & 0.000 & 0.000 & & &  \\
+\bottomrule
+\end{tabular}
+\end{table}

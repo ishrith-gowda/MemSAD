@@ -1,0 +1,16 @@
+\begin{table*}[t]
+\centering
+\small
+\caption{Defense detection rates: TPR (true positive — poison flagged) and FPR (false positive — benign flagged) per (attack, defense) pair.}
+\label{tab:defense_tpr_fpr}
+\begin{tabular}{l|cc|cc|cc|cc|cc}
+\toprule
+Attack & \multicolumn{2}{c}{Watermark} & \multicolumn{2}{c}{Validation} & \multicolumn{2}{c}{Proactive} & \multicolumn{2}{c}{Composite} & \multicolumn{2}{c}{SAD (Ours)} \\
+ & TPR & FPR & TPR & FPR & TPR & FPR & TPR & FPR & TPR & FPR \\
+\midrule
+AgentPoison & 1.000 & 0.860 & 1.000 & 0.000 & 1.000 & 1.000 & 1.000 & 1.000 & 0.000 & 0.047 \\
+MINJA & 1.000 & 0.860 & 1.000 & 0.000 & 1.000 & 1.000 & 1.000 & 1.000 & 1.000 & 0.047 \\
+InjecMEM & 1.000 & 0.860 & 0.000 & 0.000 & 1.000 & 1.000 & 1.000 & 1.000 & 0.200 & 0.047 \\
+\bottomrule
+\end{tabular}
+\end{table*}
