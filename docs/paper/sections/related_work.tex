@@ -15,25 +15,38 @@ protocol achieves ISR of 98.2\% across three experimental platforms.
 \citet{injecmem2026} propose a retriever-agnostic anchor strategy that achieves
 broad recall via topic-covering passages designed to match many query types,
 enabling injection in a single interaction.
+\citet{memorygraft2025} demonstrate that successful experiences stored in
+agent memory can be \emph{grafted}: an attacker implants a malicious
+``experience record'' that is later retrieved and replicated as a legitimate
+agent action, exploiting the union retrieval over lexical and embedding similarity.
 Concurrent work on tool-use manipulation~\citep{yang2024watch} shows that
 similar poisoning strategies transfer to agent tool selection, broadening
 the attack surface beyond memory retrieval.
+\citet{li2026memorypoisoning} provide an empirical comparison of memory
+poisoning attacks and defenses in EHR agents, confirming that attack
+effectiveness is largely robust to corpus size---consistent with our
+corpus-size ablation (Appendix~\ref{sec:ablation_appendix}).
 
 \paragraph{RAG corpus poisoning.}
 Retrieval-augmented generation (RAG) systems face analogous threats at the
 document corpus level.  \citet{zou2024poisonedrag} demonstrate that
 adversarial documents optimized via HotFlip~\citep{ebrahimi2018hotflip}
-can force specific LLM outputs when retrieved.  \citet{chaudhari2024phantom}
+can force specific LLM outputs when retrieved, achieving $> 90\%$ ASR
+at million-scale knowledge bases.  \citet{chaudhari2024phantom}
 construct phantom documents that match specific queries while appearing
-semantically benign to human inspection, achieving high attack success
-against commercial RAG systems.  \citet{xue2024badrag} show that a small
-number of adversarially crafted documents can redirect LLM answers across
-entire topic domains, a finding consistent with our corpus-size ablation
-showing that ASR-R is largely independent of benign corpus size.
+semantically benign to human inspection.  \citet{xue2024badrag} show
+that a small number of adversarially crafted documents can redirect LLM
+answers across entire topic domains, consistent with our corpus-size ablation.
+\citet{arzanipour2025ragsecurity} provide the first formal threat model
+for RAG systems, defining adversary access tiers and formally bounding
+the attack surface at the document and embedding levels.
+\citet{tan2025revprag} detect poisoned RAG responses via LLM activation
+analysis (ResNet18 on multi-layer activations), achieving $98\%$ TPR at
+$1\%$ FPR---a complementary detection signal to our query-similarity approach.
 Our work differs from RAG poisoning in that the adversarial entries are
-\emph{agent-generated and semantically coherent memories} rather than
-external documents, the threat persists across sessions, and defenses
-must operate without full corpus visibility.
+\emph{agent-generated, semantically coherent memories} rather than external
+documents, the threat persists across sessions without further adversarial
+interaction, and defenses must operate at write time without full corpus visibility.
 
 \paragraph{Backdoor attacks on neural retrieval.}
 Retrieval-based NLP systems are vulnerable to backdoor attacks beyond direct
@@ -87,6 +100,12 @@ share a common embedding-based vulnerability; our attack-defense matrix
 provides the first systematic cross-attack coverage in this setting.
 \citet{gu2019badnets} establish the foundational backdoor threat model
 that underlies our definition of memory poisoning (Definition~1).
+\citet{zhang2024asb} benchmark 10 prompt injection attacks, memory poisoning,
+and 11 defenses across 13 LLM backbones in the ASB framework; we adopt
+its matrix format and extend coverage to pre-ingestion filtering defenses.
+\citet{amemguard2025} propose a proactive defense combining consensus-based
+validation over multiple memory retrievals with a ``lessons learned'' store;
+their 95\% ASR reduction is complementary to our write-time filtering approach.
 
 \paragraph{Anomaly detection for adversarial inputs.}
 Our \sad{} defense draws on a line of anomaly detection work in NLP.
