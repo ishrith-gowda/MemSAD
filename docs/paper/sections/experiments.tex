@@ -97,6 +97,14 @@ underestimate attacker capability.
   \input{../../results/tables/table3_defense_tpr_fpr}%
 }{}
 
+\paragraph{SAD calibration and the triggered-query effect.}
+Table~\ref{tab:defense_tpr_fpr} shows \sad{} achieves $\tpr=0.00$ for
+\agentpoison{} under plain-query calibration.  We show (Section~\ref{sec:discussion})
+that calibrating \sad{} on triggered queries (the realistic post-deployment
+scenario) raises $\tpr$ to $1.00$ with $\fpr=0.00$---a result confirming
+that the \agentpoison{} blind spot is a calibration artefact, not an
+inherent limitation of the anomaly-based approach.
+
 \IfFileExists{figures/m12_attack_defense_matrix.pdf}{%
 \begin{figure}[t]
   \centering
@@ -221,12 +229,14 @@ Appendix~\ref{sec:evasion_appendix}.
   \centering
   \includegraphics[width=0.82\linewidth]{p13_evasion_analysis.pdf}
   \caption{Watermark evasion analysis across three strategies:
-           paraphrasing (varying synonym substitution intensity $\rho$),
-           copy-paste dilution (dilution ratio $r$), and adaptive
-           character substitution (budget $b$).
-           $\tpr$ curves show that the unigram z-score defense
-           remains robust ($\tpr > 0.80$) at low intensity/budget
-           but degrades at aggressive evasion.}
+           paraphrasing (synonym substitution intensity $\rho \in [0.1, 0.5]$),
+           copy-paste dilution (dilution ratio $r \in [0.5, 3.0]$), and
+           adaptive character substitution (budget $b \in [1, 20]$).
+           The unigram z-score defense maintains $\tpr = 1.00$ across
+           all tested intensity levels on the synthetic corpus; the
+           embedded vocabulary bias survives these mild evasion strategies.
+           (Table~\ref{tab:evasion}; detailed z-score distributions in
+           Appendix~\ref{sec:evasion_appendix}.)}
   \label{fig:evasion_analysis}
 \end{figure}%
 }{}

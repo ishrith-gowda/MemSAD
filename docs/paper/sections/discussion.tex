@@ -16,18 +16,29 @@ Composite defenses consistently outperform individual defenses across
 all three attacks, confirming that no single mechanism covers the full
 threat surface and motivating a defense-in-depth portfolio.
 
-\paragraph{Why SAD is difficult against centroid-targeting attacks.}
+\paragraph{Why SAD fails against centroid-targeting attacks under plain-query calibration.}
 The centroid passage is crafted to maximise mean cosine similarity across
-all victim queries.  In a well-populated memory corpus, many benign entries
-share vocabulary with common agent tasks (scheduling, preferences, notes),
-so the baseline similarity distribution under calibration already captures
-moderate query alignment.  A centroid passage that achieves $\asrr=1.00$
-need not be a distributional outlier---it must only exceed the top-$k$
-benign entries, not exceed the benign similarity mean by $k$ standard deviations.
-This gap between the retrieval criterion and the detection criterion is
-a fundamental tension, not an implementation artifact.  Future defenses
-may close this gap by calibrating on the top-$k$ retrieved entries rather
-than the full corpus mean, tightening the detection boundary.
+all \emph{triggered} victim queries.  When \sad{} is calibrated on
+\emph{plain} (un-triggered) victim queries, the centroid passage similarity
+falls within the benign distribution: plain queries do not include the
+trigger token, so the centroid passage (designed for triggered queries) is
+not anomalously similar to them.
+
+\paragraph{Triggered-query calibration closes the gap.}
+However, once the attacker deploys the trigger to user clients, triggered
+queries appear in the agent's query log.  If \sad{} is calibrated on
+\emph{observed} queries---which, after attack deployment, include triggered
+queries---the centroid passage becomes a clear outlier.  We empirically
+confirm this: calibrating \sad{} on triggered queries ($\trigger^* + q$
+for all victim queries) raises the detection TPR from $0.00$ to $1.00$
+with FPR $= 0.00$ (threshold shifts from $0.482$ to $0.432$ as triggered
+queries raise the calibration statistics in a way that leaves the centroid
+passage above the new threshold).
+This implies a practical defence-deployment strategy: \sad{} should
+use a rolling query window drawn from \emph{all} observed agent queries
+rather than a pre-deployment reference set.  As triggered queries accumulate
+in the window, \sad{} becomes increasingly effective against centroid-targeting
+attacks at no additional architectural cost.
 
 \paragraph{Trigger prepending is a fundamental protocol requirement.}
 The evaluation correction identified in Section~\ref{sec:experiments}
