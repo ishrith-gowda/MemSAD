@@ -168,6 +168,7 @@ class ComprehensiveEvaluator:
             corpus_size=self.corpus_size,
             n_poison=self.n_poison,
             top_k=self.top_k,
+            use_trigger_optimization=True,
         )
 
         attack_summaries: Dict[str, Any] = {}
@@ -235,7 +236,7 @@ class ComprehensiveEvaluator:
             corpus_size=self.corpus_size,
             n_poison=self.n_poison,
             top_k=self.top_k,
-            use_trigger_optimization=False,
+            use_trigger_optimization=True,
             seed=self.seed_base,
         )
 
