@@ -1,4 +1,4 @@
-\begin{thebibliography}{30}
+\begin{thebibliography}{35}
 \providecommand{\natexlab}[1]{#1}
 \providecommand{\url}[1]{\texttt{#1}}
 \expandafter\ifx\csname urlstyle\endcsname\relax
@@ -10,12 +10,27 @@
 \newblock {A-MEM}: Agentic memory for {LLM} agents, 2025.
 \newblock URL \url{https://github.com/agiresearch/A-MEM}.
 
+\bibitem[Anonymous(2025)]{memorygraft2025}
+Anonymous.
+\newblock {MemoryGraft}: Persistent compromise of {LLM} agents via poisoned
+  experience retrieval.
+\newblock \emph{arXiv preprint arXiv:2512.16962}, 2025.
+\newblock URL \url{https://arxiv.org/abs/2512.16962}.
+
 \bibitem[Anonymous(2026)]{injecmem2026}
 Anonymous.
 \newblock {InjecMEM}: Targeted memory injection with single interaction.
 \newblock In \emph{International Conference on Learning Representations
   (ICLR)}, 2026.
 \newblock Submission \texttt{openreview:QVX6hcJ2um}.
+
+\bibitem[Arzanipour et~al.(2025)Arzanipour, Behnia, Ebrahimi, and
+  Dutta]{arzanipour2025ragsecurity}
+Atousa Arzanipour, Rouzbeh Behnia, Reza Ebrahimi, and Kaushik Dutta.
+\newblock {RAG} security and privacy: Formalizing the threat model and attack
+  surface.
+\newblock \emph{arXiv preprint arXiv:2509.20324}, 2025.
+\newblock URL \url{https://arxiv.org/abs/2509.20324}.
 
 \bibitem[Carlini et~al.(2024)Carlini, Tram\`er, Brendel,
   et~al.]{carlini2024poisoning}
@@ -132,6 +147,19 @@ Kimin Lee, Kibok Lee, Honglak Lee, and Jinwoo Shin.
 \newblock In \emph{Advances in Neural Information Processing Systems
   (NeurIPS)}, 2018.
 
+\bibitem[Li et~al.(2025)]{amemguard2025}
+Lijun Li et~al.
+\newblock {A-MemGuard}: A proactive defense framework for {LLM}-based agent
+  memory.
+\newblock \emph{arXiv preprint arXiv:2510.02373}, 2025.
+\newblock URL \url{https://arxiv.org/abs/2510.02373}.
+
+\bibitem[Li et~al.(2026)]{li2026memorypoisoning}
+Lijun Li et~al.
+\newblock Memory poisoning attack and defense on memory based {LLM}-agents.
+\newblock \emph{arXiv preprint arXiv:2601.05504}, 2026.
+\newblock URL \url{https://arxiv.org/abs/2601.05504}.
+
 \bibitem[{Mem0 Team}(2024)]{mem0}
 {Mem0 Team}.
 \newblock {Mem0}: The memory layer for personalized {AI}, 2024.
@@ -155,6 +183,14 @@ Charles Packer, Vivian Fang, Shishir~G. Patil, Kevin Zhang, Sarah Wooders, and
 F{\'a}bio Perez and Ian Ribeiro.
 \newblock Ignore previous prompt: Attack techniques for language models.
 \newblock In \emph{NeurIPS Workshop on ML Safety}, 2022.
+
+\bibitem[Tan et~al.(2025)Tan, Luan, Luo, Sun, Chen, and Dai]{tan2025revprag}
+Xue Tan, Hao Luan, Mingyu Luo, Xiaoyan Sun, Ping Chen, and Jun Dai.
+\newblock {RevPRAG}: Revealing poisoning attacks in retrieval-augmented
+  generation through {LLM} activation analysis.
+\newblock In \emph{Findings of the Association for Computational Linguistics:
+  EMNLP}, 2025.
+\newblock URL \url{https://arxiv.org/abs/2411.18948}.
 
 \bibitem[Touvron et~al.(2023)Touvron, Lavril, Izacard, Martinet, Lachaux,
   Lacroix, Rozi\`ere, Goyal, Hambro, Azhar, et~al.]{touvron2023llama}
