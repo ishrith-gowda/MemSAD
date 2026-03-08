@@ -1,0 +1,224 @@
+\begin{thebibliography}{30}
+\providecommand{\natexlab}[1]{#1}
+\providecommand{\url}[1]{\texttt{#1}}
+\expandafter\ifx\csname urlstyle\endcsname\relax
+  \providecommand{\doi}[1]{doi: #1}\else
+  \providecommand{\doi}{doi: \begingroup \urlstyle{rm}\Url}\fi
+
+\bibitem[{A-MEM Team}(2025)]{amem}
+{A-MEM Team}.
+\newblock {A-MEM}: Agentic memory for {LLM} agents, 2025.
+\newblock URL \url{https://github.com/agiresearch/A-MEM}.
+
+\bibitem[Anonymous(2026)]{injecmem2026}
+Anonymous.
+\newblock {InjecMEM}: Targeted memory injection with single interaction.
+\newblock In \emph{International Conference on Learning Representations
+  (ICLR)}, 2026.
+\newblock Submission \texttt{openreview:QVX6hcJ2um}.
+
+\bibitem[Carlini et~al.(2024)Carlini, Tram\`er, Brendel,
+  et~al.]{carlini2024poisoning}
+Nicholas Carlini, Florian Tram\`er, Wieland Brendel, et~al.
+\newblock Poisoning the embedding space: Backdoor attacks on embedding-based
+  models.
+\newblock \emph{arXiv preprint}, 2024.
+
+\bibitem[Chaudhari et~al.(2024)Chaudhari, Severi, Abascal, Oprea, Vempala, and
+  Melis]{chaudhari2024phantom}
+Harsh Chaudhari, Giorgio Severi, John Abascal, Alina Oprea, Santosh Vempala,
+  and Luca Melis.
+\newblock Phantom: General trigger attacks on retrieval augmented language
+  generation.
+\newblock In \emph{Proceedings of the 2024 Conference on Empirical Methods in
+  Natural Language Processing}, 2024.
+\newblock URL \url{https://arxiv.org/abs/2405.20485}.
+
+\bibitem[Chen et~al.(2024)Chen, Tan, Zhao, Cheng, Jiang, Zhang,
+  et~al.]{chen2024agentpoison}
+Zhaorun Chen, Zhen Tan, Hexiang Zhao, Zhengyang Cheng, Chenhui Jiang, Huan
+  Zhang, et~al.
+\newblock {AgentPoison}: Red-teaming {LLM} agents via poisoning memory or
+  knowledge bases.
+\newblock In \emph{Advances in Neural Information Processing Systems
+  (NeurIPS)}, 2024.
+\newblock URL \url{https://arxiv.org/abs/2407.12784}.
+
+\bibitem[Dong et~al.(2025)]{dong2025minja}
+Sicheng Dong et~al.
+\newblock {MINJA}: Memory injection attacks on {LLM} agents via query-only
+  interaction.
+\newblock In \emph{Advances in Neural Information Processing Systems
+  (NeurIPS)}, 2025.
+\newblock URL \url{https://arxiv.org/abs/2503.03704}.
+
+\bibitem[Ebrahimi et~al.(2018)Ebrahimi, Rao, Lowd, and
+  Dou]{ebrahimi2018hotflip}
+Javid Ebrahimi, Anyi Rao, Daniel Lowd, and Dejing Dou.
+\newblock {HotFlip}: White-box adversarial examples for text classification.
+\newblock In \emph{Proceedings of the 56th Annual Meeting of the Association
+  for Computational Linguistics (ACL)}, 2018.
+\newblock URL \url{https://arxiv.org/abs/1712.06751}.
+
+\bibitem[Efron and Tibshirani(1993)]{efron1993bootstrap}
+Bradley Efron and Robert~J. Tibshirani.
+\newblock \emph{An Introduction to the Bootstrap}.
+\newblock Chapman and Hall/CRC, 1993.
+
+\bibitem[Gao et~al.(2019)Gao, Xu, Wang, Chen, Ranasinghe, and
+  Nepal]{gao2019strip}
+Yansong Gao, Chang Xu, Derui Wang, Shiping Chen, Damith Ranasinghe, and Surya
+  Nepal.
+\newblock {STRIP}: A defence against trojan attacks on deep neural networks.
+\newblock In \emph{Annual Computer Security Applications Conference (ACSAC)},
+  2019.
+
+\bibitem[Goldblum et~al.(2022)Goldblum, Tsipras, Xie, Chen, Schwarzschild,
+  Song, Madry, Li, and Goldstein]{goldblum2022dataset}
+Micah Goldblum, Dimitris Tsipras, Chulin Xie, Xinyun Chen, Avi Schwarzschild,
+  Dawn Song, Aleksander Madry, Bo~Li, and Tom Goldstein.
+\newblock Dataset security for machine learning: Data poisoning, backdoor
+  attacks, and defenses.
+\newblock In \emph{IEEE Transactions on Pattern Analysis and Machine
+  Intelligence}, 2022.
+
+\bibitem[Greshake et~al.(2023)Greshake, Abdelnabi, Mishra, Endres, Holz, and
+  Fritz]{greshake2023not}
+Kai Greshake, Sahar Abdelnabi, Shailesh Mishra, Christoph Endres, Thorsten
+  Holz, and Mario Fritz.
+\newblock Not what you've signed up for: Compromising real-world
+  {LLM}-integrated applications with indirect prompt injections.
+\newblock In \emph{AISec Workshop at ACM CCS}, 2023.
+\newblock URL \url{https://arxiv.org/abs/2302.12173}.
+
+\bibitem[Gu et~al.(2019)Gu, Liu, Dolan-Gavitt, and Garg]{gu2019badnets}
+Tianyu Gu, Kang Liu, Brendan Dolan-Gavitt, and Siddharth Garg.
+\newblock {BadNets}: Evaluating backdooring attacks on deep neural networks.
+\newblock In \emph{IEEE Access}, 2019.
+
+\bibitem[Hayase et~al.(2021)Hayase, Kong, Somani, and Oh]{hayase2021spectre}
+Jonathan Hayase, Weihao Kong, Raghav Somani, and Sewoong Oh.
+\newblock {SPECTRE}: Defending against backdoor attacks using robust
+  statistics.
+\newblock In \emph{International Conference on Machine Learning (ICML)}, 2021.
+\newblock URL \url{https://arxiv.org/abs/2104.11315}.
+
+\bibitem[Hu et~al.(2024)Hu, Chen, Wu, Wu, Zhang, and Huang]{hu2023unbiased}
+Zhengmian Hu, Lichang Chen, Xidong Wu, Yihan Wu, Hongyang Zhang, and Heng
+  Huang.
+\newblock Unbiased watermark for large language models.
+\newblock In \emph{International Conference on Learning Representations
+  (ICLR)}, 2024.
+\newblock URL \url{https://arxiv.org/abs/2310.10669}.
+
+\bibitem[Karpukhin et~al.(2020)Karpukhin, Oguz, Min, Lewis, Wu, Edunov, Chen,
+  and Yih]{karpukhin2020dense}
+Vladimir Karpukhin, Barlas Oguz, Sewon Min, Patrick Lewis, Ledell Wu, Sergey
+  Edunov, Danqi Chen, and Wen-tau Yih.
+\newblock Dense passage retrieval for open-domain question answering.
+\newblock In \emph{Proceedings of EMNLP}, 2020.
+
+\bibitem[Kirchenbauer et~al.(2023)Kirchenbauer, Geiping, Wen, Katz, Miers, and
+  Goldstein]{kirchenbauer2023watermark}
+John Kirchenbauer, Jonas Geiping, Yuxin Wen, Jonathan Katz, Ian Miers, and Tom
+  Goldstein.
+\newblock A watermark for large language models.
+\newblock In \emph{International Conference on Machine Learning (ICML)}, 2023.
+
+\bibitem[Lee et~al.(2018)Lee, Lee, Lee, and Shin]{lee2018simple}
+Kimin Lee, Kibok Lee, Honglak Lee, and Jinwoo Shin.
+\newblock A simple unified framework for detecting out-of-distribution samples
+  and deep generative models.
+\newblock In \emph{Advances in Neural Information Processing Systems
+  (NeurIPS)}, 2018.
+
+\bibitem[{Mem0 Team}(2024)]{mem0}
+{Mem0 Team}.
+\newblock {Mem0}: The memory layer for personalized {AI}, 2024.
+\newblock URL \url{https://github.com/mem0ai/mem0}.
+
+\bibitem[{OpenAI}(2023)]{openai2023gpt4}
+{OpenAI}.
+\newblock {GPT-4} technical report.
+\newblock Technical report, OpenAI, 2023.
+\newblock URL \url{https://arxiv.org/abs/2303.08774}.
+
+\bibitem[Packer et~al.(2023)Packer, Fang, Patil, Zhang, Wooders, and
+  Gonzalez]{memgpt2023}
+Charles Packer, Vivian Fang, Shishir~G. Patil, Kevin Zhang, Sarah Wooders, and
+  Joseph~E. Gonzalez.
+\newblock {MemGPT}: Towards {LLMs} as operating systems.
+\newblock In \emph{NeurIPS Workshop on Foundation Models for Decision Making},
+  2023.
+
+\bibitem[Perez and Ribeiro(2022)]{perez2022ignore}
+F{\'a}bio Perez and Ian Ribeiro.
+\newblock Ignore previous prompt: Attack techniques for language models.
+\newblock In \emph{NeurIPS Workshop on ML Safety}, 2022.
+
+\bibitem[Touvron et~al.(2023)Touvron, Lavril, Izacard, Martinet, Lachaux,
+  Lacroix, Rozi\`ere, Goyal, Hambro, Azhar, et~al.]{touvron2023llama}
+Hugo Touvron, Thibaut Lavril, Gautier Izacard, Xavier Martinet, Marie-Anne
+  Lachaux, Timoth{\'e}e Lacroix, Baptiste Rozi\`ere, Naman Goyal, Eric Hambro,
+  Faisal Azhar, et~al.
+\newblock {LLaMA}: Open and efficient foundation language models.
+\newblock In \emph{arXiv preprint arXiv:2302.13971}, 2023.
+
+\bibitem[Wang et~al.(2019)Wang, Yao, Shan, Li, Viswanath, Zheng, and
+  Zhao]{wang2019neuralcleanse}
+Bolun Wang, Yuanshun Yao, Shawn Shan, Huiying Li, Bimal Viswanath, Haitao
+  Zheng, and Ben~Y. Zhao.
+\newblock Neural cleanse: Identifying and mitigating backdoor attacks in neural
+  networks.
+\newblock In \emph{IEEE Symposium on Security and Privacy (S\&P)}, 2019.
+
+\bibitem[Xiang et~al.(2024)Xiang, Jiang, Xiong, Raghunathan, and
+  Li]{badchain2024}
+Zhen Xiang, Fengqing Jiang, Zidi Xiong, Aditi Raghunathan, and Bo~Li.
+\newblock {BadChain}: Backdoor chain-of-thought prompting for large language
+  models, 2024.
+\newblock URL \url{https://arxiv.org/abs/2401.12242}.
+
+\bibitem[Xue et~al.(2024)Xue, Zheng, Hua, Shen, Liu, Zhao, and
+  Lou]{xue2024badrag}
+Jiaqi Xue, Mengxin Zheng, Ting Hua, Yilong Shen, Yepeng Liu, Ladislau Zhao, and
+  Qian Lou.
+\newblock {BadRAG}: Identifying vulnerabilities in retrieval augmented
+  generation of large language models.
+\newblock In \emph{arXiv preprint arXiv:2406.00083}, 2024.
+
+\bibitem[Yang et~al.(2024)Yang, Gao, Ma, Shi, Zhang, Shen, and
+  Ren]{yang2024watch}
+Wenkai Yang, Xiaohan Gao, Yankai Ma, Baosheng Shi, Jie Zhang, Yilong Shen, and
+  Jiajun Ren.
+\newblock Watch out for your agents! investigating backdoor threats to
+  {LLM}-based agents.
+\newblock In \emph{arXiv preprint arXiv:2402.11208}, 2024.
+
+\bibitem[Yang et~al.(2021)Yang, Peltonen, et~al.]{yang2021rethinking}
+Yi~Yang, Jaakko Peltonen, et~al.
+\newblock Rethinking the backdoor attacks' triggers from a frequency
+  perspective.
+\newblock In \emph{Proceedings of the IEEE/CVF International Conference on
+  Computer Vision}, 2021.
+
+\bibitem[Zhang et~al.(2024)]{zhang2024asb}
+Xinxin Zhang et~al.
+\newblock {ASB}: Unified single black-box adversarial attack for attacks and
+  defenses.
+\newblock \emph{arXiv preprint arXiv:2410.02644}, 2024.
+
+\bibitem[Zhao et~al.(2024)Zhao, Ananth, Li, and Wang]{zhao2024watermark}
+Xuandong Zhao, Prabhanjan Ananth, Lei Li, and Yu-Xiang Wang.
+\newblock Provable robust watermarking for {AI}-generated text.
+\newblock In \emph{International Conference on Learning Representations
+  (ICLR)}, 2024.
+\newblock URL \url{https://arxiv.org/abs/2306.17439}.
+
+\bibitem[Zou et~al.(2024)Zou, Geng, Wang, and Jia]{zou2024poisonedrag}
+Wei Zou, Runpeng Geng, Binghui Wang, and Jinyuan Jia.
+\newblock {PoisonedRAG}: Knowledge corruption attacks to retrieval-augmented
+  generation of large language models.
+\newblock In \emph{USENIX Security Symposium}, 2024.
+
+\end{thebibliography}
