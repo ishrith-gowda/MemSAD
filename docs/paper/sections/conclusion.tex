@@ -1,20 +1,65 @@
 \section{Conclusion}
 \label{sec:conclusion}
 
-We presented a unified framework for evaluating memory poisoning attacks
-and defenses on LLM agent systems.  Our framework corrects a systematic
-evaluation error in prior \agentpoison{} simulations (triggered-query
-evaluation), implements a centroid-targeting adversarial passage that
-achieves $\asrr=1.00$, and proposes \sad{}---a novel query-similarity-based
-defense that requires no labeled adversarial examples.
+We presented a unified evaluation framework for memory poisoning attacks and defenses
+on LLM agent systems.  Our framework makes four concrete advances.
 
-The full $3 \times 5$ attack-defense interaction matrix reveals important
-complementarity in the defense landscape: no single defense is uniformly
-effective, and the combination of watermark-based provenance verification
-with similarity-based anomaly detection provides the strongest empirical
-defense.
+First, we identify and correct a systematic evaluation error in prior \agentpoison{}
+simulations: victim queries must include the attacker-controlled trigger token at
+evaluation time, matching the paper's Algorithm~2.  This single correction raises
+\asrr{} from $0.25$ to $1.00$---a four-fold improvement that substantially changes
+the threat assessment.  Simulations that omit trigger prepending will severely
+underestimate attacker capability, and we recommend this as a mandatory protocol
+check for future work on trigger-based retrieval attacks.
 
-As LLM agents become more capable and memory systems become more central
-to their operation, the security of external memory is a critical unsolved
-problem.  We hope this framework provides a rigorous foundation for future
-research in this area.
+Second, we show that a centroid-targeting adversarial passage---computed from the
+union of content words across victim queries---achieves $\asrr=1.00$ without
+requiring full DPR-based gradient optimization.  This practical approximation
+should accelerate future ablation studies that otherwise require expensive GPU-based
+trigger optimization for each experimental configuration.
+
+Third, we propose \sad{}: a Semantic Anomaly Detection defense that requires no
+labeled adversarial examples and no model access.  \sad{} calibrates a cosine
+similarity baseline over observed benign entries and flags incoming memory writes
+whose similarity to victim queries exceeds a $\sigma$-threshold.  For \minja{},
+which uses bridging-step passages with high query alignment, \sad{} achieves
+strong detection ($\tpr > 0.80$).  Against \agentpoison{}, the centroid passage
+is designed to match the \emph{average} query embedding, placing it near the
+boundary of the benign similarity distribution; this is a fundamental tension
+between the attack's retrieval objective and the defense's detection criterion.
+
+Fourth, our formal analysis of the adaptive adversary (Section~\ref{sec:adaptive})
+establishes a structural property: any synonym substitution that reduces
+\sad{}'s anomaly score also reduces the adversarial passage's retrieval rank,
+because both objectives depend on the same cosine similarity.  This
+gradient-coupling result limits the adaptive adversary to at most $60\%$ evasion
+rate with a corresponding $\geq 0.40$ drop in \asrr{}, providing a provable
+floor on \sad{}'s robustness.
+
+The $3 \times 5$ attack-defense interaction matrix confirms that no single defense
+dominates across all attack types.  Composite portfolios---combining watermark-based
+provenance verification with similarity-based anomaly detection---consistently
+outperform individual defenses, motivating a defense-in-depth strategy for
+production memory systems.
+
+\paragraph{Open challenges.}
+Three challenges remain unsolved.  (1)~\emph{Live agent evaluation}: true \asra{}
+measurement requires executing production LLM agents across thousands of evaluation
+queries; our modelled \asra{} is an approximation.  (2)~\emph{Scalability}:
+our FAISS-backed evaluation uses 200 corpus entries; production systems with
+millions of entries may exhibit different similarity distributions that affect
+both attack effectiveness and \sad{} calibration.  (3)~\emph{Formal robustness
+bounds for composite defenses}: while we prove the gradient-coupling property for
+\sad{} in isolation, no formal guarantee exists for the composite portfolio under
+adaptive adversaries that optimize against all defenses simultaneously.
+
+\paragraph{Reproducibility.}
+All code, the 200-entry synthetic corpus, evaluation scripts, and generated figures
+are open-sourced at \url{https://github.com/ishrith-gowda/memory-agent-security}.
+The repository includes a full pipeline script (\texttt{src/scripts/run\_pipeline.py})
+that reproduces all tables and figures from a single command.
+
+As autonomous agents increasingly mediate consequential decisions---scheduling,
+information retrieval, task planning---memory integrity becomes a safety-critical
+property.  We hope this framework provides a rigorous foundation for future research
+on this underexplored attack surface.
