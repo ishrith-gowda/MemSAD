@@ -95,6 +95,15 @@ effective detection threshold.
 (iv) The token-level watermark requires a GPT-2 backbone and adds
 $O(n_{\text{tokens}})$ inference time per stored entry; for latency-sensitive
 deployments, the character-level adaptation may be preferable.
+(v) The word-level synonym adversary circumvents \sad{}'s theoretical
+gradient tension (Section~\ref{sec:adaptive}) because semantic embeddings
+are synonym-invariant: the all-MiniLM-L6-v2 model was trained on paraphrase
+pairs and assigns nearly identical embeddings to domain synonyms.  Synonym
+substitution can cross the detection threshold without affecting retrieval
+rank.  The theoretical tension therefore holds only for continuous
+gradient-based adversaries (e.g., HotFlip-style optimisation), not for
+discrete word-substitution adversaries.  Future defenses should incorporate
+lexical diversity features or synonym-aware thresholds to close this gap.
 
 \paragraph{Future work.}
 Key extensions include:

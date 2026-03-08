@@ -1,17 +1,26 @@
 \begin{table}[t]
 \centering
 \small
-\caption{Adaptive adversary evaluation against SAD. The adversary applies greedy synonym substitution to craft passages below the detection threshold ($k=2$). Evasion Rate = fraction of poison entries below threshold; Retrieval Degradation = ASR-R loss.}
+\caption{Adaptive adversary (greedy synonym substitution) vs.\ SAD ($k=2.0$).
+         Standard ASR-R: baseline attack without trigger optimisation.
+         Adaptive: after synonym substitution targeting the detection boundary.
+         Evasion Rate = fraction of poison entries below SAD threshold;
+         $\Delta$ASR-R = retrieval degradation (Standard $-$ Adaptive ASR-R).
+         Note: AgentPoison is evaluated without trigger optimisation to isolate
+         the SAD detection component; see Table~\ref{tab:attack_results} for
+         triggered-query ASR-R values.}
 \label{tab:adaptive_sad}
 \begin{tabular}{lcccccc}
 \toprule
-Attack & \multicolumn{2}{c}{Standard} & \multicolumn{2}{c}{Adaptive} & Evasion & Ret. Degrad. \\
+Attack & \multicolumn{2}{c}{Standard} & \multicolumn{2}{c}{Adaptive} & Evasion & $\Delta$ASR-R \\
 \cmidrule(lr){2-3}\cmidrule(lr){4-5}
- & ASR-R & SAD TPR & ASR-R & SAD TPR & Rate & $\Delta$ASR-R \\
+ & ASR-R & SAD TPR & ASR-R & SAD TPR & Rate & \\
 \midrule
 AgentPoison & 0.100 & 0.000 & 0.100 & 0.000 & 1.000 & 0.000 \\
-MINJA & 0.650 & 0.450 & 0.650 & 0.000 & 1.000 & 0.000 \\
-InjecMEM & 0.500 & 0.467 & 0.500 & 0.200 & 0.800 & 0.000 \\
+MINJA        & 0.650 & 0.450 & 0.650 & 0.000 & 1.000 & 0.000 \\
+InjecMEM     & 0.500 & 0.467 & 0.500 & 0.200 & 0.800 & 0.000 \\
 \bottomrule
+\multicolumn{7}{l}{\footnotesize Synonym substitution achieves evasion without retrieval cost} \\
+\multicolumn{7}{l}{\footnotesize (semantic embeddings are synonym-invariant; see Section~\ref{sec:adaptive_results}).} \\
 \end{tabular}
 \end{table}

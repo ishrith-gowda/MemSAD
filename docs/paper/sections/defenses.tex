@@ -171,7 +171,12 @@ decreases retrieval probability for at least one victim query.
 \paragraph{Empirical results.}
 Table~\ref{tab:adaptive_sad} (Section~\ref{sec:adaptive_results}) reports
 the evasion rate and retrieval degradation under the adaptive adversary
-for all three attacks.  We find that while the adaptive adversary can
-partially evade \sad{} (evasion rates of $20$--$60\%$ depending on attack
-type and threshold), the corresponding retrieval degradation is substantial
-($0.15$--$0.45$ in ASR-R), confirming the fundamental tension empirically.
+for all three attacks.  The measured word-level synonym adversary achieves
+high evasion rates (80--100\%) with negligible retrieval degradation
+($\Delta\text{ASR-R} \approx 0.00$).  This is consistent with semantic
+embeddings being synonym-invariant by training: word-for-word substitution
+from a domain synonym vocabulary shifts embeddings below the detection
+threshold without meaningfully reducing cosine similarity to victim queries.
+The gradient-based tension (Eq.~\ref{eq:adaptive_obj}) holds in continuous
+space but is circumvented by discrete synonym substitution; full analysis
+is in Section~\ref{sec:adaptive_results}.

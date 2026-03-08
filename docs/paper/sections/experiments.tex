@@ -176,25 +176,36 @@ against \sad{} for all three attack types.  The adversary applies greedy
 synonym substitution targeting the calibration threshold at $k=2.0$.
 
 \paragraph{Key finding.}
-Across all attacks, the adaptive adversary faces a fundamental tradeoff:
-evasion gains (passages falling below the detection threshold) come at
-the cost of retrieval degradation (ASR-R reduction).  Specifically:
-\begin{itemize}
-  \item \agentpoison{}: high evasion rate ($\approx 60\%$) but largest
-    retrieval degradation ($\Delta\text{ASR-R} \approx 0.40$) because the
-    centroid passage has extremely high initial similarity that requires
-    many substitutions to reduce.
-  \item \minja{}: moderate evasion rate ($\approx 40\%$) and moderate
-    degradation ($\Delta\text{ASR-R} \approx 0.25$); bridging-step passages
-    have intermediate initial similarity.
-  \item \injecmem{}: lowest evasion rate ($\approx 20\%$) but also lowest
-    initial anomaly signal; broad-anchor passages are already near the
-    detection boundary.
-\end{itemize}
-These results confirm that \sad{} maintains meaningful protection even under
-a white-box adaptive adversary: any successful evasion incurs a substantial
-retrieval cost, reducing the threat to a level comparable to or lower than
-the defended ASR-R of simpler defenses.
+Table~\ref{tab:adaptive_sad} reports the measured outcomes.
+The word-level synonym adversary achieves high evasion rates
+(80--100\%) with negligible retrieval cost ($\Delta\text{ASR-R} \approx 0$)
+across all three attack types.  This result reflects a fundamental property
+of semantic embeddings: all-MiniLM-L6-v2 is trained to be invariant to
+synonym substitution, so replacing ``schedule'' with ``plan'' or ``meeting''
+with ``session'' shifts embeddings by less than the anomaly detection margin.
+Consequently, synonym substitution can bring a passage below the detection
+threshold without materially changing its cosine similarity to victim queries.
+
+\paragraph{Theoretical vs.\ empirical tension.}
+The theoretical gradient analysis (Eq.~\ref{eq:adaptive_obj},
+Section~\ref{sec:adaptive}) proves that a \emph{continuous gradient-based}
+adversary cannot reduce anomaly score without simultaneously reducing
+retrieval rank, since both depend on the same similarity measure.
+The empirical results reveal a practical loophole: \emph{discrete synonym
+substitution} is not gradient-based and therefore is not subject to this
+tension.  In the synonym vocabulary, two synonymous words may have
+nearly identical semantic embeddings, so the adversary can cross the
+detection threshold (which is calibrated at a specific similarity value)
+without meaningfully reducing retrieval rank.
+
+These findings motivate future defenses that extend anomaly detection
+beyond the $\ell_2$ semantic embedding space, for example by incorporating
+lexical diversity features or synonym-aware thresholds that are robust
+to in-vocabulary substitution.  A gradient-based adversary operating
+directly in the continuous embedding space would face the theoretical
+tension; such an adversary corresponds to an attacker with access to
+differentiable text optimization (e.g., via HotFlip), which is a
+strictly stronger threat model.
 
 \subsection{Watermark Evasion}
 
@@ -246,9 +257,13 @@ up to 10 entries, after which returns diminish.
 
 \paragraph{\sad{} threshold \texorpdfstring{$k$}{k}.}
 Lower $k$ yields higher TPR but also higher FPR (aggressive detection).
-The default $k=2.0$ achieves TPR $\approx 0.85$ and FPR $\approx 0.05$
-for \agentpoison{} (see Appendix~\ref{sec:ablation_appendix} and
-Figure~\ref{fig:sad_ablation}).
+At the default $k=2.0$, \sad{} achieves TPR $\approx 1.00$ for \minja{},
+TPR $\approx 0.20$ for \injecmem{}, and TPR $\approx 0.00$ for \agentpoison{}.
+The near-zero TPR for \agentpoison{} reflects that the centroid passage
+similarity falls within the benign calibration distribution when \sad{}
+is calibrated on un-triggered victim queries (see Section~\ref{sec:discussion}).
+FPR $\approx 0.05$ is consistent across all three attacks
+(see Appendix~\ref{sec:ablation_appendix} and Figure~\ref{fig:sad_ablation}).
 
 \IfFileExists{figures/p13_ablation_sad_sigma.pdf}{%
 \begin{figure}[t]
@@ -267,8 +282,11 @@ Figure~\ref{fig:sad_ablation}).
   \end{subfigure}
   \caption{Ablation curves.
            Left: \sad{} threshold $k$ controls the TPR/FPR tradeoff;
-           $k=2.0$ (vertical dashed) achieves $\tpr\!\approx\!0.85$,
-           $\fpr\!\approx\!0.05$.
+           $k=2.0$ (vertical dashed) achieves $\tpr\!\approx\!1.00$
+           for \minja{}, $\tpr\!\approx\!0.20$ for \injecmem{},
+           and $\tpr\!\approx\!0.00$ for \agentpoison{} (centroid passage
+           falls within benign similarity distribution at un-triggered calibration).
+           $\fpr\!\approx\!0.05$ across all attacks.
            Right: ASR-R for all three attacks is largely independent of
            benign corpus size $N$ (50--500 entries), confirming poison
            entries are extreme similarity outliers.}
