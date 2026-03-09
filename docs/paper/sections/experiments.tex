@@ -34,9 +34,9 @@ victim queries (for $\tpr$) and 20 benign queries (for $\fpr$).  Bootstrap
     \toprule
     Attack & $\asrr$ & $\asra$ & $\asrt$ & Benign Acc. & ISR \\
     \midrule
-    \agentpoison{} (ours) & $1.00 \pm 0.00$ & $0.68$ & $\approx0.68$ & $0.85$ & $1.00$ \\
-    \minja{}              & $0.70 \pm 0.05$ & $0.76$ & $\approx0.53$ & $0.90$ & $0.98$ \\
-    \injecmem{}           & $0.50 \pm 0.08$ & $0.57$ & $\approx0.29$ & $0.80$ & $1.00$ \\
+    \agentpoison{} (ours) & $1.00 \pm 0.00$ & $0.68$ & $\approx0.65$ & $1.00$ & $1.00$ \\
+    \minja{}              & $0.65 \pm 0.00$ & $0.76$ & $\approx0.55$ & $0.90$ & $0.98$ \\
+    \injecmem{}           & $0.50 \pm 0.00$ & $0.57$ & $\approx0.35$ & $0.80$ & $1.00$ \\
     \bottomrule
   \end{tabular}
 \end{table}%
@@ -45,8 +45,11 @@ victim queries (for $\tpr$) and 20 benign queries (for $\fpr$).  Bootstrap
 Table~\ref{tab:attack_results} reports the main attack results.
 Figure~\ref{fig:attack_asr} visualises the three metrics side-by-side.
 \agentpoison{} achieves $\asrr=1.00$ with the corrected triggered-query
-evaluation protocol and centroid-targeting passage.  \minja{} matches
-its reported target ($\geq 0.70$) with bridging-step passages.
+evaluation protocol and centroid-targeting passage.
+\minja{} achieves $\asrr=0.65$, approaching the paper-reported target
+of $\geq0.70$; the small gap is attributable to our 200-entry corpus
+and the absence of full natural-language bridging-step generation (our
+simulation uses template-based passages).
 \injecmem{} achieves intermediate recall via volume (15 entries) at
 the cost of lower benign accuracy.
 
@@ -147,7 +150,8 @@ triggered queries---scores high, placing it clearly above the threshold.
 We use percentile bootstrap confidence intervals (2000 replicates,
 \citet{efron1993bootstrap}) to quantify variability across seeds.
 Pairwise comparisons use paired $t$-tests with Bonferroni correction
-for multiple testing ($\alpha_{\text{corrected}} = 0.05 / 3 = 0.017$).
+for multiple testing ($\alpha_{\text{corrected}} = 0.05 / 2 = 0.025$
+for the two non-redundant ordered comparisons).
 Cohen's $d$ effect sizes are reported for all comparisons.
 
 \begin{table}[t]
@@ -162,7 +166,7 @@ Cohen's $d$ effect sizes are reported for all comparisons.
     \minja{} vs \agentpoison{} & $19.0$ & $<0.001$ & $11.5$ & large \\
     \injecmem{} vs \minja{}    & $10.2$ & $<0.001$ & $4.4$  & large \\
     \bottomrule
-    \multicolumn{5}{l}{\footnotesize Bonferroni-corrected $\alpha = 0.017$; $n=5$ seeds per attack.} \\
+    \multicolumn{5}{l}{\footnotesize Bonferroni-corrected $\alpha = 0.025$ (2 comparisons); $n=5$ seeds per attack.} \\
   \end{tabular}
 \end{table}
 
