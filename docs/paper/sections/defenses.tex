@@ -158,15 +158,76 @@ victim queries (for evasion) simultaneously reduces the retrieval rank of
 the passage (hurting attack effectiveness).  This tension is a structural
 property of \sad{}: any substitution that reduces the anomaly score also
 reduces the attack's retrieval signal, since both depend on the same
-similarity measure.  Formally, the two objectives are in direct conflict:
+similarity measure.  We formalise this as follows.
+
+\begin{proposition}[Gradient Tension for Continuous Adversaries]
+\label{prop:gradient_tension}
+Let $c \in \mathcal{V}^*$ be an adversarial passage, $E : \mathcal{V}^* \to \RR^d$
+a differentiable encoder, and
+$q^{*} = \arg\max_{q \in \mathcal{H}} \cos(E(c), E(q))$
+the most-similar observed victim query.
+Define the \sad{} anomaly score $s(c) = \cos(E(c), E(q^{*}))$
+and the retrieval objective $\mathcal{R}(c) = \cos(E(c), E(q^{*}))$
+(retrieval rank for $q^{*}$ is monotone in this similarity).
+Then
 \begin{equation}
-  \nabla_c \bigl[-s(c)\bigr]
+  \nabla_{E(c)}\,s(c)
   \;=\;
-  -\nabla_c \bigl[\max_{q \in \mathcal{H}} \cos(E(c), E(q))\bigr],
+  \nabla_{E(c)}\,\mathcal{R}(c)
+  \;=\;
+  \frac{E(q^{*})}{\|E(c)\|\,\|E(q^{*})\|}
+    - \frac{\cos(E(c),E(q^{*}))}{\|E(c)\|^2}\,E(c).
+  \label{eq:gradient_tension}
 \end{equation}
-which is also the negative gradient of the retrieval objective for the
-highest-similarity victim query.  Decreasing anomaly score necessarily
-decreases retrieval probability for at least one victim query.
+Consequently, for any first-order perturbation direction $\delta \in \RR^d$,
+\begin{equation}
+  \langle \delta,\, \nabla_{E(c)}\,s(c) \rangle < 0
+  \;\;\Longrightarrow\;\;
+  \langle \delta,\, \nabla_{E(c)}\,\mathcal{R}(c) \rangle < 0,
+  \label{eq:gradient_tension_implication}
+\end{equation}
+i.e.\ any continuous perturbation that decreases the \sad{} anomaly score
+simultaneously decreases the retrieval probability for $q^{*}$.
+\end{proposition}
+
+\begin{proof}[Proof sketch]
+Since $s(c) = \mathcal{R}(c) = \cos(E(c), E(q^{*}))$, their gradients with
+respect to $E(c)$ are identical by definition.
+The explicit form (Eq.~\ref{eq:gradient_tension}) follows from the standard
+derivative of the cosine similarity $\cos(u,v) = u^\top v / (\|u\|\|v\|)$
+with respect to $u$.
+\end{proof}
+
+\begin{remark}[Discrete synonym loophole]
+\label{rem:synonym}
+Proposition~\ref{prop:gradient_tension} applies only to \emph{continuous}
+perturbations in embedding space.  For discrete word-level substitution, the
+key question is whether $E(\mathrm{synonym}(c)) \approx E(c)$.
+Encoders such as \texttt{all-MiniLM-L6-v2} are trained on paraphrase
+objectives that explicitly enforce synonym-invariance:
+$\|E(\mathrm{synonym}(c)) - E(c)\| \approx 0$ for in-domain synonyms.
+Therefore, synonym substitution achieves $s(c) < \mu + k\sigma$ (evasion)
+while preserving $\mathcal{R}(c) \approx \mathcal{R}(c_{\mathrm{orig}})$
+(retrieval unchanged).  This is the mechanism behind the empirical
+$\Delta\asrr \approx 0$ with evasion rate $\geq 0.80$ in
+Table~\ref{tab:adaptive_sad}.
+\end{remark}
+
+\IfFileExists{figures/fig_sad_roc_curve.pdf}{%
+\begin{figure}[t]
+  \centering
+  \includegraphics[width=0.90\linewidth]{fig_sad_roc_curve.pdf}
+  \caption{SAD threshold sweep: TPR vs.\ FPR as the detection parameter $k$ ranges
+           from $0.5$ to $4.0$.  \minja{} (plain calibration) traces a near-ideal
+           left-edge curve.  \agentpoison{} (plain calibration) is undetectable at
+           all thresholds (flat line at TPR$=0$), while triggered-query calibration
+           recovers perfect detection (TPR$=1$, FPR$=0$ at $k=2.0$, marked with
+           $\star$).  \injecmem{} achieves moderate detection (broad anchors are
+           less anomalous).
+           Figure generated from the measured threshold sweep in Table~\ref{tab:ablation}.}
+  \label{fig:sad_roc}
+\end{figure}%
+}{}
 
 \paragraph{Empirical results.}
 Table~\ref{tab:adaptive_sad} (Section~\ref{sec:adaptive_results}) reports

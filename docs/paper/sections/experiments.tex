@@ -104,6 +104,28 @@ that calibrating \sad{} on triggered queries (the realistic post-deployment
 scenario) raises $\tpr$ to $1.00$ with $\fpr=0.00$---a result confirming
 that the \agentpoison{} blind spot is a calibration artefact, not an
 inherent limitation of the anomaly-based approach.
+Figure~\ref{fig:sad_calibration} illustrates the mechanism: under plain
+calibration the \agentpoison{} centroid passage falls within the benign
+similarity distribution, but under triggered calibration benign entries
+score low against triggered queries while the passage---optimised for
+triggered queries---scores high, placing it clearly above the threshold.
+
+\IfFileExists{figures/fig_sad_calibration_comparison.pdf}{%
+\begin{figure}[t]
+  \centering
+  \includegraphics[width=0.96\linewidth]{fig_sad_calibration_comparison.pdf}
+  \caption{SAD calibration mode comparison for \agentpoison{}.
+           \emph{(a)} Plain-query calibration: the centroid passage (red)
+           falls within the benign similarity distribution (blue) ---
+           threshold is set too high to detect it ($\tpr=0.00$).
+           \emph{(b)} Triggered-query calibration: benign entries score low
+           against triggered queries while the centroid passage scores high,
+           placing it above the (now lower) detection threshold
+           ($\tpr=1.00$, $\fpr=0.00$, threshold shift $0.482\to 0.432$).
+           See also Figure~\ref{fig:sad_roc} for the full threshold sweep.}
+  \label{fig:sad_calibration}
+\end{figure}%
+}{}
 
 \IfFileExists{figures/m12_attack_defense_matrix.pdf}{%
 \begin{figure}[t]
