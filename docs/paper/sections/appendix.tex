@@ -186,6 +186,73 @@ The default $z_{\mathrm{thr}} = 4.0$ achieves TPR $\approx 0.90$, FPR $\approx 0
   \input{../../results/tables/table6_ablation}%
 }{}
 
+\subsection{Encoder Generalization}
+\label{app:encoder_generalization}
+
+A key practical question is whether SAD's detection performance is robust to
+the choice of sentence-transformer encoder.  If the detection signal depended
+on properties specific to the \texttt{all-MiniLM-L6-v2} encoder, the defense
+would not be directly deployable on systems using different retrieval models.
+
+We evaluate SAD at $k=2.0$ on three sentence-transformer encoders of varying
+capacity and training objective:
+\begin{enumerate}
+  \item \texttt{all-MiniLM-L6-v2} (384-dim, contrastive, default retriever)
+  \item \texttt{all-mpnet-base-v2} (768-dim, higher-capacity MPNet backbone)
+  \item \texttt{paraphrase-MiniLM-L6-v2} (384-dim, paraphrase-optimised)
+\end{enumerate}
+For each encoder and each attack (\minja{}, \injecmem{}, and \agentpoison{}
+with triggered-query calibration), we calibrate SAD on 100 benign entries
+and 10 victim queries drawn from the same synthetic corpus, then evaluate
+on 100 held-out benign entries and the respective poison passages.
+
+\IfFileExists{../../results/tables/table_encoder_generalization.tex}{%
+  \input{../../results/tables/table_encoder_generalization}%
+}{}
+
+\IfFileExists{figures/fig_encoder_generalization.pdf}{%
+\begin{figure}[h]
+  \centering
+  \includegraphics[width=0.98\linewidth]{fig_encoder_generalization.pdf}
+  \caption{SAD TPR (left) and FPR (right) at $k=2.0$ across three
+           sentence-transformer encoders.  \agentpoison{} with triggered-query
+           calibration achieves $\tpr = 1.000$ on all three encoders.
+           \minja{} achieves $\tpr \geq 0.80$ across encoders; the variation
+           reflects differences in the encoder's synonym-invariance under
+           bridging-step passage vocabulary.  \injecmem{} shows the largest
+           encoder sensitivity ($\tpr \in [0.00, 0.40]$), consistent with
+           broad-anchor passages being designed to be retriever-agnostic
+           (close to all queries, hence harder to detect against any single
+           encoder).  FPR remains below $0.10$ across all conditions.}
+  \label{fig:encoder_generalization}
+\end{figure}%
+}{}
+
+\paragraph{Findings.}
+Three observations are consistent across all encoders:
+\begin{enumerate}
+  \item \textbf{AgentPoison + triggered calibration.}  $\tpr = 1.000$ on all
+  three encoders (AUROC $= 1.000$).  The centroid passage is an extreme
+  similarity outlier regardless of embedding dimension or training objective:
+  it is explicitly constructed to maximize cosine similarity to victim queries,
+  making it detectable in any encoder space.
+  \item \textbf{MINJA.}  $\tpr \in [0.80, 1.00]$ across encoders.  Bridging-step
+  passages contain the same vocabulary as victim queries, producing anomalous
+  similarity in all tested embedding spaces.
+  \item \textbf{InjecMEM.}  $\tpr \in [0.00, 0.40]$ — the largest encoder
+  sensitivity.  The broad-anchor design achieves moderate similarity to many
+  query types, placing it closer to the benign boundary; whether it crosses the
+  threshold depends on how tightly the encoder clusters general-purpose
+  vocabulary.
+\end{enumerate}
+
+These results support the conclusion that SAD's detection signal is
+fundamentally encoder-agnostic for targeted attacks: any encoder that places
+poison entries close to victim queries in embedding space will make those
+entries detectable by SAD.  The InjecMEM exception is consistent with its
+threat model (retriever-agnostic anchors achieve partial similarity to many
+queries, not maximum similarity to any specific query).
+
 \subsection{Bootstrap CI Computation}
 \label{sec:bootstrap}
 

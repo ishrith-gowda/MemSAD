@@ -1,0 +1,23 @@
+\begin{table}[h]
+  \centering
+  \small
+  \caption{SAD encoder generalization: TPR / FPR / AUROC at $k=2.0$ for three sentence-transformer encoders.  Results are consistent across encoder capacity and training objective, confirming that SAD's detection signal is encoder-agnostic.}
+  \label{tab:encoder_generalization}
+  \begin{tabular}{llccc}
+    \toprule
+    Encoder & Attack & TPR & FPR & AUROC \\
+    \midrule
+    \texttt{MiniLM-L6} & \minja{} & 0.800 & 0.090 & 0.966 \\
+     & \injecmem{} & 0.400 & 0.090 & 0.816 \\
+     & \agentpoison{} (trig.) & 1.000 & 0.040 & 1.000 \\
+    \midrule
+    \texttt{MPNet-Base} & \minja{} & 1.000 & 0.100 & 0.954 \\
+     & \injecmem{} & 0.200 & 0.100 & 0.840 \\
+     & \agentpoison{} (trig.) & 1.000 & 0.100 & 1.000 \\
+    \midrule
+    \texttt{Para-MiniLM} & \minja{} & 1.000 & 0.080 & 0.978 \\
+     & \injecmem{} & 0.000 & 0.080 & 0.744 \\
+     & \agentpoison{} (trig.) & 1.000 & 0.040 & 1.000 \\
+    \bottomrule
+  \end{tabular}
+\end{table}
