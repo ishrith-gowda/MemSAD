@@ -50,9 +50,14 @@ This paper makes six contributions:
 
   \item \textbf{Semantic Anomaly Detection (\sad{}).}  We propose a novel
   defense that detects adversarial memory entries by their anomalously high
-  cosine similarity to observed victim queries, without requiring a reference
-  corpus of known attacks.  \sad{} achieves $\tpr > 0.70$ with $\fpr < 0.10$
-  across all three attack types.
+  cosine similarity to observed victim queries, without requiring labeled
+  attack examples.  Under plain-query calibration, \sad{} achieves
+  $\tpr=1.00$, $\fpr=0.05$ for \minja{} and $\tpr=0.20$ for \injecmem{};
+  calibrating on triggered queries closes the \agentpoison{} blind spot
+  ($\tpr=0.00 \to 1.00$, $\fpr=0.00$, threshold shift $0.482 \to 0.432$).
+  We prove (Proposition~\ref{prop:gradient_tension}) that continuous
+  evasion in embedding space is impossible; the empirical synonym-invariance
+  loophole for discrete substitution is characterised in Remark~\ref{rem:synonym}.
 
   \item \textbf{Full attack-defense interaction matrix.}  We evaluate all
   $3 \times 5$ (attack, defense) pairs under a pre-ingestion filtering model,
@@ -61,13 +66,14 @@ This paper makes six contributions:
 
   \item \textbf{Adaptive adversary analysis.}  We characterise a white-box
   adaptive adversary who knows \sad{}'s calibration statistics and applies
-  greedy synonym substitution to craft evasive passages.  We prove in
-  continuous gradient space that any reduction in anomaly score simultaneously
-  reduces retrieval rank.  Empirically, we find that word-level synonym
-  substitution circumvents this tension (evasion rate $\geq 0.80$,
-  $\Delta\asrr \approx 0$) because semantic embeddings are synonym-invariant
-  by training, revealing that lexical diversity features are needed to close
-  this gap in anomaly-based defenses.
+  greedy synonym substitution to craft evasive passages.
+  Proposition~\ref{prop:gradient_tension} proves that in continuous
+  embedding space any reduction in anomaly score simultaneously reduces
+  retrieval rank (shared cosine gradient).  Remark~\ref{rem:synonym}
+  identifies the discrete loophole: synonym-invariant encoders make
+  word-level substitution effectively free ($\Delta\asrr \approx 0$,
+  evasion $\geq 0.80$), revealing that lexical diversity features are
+  needed to close this gap.
 
   \item \textbf{Paper-faithful implementations and measured bounds.}  We
   implement DPR HotFlip gradient-guided trigger optimization

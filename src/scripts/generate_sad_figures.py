@@ -67,35 +67,6 @@ _INJEC_FPR = [0.450, 0.200, 0.150, 0.000, 0.000, 0.000, 0.000, 0.000]
 # ---------------------------------------------------------------------------
 
 
-def _roc_curve_ax(ax: plt.Axes, sigma_vals, tpr_vals, fpr_vals, **kw) -> None:
-    """plot tpr vs fpr curve on ax with sigma annotations."""
-    # add corners for a closed curve (start at (1,0), end at (0,1))
-    fpr_plot = [1.0] + list(fpr_vals) + [0.0]
-    tpr_plot = [0.0] + list(tpr_vals) + [1.0]
-    ax.plot(fpr_plot, tpr_plot, **kw)
-    # annotate key sigma points
-    for s, t, f in zip(sigma_vals, tpr_vals, fpr_vals):
-        if s in (1.0, 2.0, 3.0):
-            ax.annotate(
-                f"$k={s:.0f}$",
-                xy=(f, t),
-                xytext=(f + 0.03, t - 0.06),
-                fontsize=7,
-                color=kw.get("color", "black"),
-                arrowprops=dict(arrowstyle="-", lw=0.7),
-            )
-    # mark operating point (sigma=2.0)
-    idx = sigma_vals.index(2.0)
-    ax.scatter(
-        [fpr_vals[idx]],
-        [tpr_vals[idx]],
-        marker="*",
-        s=80,
-        zorder=5,
-        **{k: v for k, v in kw.items() if k == "color"},
-    )
-
-
 def generate_sad_roc_figure() -> Path:
     """
     generate fig_sad_roc_curve showing tpr vs fpr as the sad threshold sigma

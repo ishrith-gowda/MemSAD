@@ -106,6 +106,32 @@ each using a distinct anchor template from a pool of 8.  Modelled
 $\asra \sim \mathcal{N}(0.57, 0.07^2)$ (lower, as broad anchors are less
 contextually convincing than targeted ones).
 
+\subsection{Attack Properties Summary}
+
+Table~\ref{tab:attack_properties} summarises the three threat models across
+five dimensions relevant to real-world deployability.
+
+\begin{table}[h]
+  \centering
+  \small
+  \caption{Attack threat-model comparison across five deployment-relevant dimensions.}
+  \label{tab:attack_properties}
+  \begin{tabular}{lccc}
+    \toprule
+    Property & \agentpoison{} & \minja{} & \injecmem{} \\
+    \midrule
+    Memory write access required & \checkmark & --- & --- \\
+    Query-only (no write access)  & ---        & \checkmark & \checkmark \\
+    Single interaction            & ---        & ---        & \checkmark \\
+    Trigger token required        & \checkmark & ---        & --- \\
+    Query-specific optimisation   & \checkmark & \checkmark & --- \\
+    Retriever-agnostic passage    & ---        & ---        & \checkmark \\
+    Persistence (multiple copies) & 1$\times$  & 2$\times$  & 3$\times$ \\
+    Modelled $\asra$              & $0.68$ & $0.76$ & $0.57$ \\
+    \bottomrule
+  \end{tabular}
+\end{table}
+
 \subsection{Evaluation Setup}
 
 The synthetic corpus contains 200 benign memory entries across 7 categories
