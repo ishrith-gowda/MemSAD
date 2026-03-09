@@ -1,15 +1,20 @@
 \begin{table*}[t]
 \centering
 \small
-\caption{Attack success rate (ASR-R) under each defense (pre-ingestion filtering). Defense effectiveness = $1 - \text{ASR-R}_{\text{defended}} / \text{ASR-R}_{\text{baseline}}$.}
+\caption{Attack success rate (ASR-R) under each defense (pre-ingestion filtering). Defense
+effectiveness = $1 - \text{ASR-R}_{\text{defended}} / \text{ASR-R}_{\text{baseline}}$.
+SAD is calibrated on plain victim queries (worst case for centroid-targeting attacks);
+under triggered-query calibration, \agentpoison{} SAD ASR-R drops to $0.000$ (TPR\,=\,1.00, FPR\,=\,0.00).}
 \label{tab:attack_defense_matrix}
 \begin{tabular}{l|c|ccccc}
 \toprule
 Attack & Baseline & Watermark & Validation & Proactive & Composite & SAD (Ours) \\
 \midrule
-AgentPoison & 1.000 & 0.000 & 0.000 & 0.000 & 0.000 & 1.000 \\
-MINJA & 0.633 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 \\
-InjecMEM & 0.483 & 0.000 & 0.483 & 0.000 & 0.000 & 0.433 \\
+AgentPoison & 1.000 & 0.000 & 0.000 & 0.000 & 0.000 & 1.000$^\dagger$ \\
+MINJA       & 0.633 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 \\
+InjecMEM    & 0.483 & 0.000 & 0.483 & 0.000 & 0.000 & 0.433 \\
 \bottomrule
 \end{tabular}
+\vspace{0.5ex}
+{\small $^\dagger$Plain-query calibration; triggered-query calibration achieves ASR-R\,=\,0.000 (see Section~\ref{sec:discussion}).}
 \end{table*}

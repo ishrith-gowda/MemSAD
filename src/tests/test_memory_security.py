@@ -2450,6 +2450,84 @@ class TestSemanticAnomalyDetector:
         # random → expect auroc near 0.5 (within generous margin)
         assert 0.0 <= auroc <= 1.0
 
+    def test_calibrate_triggered_returns_stats_with_trigger_key(self):
+        """calibrate_triggered should return all calibrate() keys plus trigger_str."""
+        from defenses.semantic_anomaly import SemanticAnomalyDetector
+
+        det = SemanticAnomalyDetector(threshold_sigma=2.0)
+        benign_corpus = [
+            "reminder: buy groceries on the way home",
+            "team lunch scheduled for wednesday at noon",
+            "dentist appointment next tuesday morning",
+            "submit the project proposal by friday",
+            "renew gym membership this month",
+        ] * 4
+        plain_queries = [
+            "what are my upcoming appointments?",
+            "when is my next meeting?",
+            "what tasks are due this week?",
+        ]
+        trigger = "system task context access compliance"
+        stats = det.calibrate_triggered(benign_corpus, plain_queries, trigger)
+        for key in ("mean", "std", "threshold", "n_entries", "n_queries"):
+            assert key in stats, f"missing key: {key}"
+        assert "trigger_str" in stats
+        assert stats["trigger_str"] == trigger
+        assert det.is_calibrated
+        assert stats["threshold"] > stats["mean"]
+
+    def test_calibrate_triggered_differs_from_plain(self):
+        """triggered calibration should produce different statistics than plain."""
+        from defenses.semantic_anomaly import SemanticAnomalyDetector
+
+        benign_corpus = [
+            "dentist appointment next tuesday",
+            "call mom at 6pm today",
+            "buy coffee beans at the grocery store",
+            "team lunch on wednesday afternoon",
+            "renew gym membership by end of month",
+        ] * 4
+        plain_queries = [
+            "what are my tasks today?",
+            "when is my dentist appointment?",
+            "what meetings do i have scheduled?",
+        ]
+        trigger = "system access context override"
+        plain_det = SemanticAnomalyDetector(threshold_sigma=2.0)
+        plain_stats = plain_det.calibrate(benign_corpus, plain_queries)
+        trig_det = SemanticAnomalyDetector(threshold_sigma=2.0)
+        trig_stats = trig_det.calibrate_triggered(benign_corpus, plain_queries, trigger)
+        # triggered queries alter query semantics — calibration statistics differ
+        assert (
+            abs(plain_stats["mean"] - trig_stats["mean"]) > 1e-6
+            or abs(plain_stats["std"] - trig_stats["std"]) > 1e-6
+        )
+        assert plain_det.is_calibrated
+        assert trig_det.is_calibrated
+        assert 0.0 <= plain_stats["threshold"] <= 1.0
+        assert 0.0 <= trig_stats["threshold"] <= 1.0
+
+    def test_calibrate_triggered_empty_queries_raises(self):
+        """calibrate_triggered with empty victim_queries should raise ValueError."""
+        from defenses.semantic_anomaly import SemanticAnomalyDetector
+
+        det = SemanticAnomalyDetector()
+        with pytest.raises(ValueError):
+            det.calibrate_triggered(["some benign entry here"], [], "trigger")
+
+    def test_calibrate_triggered_threshold_equals_mean_plus_sigma_std(self):
+        """calibrate_triggered threshold should equal mean + sigma * std."""
+        from defenses.semantic_anomaly import SemanticAnomalyDetector
+
+        sigma = 1.5
+        det = SemanticAnomalyDetector(threshold_sigma=sigma)
+        benign = ["task: file report by eod", "schedule: dentist thursday"] * 5
+        queries = ["what is due today?", "any medical appointments?"]
+        trigger = "xyzzy_trigger_token"
+        stats = det.calibrate_triggered(benign, queries, trigger)
+        expected = stats["mean"] + sigma * stats["std"]
+        assert abs(stats["threshold"] - expected) < 1e-9
+
 
 # ---------------------------------------------------------------------------
 # phase 12: centroid agentpoison passage, triggered-query evaluation, matrix

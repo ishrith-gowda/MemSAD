@@ -170,6 +170,8 @@ five types total:
 
 **sad defense** (`defenses/semantic_anomaly.py`): calibrates a baseline similarity distribution over benign entries × sample queries. flags any incoming entry with similarity score `> μ + k·σ` (default k=2.0). also supports rolling query history (`max_query_history=100` fifo window), batch detection, threshold sweep, and trapezoidal auroc computation (no sklearn dependency).
 
+**triggered-query calibration** (phase 22): `calibrate_triggered(benign_entries, victim_queries, trigger_str)` prepends the trigger token to each victim query before computing calibration statistics. when the attacker's trigger has propagated to user clients, triggered queries appear in the query log and raise the calibration mean for benign entries — but the centroid passage (optimised for triggered queries) scores high, making it an outlier. empirical result: agentpoison tpr 0.00 → 1.00, fpr = 0.00, threshold 0.482 → 0.432. deployed via the rolling query window without architectural changes.
+
 ### watermarkdefense (main one)
 
 uses zhao et al. unigram watermark. embeds provenance at write time, detects unsigned entries at retrieval time via z-score.
@@ -317,15 +319,37 @@ corpus=200, top_k=5, n_poison_base=5, seed=42, 20 victim queries, 20 benign quer
 
 **injecmem** intermediate — broad anchors + volume (15 entries) gives decent recall. lower asr-a because broad anchors are less contextually convincing.
 
-defense results (simulated, pre-ingestion filtering model via `AttackDefenseEvaluator`):
+**3×5 attack-defense matrix** (phase 12, measured; `results/tables/table2_attack_defense_matrix.tex`):
 
-| defense | avg tpr | avg fpr | avg effectiveness | notes |
-|---|---|---|---|---|
-| watermark | 0.87 | 0.08 | varies | z-score detection |
-| validation | 0.72 | 0.15 | varies | pattern matching |
-| proactive | 0.78 | 0.12 | varies | simulation-based |
-| composite | 0.91 | 0.06 | highest | ensemble |
-| sad (ours) | 0.70+ | 0.10 | strong vs agentpoison | similarity-based |
+| attack | baseline | watermark | validation | proactive | composite | sad (ours) |
+|---|---|---|---|---|---|---|
+| agentpoison | 1.000 | 0.000 | 0.000 | 0.000 | 0.000 | 1.000† |
+| minja | 0.633 | 0.000 | 0.000 | 0.000 | 0.000 | 0.000 |
+| injecmem | 0.483 | 0.000 | 0.483 | 0.000 | 0.000 | 0.433 |
+
+†plain-query calibration. triggered-query calibration (phase 22) achieves asr-r = 0.000 (tpr=1.00, fpr=0.00).
+
+**sad threshold sweep** (phase 20, minja; `results/tables/table6_ablation.tex`):
+
+| σ | tpr | fpr |
+|---|---|---|
+| 0.5 | 1.000 | 0.450 |
+| 1.0 | 1.000 | 0.200 |
+| 1.5 | 1.000 | 0.150 |
+| 2.0 | 1.000 | 0.000 |
+| 2.5 | 1.000 | 0.000 |
+| 3.0 | 0.800 | 0.000 |
+| 3.5 | 0.600 | 0.000 |
+| 4.0 | 0.300 | 0.000 |
+
+σ=2.0 is the sweet spot: full tpr with zero fpr for minja.
+
+**adaptive adversary** (phase 13/19): synonym substitution achieves evasion rate ≥0.80 with Δasr-r ≈ 0.000. semantic embeddings (all-minilm-l6-v2) are synonym-invariant — the gradient tension holds only in continuous space.
+
+**phase 17 extensions** (paper-faithful):
+- dpr hotflip trigger: mean cosine similarity 0.48 → 0.78 (facebook/dpr-ctx_encoder-single-nq-base, 768-dim)
+- token-level watermark (zhao et al. iclr 2024): p_green ≈ 0.711, mean z-score ≈7.5 vs 4.1 char-level (+83%)
+- local gpt-2 agent evaluator (measured asr-a lower bounds): agentpoison 0.42, minja 0.51, injecmem 0.29
 
 the full 3×5 attack-defense matrix (pairresult for each pair) is produced by `AttackDefenseEvaluator.evaluate_full_matrix()`. defense_effectiveness = 1 - asr_r_under_defense / asr_r_baseline.
 
@@ -347,39 +371,56 @@ all 4 are in notebooks/ and generate publication-ready figures (png 300dpi + pdf
 
 ## tests
 
-360 tests total, all passing (as of phase 12).
+445 tests total (as of phase 22).
 
-- `src/tests/test_memory_security.py` — 323 tests across 21 classes (attacks, defenses, watermark, memory, metrics, evaluators, integration, timing, trigger optimizer, evasion evaluator, retrieval sim phases 10+12, bootstrap ci, hypothesis testing, multitrial, latex tables, sad, centroid passage, triggered-query eval, attack-defense matrix)
+- `src/tests/test_memory_security.py` — 408 tests across 26 classes (attacks, defenses, watermark, memory, metrics, evaluators, integration, timing, trigger optimizer, evasion evaluator, retrieval sim phases 10+12, bootstrap ci, hypothesis testing, multitrial, latex tables, sad + triggered calibration, centroid passage, triggered-query eval, attack-defense matrix, adaptive adversary, ablation study, comprehensive eval, phase 13 visualization, phase 17 components)
 - `tests/test_memory.py` — 27 unit tests (MockMemorySystem, VectorMemorySystem, factory)
 - `tests/test_message_serialization.py` — 10 unit tests (AttackMetrics, DefenseMetrics serialization, formula verification)
 
 ```bash
-python3 -m pytest src/tests/test_memory_security.py -q            # 323 tests
+python3 -m pytest src/tests/test_memory_security.py -q            # 408 tests
 python3 -m pytest tests/ -q                                        # 37 tests
-python3 -m pytest src/tests/test_memory_security.py tests/ -q     # 360 tests
+python3 -m pytest src/tests/test_memory_security.py tests/ -q     # 445 tests
 python3 smoke_test.py                                              # 5 quick tests
 ```
 
 ---
 
+## completed phases summary
+
+| phase | description | status |
+|---|---|---|
+| 1–8 | attacks, defenses, watermark, benchmarking, test suite, visualization | done |
+| 9 | realistic faiss retrieval (all-minilm-l6-v2, 200-entry corpus) | done |
+| 10 | trigger optimizer, evasion evaluator | done |
+| 11 | bootstrap ci, hypothesis testing, sad defense | done |
+| 12 | attack-defense matrix, triggered-query eval fix | done |
+| 13 | adaptive adversary, ablation study, comprehensive eval | done |
+| 14 | pipeline integration | done |
+| 15 | full empirical results, paper figure generation | done |
+| 16 | research quality enhancement | done |
+| 17 | dpr hotflip optimizer, token-level watermark, live agent evaluator | done |
+| 18 | paper integration of phase 17 contributions | done |
+| 19 | fix text-data inconsistencies (adaptive adversary, sad) | done |
+| 20 | fix ablation text/data inconsistencies | done |
+| 21 | triggered-query-aware sad finding added to paper | done |
+| 22 | calibrate_triggered() implementation + tests + table2 footnote + abstract fix | done |
+
+## paper status
+
+- `docs/paper/main.tex` — 23-page paper, clean pdflatex+bibtex compilation
+- all text-data inconsistencies resolved across all sections
+- all 6 contributions documented in introduction
+- abstract reflects correct adaptive adversary finding (synonym-invariant, Δasr-r≈0)
+- abstract includes triggered-query calibration finding (tpr 0.00 → 1.00)
+
 ## things that still need work
 
-**dpr-based trigger optimization (camera-ready)** — phase 10 uses all-minilm-l6-v2 coordinate descent. the paper uses dpr-ctx_encoder-single-nq-base (768-dim) with full hotflip-style gradient optimization. for camera-ready: swap encoder, add perplexity filter for naturalness, run on gpu. current coordinate descent is cpu-tractable approximation.
+**multi-agent extension** — poison that propagates across agents sharing a knowledge base. future work section material; not needed for current submission.
 
-**live llm agent integration** — true asr-a measurement requires live agent execution. langchain or openai agents api with memory plugin. would let us test on real production workflows and measure asr-a directly instead of modelling it.
+**live agent asr-a** — full end-to-end measurement with a real llm agent. gpt-2 lower bound is documented; true asr-a requires api-level agent execution. left as future work.
 
-**token-level watermark** — current char-level unigram is weaker than zhao et al.'s lm-token-level. need llm backbone for full paper-level comparison. character-level z-scores are lower but still statistically valid.
-
-**paper writing** — skeleton needed:
-- abstract + introduction (threat model, motivation, contributions)
-- related work (memory attack papers, backdoor defenses, watermarking)
-- methodology (attack models, sad defense, evaluation protocol)
-- experiments section (main table, ablation, evasion eval)
-- discussion + limitations
-
-**evasion evaluation (deeper analysis)** — `WatermarkEvasionEvaluator` is implemented (phase 10) but results need deeper analysis: what substitution budget breaks the unigram watermark? what dilution ratio? include in paper experiments section.
-
-**multi-agent extension** — poison that propagates across agents sharing a knowledge base. could be a good "future work" section or additional experiment.
+**extended ablation on corpus scale** — triggered agentpoison ablation shows asr-r ≥0.95 at all corpus sizes; un-triggered ablation shows decay. the paper documents both; no additional ablation needed for submission.
 
 ---
 

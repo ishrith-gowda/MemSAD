@@ -45,6 +45,10 @@
 \citation{kirchenbauer2023watermark}
 \citation{perez2022ignore}
 \citation{greshake2023not}
+\@writefile{toc}{\contentsline {paragraph}{RAG corpus poisoning.}{3}{section*.2}\protected@file@percent }
+\@writefile{toc}{\contentsline {paragraph}{Backdoor attacks on neural retrieval.}{3}{section*.3}\protected@file@percent }
+\@writefile{toc}{\contentsline {paragraph}{LLM watermarking for content provenance.}{3}{section*.4}\protected@file@percent }
+\@writefile{toc}{\contentsline {paragraph}{Prompt injection and indirect injection attacks.}{3}{section*.5}\protected@file@percent }
 \citation{memgpt2023}
 \citation{mem0}
 \citation{amem}
@@ -54,15 +58,10 @@
 \citation{gu2019badnets}
 \citation{zhang2024asb}
 \citation{amemguard2025}
-\@writefile{toc}{\contentsline {paragraph}{RAG corpus poisoning.}{3}{section*.2}\protected@file@percent }
-\@writefile{toc}{\contentsline {paragraph}{Backdoor attacks on neural retrieval.}{3}{section*.3}\protected@file@percent }
-\@writefile{toc}{\contentsline {paragraph}{LLM watermarking for content provenance.}{3}{section*.4}\protected@file@percent }
-\@writefile{toc}{\contentsline {paragraph}{Prompt injection and indirect injection attacks.}{3}{section*.5}\protected@file@percent }
 \citation{gao2019strip}
 \citation{goldblum2022dataset}
 \citation{hayase2021spectre}
 \citation{lee2018simple}
-\citation{chen2024agentpoison}
 \@writefile{lof}{\contentsline {figure}{\numberline {1}{\ignorespaces Memory poisoning threat model. The adversary injects adversarial entries $p_{\mathrm  {adv}}$ into the memory store $\mathcal  {M}$. When a victim query $q$ is issued, the poisoned entry is retrieved as top-$k$ context, causing the agent to produce an attacker-controlled response. The three attacks differ in how $p_{\mathrm  {adv}}$ is crafted and how write access to $\mathcal  {M}$ is obtained.}}{4}{figure.caption.8}\protected@file@percent }
 \providecommand*\caption@xref[2]{\@setref\relax\@undefined{#1}}
 \newlabel{fig:threat_model}{{1}{4}{Memory poisoning threat model. The adversary injects adversarial entries $p_{\mathrm {adv}}$ into the memory store $\mathcal {M}$. When a victim query $q$ is issued, the poisoned entry is retrieved as top-$k$ context, causing the agent to produce an attacker-controlled response. The three attacks differ in how $p_{\mathrm {adv}}$ is crafted and how write access to $\mathcal {M}$ is obtained}{figure.caption.8}{}}
@@ -72,8 +71,9 @@
 \newlabel{sec:threat}{{3}{4}{Threat Model}{section.3}{}}
 \@writefile{toc}{\contentsline {paragraph}{System model.}{4}{section*.9}\protected@file@percent }
 \newlabel{eq:retrieval}{{1}{4}{System model}{equation.1}{}}
-\@writefile{toc}{\contentsline {paragraph}{Attacker goal.}{4}{section*.10}\protected@file@percent }
 \citation{chen2024agentpoison}
+\citation{chen2024agentpoison}
+\@writefile{toc}{\contentsline {paragraph}{Attacker goal.}{5}{section*.10}\protected@file@percent }
 \@writefile{toc}{\contentsline {paragraph}{Success metrics.}{5}{section*.11}\protected@file@percent }
 \newlabel{eq:asrr}{{2}{5}{Success metrics}{equation.2}{}}
 \newlabel{eq:asra}{{3}{5}{Success metrics}{equation.3}{}}
@@ -148,8 +148,8 @@
 \newlabel{sec:statistical}{{6.4}{10}{Statistical Analysis}{subsection.6.4}{}}
 \@writefile{lot}{\contentsline {table}{\numberline {2}{\ignorespaces Impact of the triggered-query evaluation correction. Pre-fix: plain queries (no trigger). Post-fix: triggered queries ($q \oplus T^*$).}}{11}{table.caption.34}\protected@file@percent }
 \newlabel{tab:trigger_fix}{{2}{11}{Impact of the triggered-query evaluation correction. Pre-fix: plain queries (no trigger). Post-fix: triggered queries ($q \oplus \trigger ^*$)}{table.caption.34}{}}
-\@writefile{lot}{\contentsline {table}{\numberline {3}{\ignorespaces Attack success rate (ASR-R) under each defense (pre-ingestion filtering). Defense effectiveness = $1 - \text  {ASR-R}_{\text  {defended}} / \text  {ASR-R}_{\text  {baseline}}$.}}{11}{table.caption.35}\protected@file@percent }
-\newlabel{tab:attack_defense_matrix}{{3}{11}{Attack success rate (ASR-R) under each defense (pre-ingestion filtering). Defense effectiveness = $1 - \text {ASR-R}_{\text {defended}} / \text {ASR-R}_{\text {baseline}}$}{table.caption.35}{}}
+\@writefile{lot}{\contentsline {table}{\numberline {3}{\ignorespaces Attack success rate (ASR-R) under each defense (pre-ingestion filtering). Defense effectiveness = $1 - \text  {ASR-R}_{\text  {defended}} / \text  {ASR-R}_{\text  {baseline}}$. SAD is calibrated on plain victim queries (worst case for centroid-targeting attacks); under triggered-query calibration, \textsc  {AgentPoison}{} SAD ASR-R drops to $0.000$ (TPR\,=\,1.00, FPR\,=\,0.00).}}{11}{table.caption.35}\protected@file@percent }
+\newlabel{tab:attack_defense_matrix}{{3}{11}{Attack success rate (ASR-R) under each defense (pre-ingestion filtering). Defense effectiveness = $1 - \text {ASR-R}_{\text {defended}} / \text {ASR-R}_{\text {baseline}}$. SAD is calibrated on plain victim queries (worst case for centroid-targeting attacks); under triggered-query calibration, \agentpoison {} SAD ASR-R drops to $0.000$ (TPR\,=\,1.00, FPR\,=\,0.00)}{table.caption.35}{}}
 \@writefile{toc}{\contentsline {subsection}{\numberline {6.5}Adaptive Adversary Results}{11}{subsection.6.5}\protected@file@percent }
 \newlabel{sec:adaptive_results}{{6.5}{11}{Adaptive Adversary Results}{subsection.6.5}{}}
 \@writefile{toc}{\contentsline {paragraph}{Key finding.}{11}{section*.42}\protected@file@percent }
