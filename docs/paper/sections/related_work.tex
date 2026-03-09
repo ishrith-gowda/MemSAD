@@ -61,8 +61,15 @@ framework for backdoor attacks and defenses in classification settings;
 we adapt its matrix format to the memory-agent threat model.
 Neural Cleanse \citep{wang2019neuralcleanse} and STRIP \citep{gao2019strip}
 are representative detection methods that inspired our proactive and composite
-defense designs.  Unlike model-weight methods, our defenses target memory
-content directly and operate without model access.
+defense designs.  However, these methods are fundamentally model-centric:
+Neural Cleanse requires white-box model access and reverse-engineers trigger
+patterns in parameter space; STRIP perturbs \emph{inference-time inputs} and
+detects Trojan activation via entropy collapse.  Neither applies to the
+memory-poisoning setting: our defenses target raw \emph{stored content}
+rather than model weights or inference activations, and must operate at
+write time without access to the retrieval model's internal states.
+This architectural difference motivates SAD's calibration-based approach,
+which detects anomalous \emph{similarity} rather than anomalous \emph{activation}.
 
 \paragraph{LLM watermarking for content provenance.}
 \citet{zhao2024watermark} propose a provably robust token-level watermark
@@ -114,7 +121,14 @@ predictions; we adapt the key insight---that adversarial inputs cluster
 differently from benign ones in representation space---to the memory entry
 setting.  \citet{goldblum2022dataset} and \citet{hayase2021spectre} develop
 spectral methods for detecting poisoned samples in supervised learning;
-\sad{}'s calibration step is analogous in spirit but operates without
-labeled poison examples.  \citet{lee2018simple} show that Mahalanobis
-distance to class centroids is an effective out-of-distribution detector;
-our cosine similarity threshold is the retrieval-space analogue.
+their methods require a labeled set of both clean and poisoned training examples
+to compute a covariance structure and identify poisoned directions.
+In the memory-agent setting, no labeled poison examples are available at
+detection time, making spectral methods inapplicable.
+\sad{} sidesteps this by exploiting the \emph{query-similarity signal}:
+poison entries must be semantically close to victim queries (by attack
+design), while benign entries are not, enabling calibration from benign
+content alone.  \citet{lee2018simple} show that Mahalanobis distance to
+class centroids is an effective out-of-distribution detector;
+our cosine similarity threshold is the retrieval-space analogue, adapted
+to the unsupervised, query-conditioned memory setting.

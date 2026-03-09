@@ -141,3 +141,16 @@ controlled stochastic process to mimic realistic agent memory content.
 The victim query set $\mathcal{Q}_v$ contains 20 queries targeting
 preference/task/calendar topics.  The benign query control set contains
 20 off-target queries (science, programming, general knowledge).
+
+\paragraph{Encoder choice.}
+All retrieval, SAD calibration, and trigger-optimization evaluations use
+\texttt{sentence-transformers/all-MiniLM-L6-v2} (384-dim) as the production
+retrieval encoder, matching the encoder that a real deployment agent would
+use.  The DPR HotFlip trigger optimizer additionally uses the
+\texttt{facebook/dpr-ctx\_encoder-single-nq-base} (768-dim BERT-based)
+encoder \emph{only} during offline trigger construction (Section~\ref{sec:attacks}),
+as the AgentPoison paper specifies DPR for gradient-guided optimization.
+This two-encoder setup mirrors the realistic attack scenario in which the
+adversary has knowledge of the DPR architecture (used for optimization)
+while the deployed system uses a lighter retrieval model (all-MiniLM-L6-v2).
+Appendix~\ref{app:ablation} reports ablation results on encoder sensitivity.
