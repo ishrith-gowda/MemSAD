@@ -72,17 +72,20 @@ DPR HotFlip is most beneficial in embedding spaces with lower isotropy
 not span multiple query clusters.
 
 \paragraph{Generalization across embedding models and memory architectures.}
-All experiments use all-MiniLM-L6-v2 with FAISS IndexFlatIP.  Attack
-effectiveness and \sad{} calibration will differ for other encoders.
-Attacks that rely on trigger-triggered centroid retrieval should transfer
-broadly (any dense retriever shares the inner-product objective), but
-the absolute \asrr{} values will vary with encoder isotropy and vocabulary.
-\sad{}'s calibration is encoder-agnostic in design---it calibrates on
-whatever similarity distribution the deployed encoder produces---but its
-threshold $k$ may require re-tuning for encoders with different
-intra-corpus similarity ranges.  Graph-structured memory systems (e.g.,
-those using entity--relation stores) present a different attack surface
-that our retrieval-based threat model does not cover.
+All vector-memory experiments use all-MiniLM-L6-v2 with FAISS IndexFlatIP.
+Attack effectiveness and \sad{} calibration will differ for other encoders;
+our seven-encoder evaluation (Section~\ref{sec:phase22_results}) confirms
+that \sad{} generalizes across architecture families when $k=2.0$ is
+held fixed, with \agentpoison{} triggered-calibration achieving $\tpr=1.000$
+on all encoders tested.  Absolute ASR-R values vary with encoder isotropy:
+BGE-large's higher-dimensional space produces tighter query clusters that
+make centroid passages slightly less dominant, consistent with findings in
+\citet{chaudhari2024phantom}.  For graph-structured memory systems
+(Section~\ref{sec:phase22_results}), the attack surface differs fundamentally:
+structural topology attacks (hub insertion, edge-hijack) have no counterpart
+in flat-index retrieval, and degree-anomaly defenses require graph statistics
+unavailable in a FAISS store.  This motivates separate threat-model
+characterization for graph vs.\ flat memory backends.
 
 \paragraph{Deployment recommendations.}
 Three practical recommendations emerge from our evaluation.
@@ -103,10 +106,12 @@ layered combination, confirming that defense-in-depth provides compounding
 protection that individual defenses cannot.
 
 \paragraph{Limitations.}
-(i) Measured $\asra$ from GPT-2 (Section~\ref{sec:phase17_results}) is a
-lower bound; true $\asra$ from production LLMs (GPT-4, Llama-3) is expected
-to be substantially higher, closer to the modelled upper bound.
-Full live agent evaluation with production-scale LLMs remains future work.
+(i) The GPT-2 \textsc{LocalAgentEvaluator} provides a weak lower bound on
+$\asra$; our GPT-4o-mini \textsc{OpenAIAgentEvaluator} provides a
+production-scale measurement, but keyword-based action detection may
+undercount adversarial successes for sophisticated injected instructions
+that avoid explicit keywords.  Evaluation using human-annotated adversarial
+goals across diverse task domains remains an open problem.
 (ii) The synthetic corpus of 200 entries may not capture the full
 diversity of production memory contents, particularly in multi-user or
 multi-domain agent deployments.
@@ -129,13 +134,12 @@ lexical diversity features or synonym-aware thresholds to close this gap.
 
 \paragraph{Future work.}
 Key extensions include:
-(a)~live agent evaluation with production-scale LLMs (LangChain, OpenAI
-Assistants API) for tighter $\asra$ bounds;
-(b)~multi-agent propagation experiments where a single poisoned entry
-spreads across a shared knowledge base serving multiple agents;
-(c)~formal robustness analysis for composite portfolios under
+(a)~human-annotated adversarial goal evaluation across diverse task domains
+for tighter $\asra$ bounds beyond keyword detection;
+(b)~formal robustness analysis for composite portfolios under
 simultaneously-adaptive adversaries optimizing against all defenses jointly;
-(d)~evaluation on \citet{memorygraft2025} and \citet{amemguard2025}
+(c)~evaluation on \citet{memorygraft2025} and \citet{amemguard2025}
 architectures to assess cross-system generalization; and
-(e)~DPR trigger optimization in alternative embedding spaces (Contriever,
-E5, text-embedding-3) to assess encoder-agnostic attack strength.
+(d)~graph-level adaptive adversaries that exploit BFS expansion structure
+to craft subgraph attacks that evade degree-anomaly detection while
+maintaining high retrieval coverage.

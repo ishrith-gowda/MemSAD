@@ -81,8 +81,38 @@ This paper makes six contributions:
   the full token-level unigram watermark \citep{zhao2024watermark} via a
   GPT-2 backbone ($p_{\text{green}} \approx 0.711$, $+83\%$ z-score at
   short texts), and a local GPT-2 agent evaluator providing directly measured
-  lower bounds on $\asra$ (0.42--0.51 across attacks vs.\  modelled
+  lower bounds on $\asra$ (0.42--0.51 across attacks vs.\ modelled
   upper bounds of 0.68--0.76).
+
+  \item \textbf{Multi-encoder transferability.}  We evaluate all three
+  attacks and \sad{} across seven retrieval encoders spanning three
+  architecture families (sentence-transformers, Contriever-style, OpenAI
+  API) and compute linear CKA \citep{kornblith2019similarity} between all
+  encoder pairs.  High inter-encoder CKA predicts cross-encoder ASR-R
+  transferability, providing a practical tool for assessing which encoder
+  migrations preserve attacker advantage.
+
+  \item \textbf{Multi-agent epidemic propagation.}  We model the spread of
+  a single poisoned entry across $N$ agents sharing a FAISS knowledge base
+  using a discrete-step SIR epidemic model \citep{gu2024agentsmith}.
+  At each step, agents re-store retrieved entries with probability
+  $p_{\text{re-store}}$, amplifying initial injections into secondary
+  poison entries.  \sad{}-based write-time quarantine eliminates secondary
+  infection by blocking flagged entries before re-storage.
+
+  \item \textbf{Graph-structured memory attacks and defenses.}  We extend
+  the threat model to GraphRAG-style entity-relation memory stores,
+  implementing three structural attacks---hub insertion, edge-hijack, and
+  subgraph-cluster---that exploit graph topology to maximise retrieval
+  coverage.  Two graph-native defenses---degree-anomaly detection and
+  adjacency contamination scoring---identify structurally anomalous nodes
+  without labeled poison examples.
+
+  \item \textbf{Exact FPR validation.}  We validate FPR across 20
+  independent trials with fresh per-trial calibration using Clopper-Pearson
+  exact binomial confidence intervals \citep{clopper1934use}, confirming
+  FPR\,$=0.000$ for watermark and \sad{} combined-mode at $95\%$ confidence
+  with a one-sided upper bound $< 0.03$ ($n = 1{,}000$ benign trials).
 \end{enumerate}
 
 % --- paper organization ---

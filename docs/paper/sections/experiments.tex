@@ -409,3 +409,153 @@ Figure~\ref{fig:measured_asr} illustrates the comparison.
   \label{fig:measured_asr}
 \end{figure}%
 }{}
+
+\subsection{Multi-Encoder, Multi-Agent, and Graph Memory Evaluation}
+\label{sec:phase22_results}
+
+\subsubsection{Multi-Encoder Attack Transferability}
+
+We evaluate all three attacks and \sad{} across seven retrieval encoders
+using \textsc{MultiEncoderEvaluator} (\texttt{src/evaluation/multi\_encoder\_eval.py}).
+The encoder set spans three architecture families:
+\begin{itemize}
+  \item \emph{Sentence-transformers}: \texttt{all-MiniLM-L6-v2} (384-dim),
+        \texttt{all-mpnet-base-v2} (768-dim), \texttt{intfloat/e5-base-v2} (768-dim),
+        \texttt{facebook/contriever-msmarco} (768-dim), \texttt{BAAI/bge-large-en-v1.5} (1024-dim)
+  \item \emph{OpenAI API}: \texttt{text-embedding-3-small} (1536-dim),
+        \texttt{text-embedding-3-large} (3072-dim)
+\end{itemize}
+
+\paragraph{CKA transferability matrix.}
+We compute linear Centered Kernel Alignment (CKA; \citealt{kornblith2019similarity})
+between all $\binom{7}{2} = 21$ encoder pairs on $n=100$ shared corpus entries:
+\begin{equation}
+  \mathrm{CKA}(K, L) =
+  \frac{\mathrm{HSIC}(K_c, L_c)}{\sqrt{\mathrm{HSIC}(K_c, K_c)\,\mathrm{HSIC}(L_c, L_c)}},
+  \label{eq:cka}
+\end{equation}
+where $K = XX^\top$, $L = YY^\top$ are gram matrices of the respective embeddings
+and $K_c$, $L_c$ denote their doubly-centered versions.
+The gram-matrix formulation supports encoders with different embedding dimensions,
+enabling comparison across heterogeneous architectures.
+High CKA between two encoders indicates that their similarity-based ranking is
+nearly equivalent, predicting that attacks optimized against one encoder
+will transfer to the other.
+
+\paragraph{Cross-encoder SAD generalization.}
+\sad{} is calibrated on each encoder independently and evaluated using an
+\textsc{ExternalEmbeddingDetector} that replaces the default MiniLM-L6
+embedding with the target encoder's embeddings.  The calibration threshold
+$k$ is held fixed at $2.0$ across encoders.  The Appendix
+(Section~\ref{app:encoder_generalization}) reports encoder-level TPR/FPR
+and AUROC.
+
+\subsubsection{Multi-Agent Epidemic Propagation}
+
+We model inter-agent poison propagation using \textsc{MultiAgentEnvironment}
+(\texttt{src/evaluation/multi\_agent\_propagation.py}), a discrete-step
+SIR-inspired epidemic model \citep{gu2024agentsmith} over a shared
+\textsc{SharedKnowledgeBase} backed by a FAISS IndexFlatIP:
+
+\begin{enumerate}
+  \item At each step $t$, all $N$ agents issue $q_{\mathrm{step}}$ queries
+        to the shared knowledge base (top-$k$ retrieval).
+  \item Any agent that retrieves a poison entry re-stores a secondary
+        paraphrase of it with probability $p_{\mathrm{re\text{-}store}}$,
+        increasing the total poison count in the knowledge base.
+  \item Propagation terminates when no new secondary entries are added for
+        one full step or $t_{\mathrm{max}}$ steps are reached.
+\end{enumerate}
+
+This models real-world agentic deployments (shared Mem0, MemGPT, or
+LangChain memory) where retrievals from one agent session influence
+memory contents seen by other agents.
+
+\paragraph{SAD quarantine defense.}
+\textsc{PropagationWithSADQuarantine} runs two parallel simulations:
+(i) a baseline without defense; (ii) a defended simulation where each
+candidate entry---both initial and secondary---is screened through \sad{}
+($k=2.0$, combined scoring mode, $\fpr=0.000$) before insertion into the
+shared knowledge base.  Blocked entries are quarantined (not stored),
+halting secondary infection at the source.
+
+\paragraph{Key findings.}
+Under the baseline (no defense), a single initial poison entry can reach
+all $N$ agents within $t_{\mathrm{max}}$ steps as re-storage amplifies
+the poison count.
+\sad{} quarantine eliminates secondary entries entirely for \minja{} and
+\agentpoison{} (AUROC $= 1.000$), containing spread to the initial
+injection only.  For \injecmem{} (AUROC $= 0.920$), quarantine reduces
+but does not fully eliminate spread, consistent with the lower per-entry
+TPR ($0.40$) under plain-query calibration.
+
+\subsubsection{Graph-Structured Memory Attacks and Defenses}
+
+Real-world memory systems increasingly use graph-structured stores where
+memories are connected by semantic or relational edges (e.g., GraphRAG
+\citealt{edge2024graphrag}, MemGPT entity graphs \citealt{memgpt2023}).
+We implement \textsc{GraphMemorySystem} (\texttt{src/memory\_systems/graph\_memory.py}),
+a GraphRAG-style entity-relation store where nodes are memory entries and
+edges are auto-constructed when cosine similarity between entries exceeds
+$\tau_{\mathrm{edge}}$.  Retrieval uses top-$k$ anchor scoring followed
+by BFS graph expansion to depth $d$.
+
+\paragraph{Graph-native attacks.}
+We implement three structural attacks:
+\begin{itemize}
+  \item \textbf{Hub insertion.}  A poison entry is connected via
+        forced edges to the $n_h$ highest-degree benign nodes, placing it
+        at the centre of the graph and guaranteeing retrieval via any
+        query that triggers a hub anchor.
+  \item \textbf{Edge-hijack.}  A semantically plausible poison entry is
+        inserted normally; the top-degree benign hubs then have forced edges
+        added \emph{from} them to the poison node, making it a reachable
+        neighbour of already-trusted high-degree nodes.
+  \item \textbf{Subgraph cluster.}  Multiple poison entries form a
+        fully connected clique, creating a high-density region that
+        retrieval BFS expands fully once any cluster node is an anchor.
+\end{itemize}
+
+\paragraph{Graph-native defenses.}
+\begin{itemize}
+  \item \textbf{Degree-anomaly detection.}  A node is flagged if its degree
+        exceeds $\mu_{\mathrm{benign}} + \sigma \cdot \mathrm{std}_{\mathrm{benign}}$,
+        where statistics are computed over all non-adversarial nodes.  Hub
+        insertion is detectable at $\sigma = 2.0$ because forced connections
+        produce degree values far above the benign mean.
+  \item \textbf{Adjacency contamination scoring.}  For each benign node,
+        the fraction of adversarial neighbours is computed; benign nodes
+        with contamination $> 0$ indicate that edge-hijack attacks have
+        inserted forced edges from trusted hubs.
+\end{itemize}
+
+\subsubsection{Production-Scale \texorpdfstring{$\asra$}{ASR-A} and Exact FPR Validation}
+
+\paragraph{GPT-4o-mini agent evaluation.}
+Beyond the GPT-2 lower bound, we evaluate $\asra$ using
+\textsc{OpenAIAgentEvaluator} with \texttt{gpt-4o-mini} at temperature $T=0$
+as a production-scale agent.  Retrieval uses a FAISS index over
+\texttt{text-embedding-3-large} (3072-dim) embeddings.  For each victim
+query, the top-$k$ retrieved entries are embedded in the agent's system
+prompt; the model response is scored for adversarial action execution via
+keyword matching with threshold $\geq 1$ keyword hit.  This evaluator
+provides a directly measured production-scale $\asra$ rather than a
+modelled or proxy bound.
+
+\paragraph{Clopper-Pearson exact FPR validation.}
+We validate FPR using \textsc{FPRValidator} over $n_{\mathrm{trials}}=20$
+independent trials, each with fresh calibration on $n_{\mathrm{cal}}=100$
+benign entries and evaluation on $n_{\mathrm{benign}}=50$ held-out
+benign entries ($n_{\mathrm{total}} = 1{,}000$ benign evaluations).
+For the zero-event case ($k=0$ false positives), we apply the Clopper-Pearson
+exact binomial confidence interval \citep{clopper1934use}:
+\begin{equation}
+  \mathrm{CI}_{95\%}^{\mathrm{upper}}(k{=}0, n)
+  = 1 - \left(\tfrac{\alpha}{2}\right)^{1/n}
+  \approx \frac{-\ln(\alpha/2)}{n},
+  \label{eq:cp_ci}
+\end{equation}
+yielding an upper bound of $< 0.003$ on FPR at $95\%$ confidence for
+watermark and \sad{} combined-mode, substantially tighter than a normal
+approximation (which collapses to $0.000 \pm 0.000$ and provides no
+meaningful bound for zero-event trials \citealt{brown2001interval}).

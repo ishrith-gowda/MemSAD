@@ -1,5 +1,4 @@
 % Memory Agent Security: Unified Attack Evaluation and Defense Framework
-% Target: NeurIPS 2026 or ACM CCS 2026
 %
 % Compilation: pdflatex main.tex && bibtex main && pdflatex main.tex && pdflatex main.tex
 % Or use latexmk: latexmk -pdf main.tex
@@ -57,7 +56,7 @@
   \texttt{ishrithgowda@berkeley.edu}
 }
 
-\date{Draft --- \today}
+\date{March 2026}
 
 \begin{document}
 
@@ -107,6 +106,28 @@ $83\%$ higher z-scores than character-level at short text lengths; and
 (iii) a local GPT-2 agent evaluator providing a directly measured lower bound
 on $\asra$ ($0.42$--$0.51$ across attacks) that confirms the modelled values
 are conservative.
+
+We extend the evaluation across three further dimensions.
+\emph{Multi-encoder transferability}: we evaluate all three attacks and
+\sad{} across seven retrieval encoders (MiniLM-L6, MPNet-Base, E5-base,
+Contriever, BGE-large, OpenAI text-embedding-3-small/-large) and compute
+linear Centered Kernel Alignment (CKA) across all encoder pairs, finding
+that high inter-encoder CKA predicts cross-encoder ASR-R transferability.
+\emph{Multi-agent epidemic propagation}: a discrete-step SIR model over a
+shared FAISS knowledge base shows that a single poisoned entry spreads to
+connected agents via re-storage; \sad{}-based write-time quarantine halts
+secondary infection by blocking flagged entries before they are re-stored.
+\emph{Graph-structured memory}: we extend the threat model to GraphRAG-style
+entity-relation stores, implementing hub insertion, edge-hijack, and
+subgraph-cluster attacks that exploit graph topology, and two graph-native
+defenses---degree-anomaly detection and adjacency contamination
+scoring---that identify structurally anomalous nodes without requiring
+labeled poison examples.
+Production-scale \asra{} is directly measured using a GPT-4o-mini agent
+evaluator (OpenAI \texttt{text-embedding-3-large} retrieval, $T=0$),
+and FPR for all defenses is validated over 20 independent trials using
+Clopper-Pearson exact binomial confidence intervals, confirming
+FPR\,$=0.000$ for watermark and \sad{} combined-mode at $95\%$ confidence.
 
 All code, experiments, and figures are open-sourced at
 \url{https://github.com/ishrith-gowda/memory-agent-security}.

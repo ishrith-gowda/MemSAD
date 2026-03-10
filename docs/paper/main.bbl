@@ -1,4 +1,4 @@
-\begin{thebibliography}{35}
+\begin{thebibliography}{40}
 \providecommand{\natexlab}[1]{#1}
 \providecommand{\url}[1]{\texttt{#1}}
 \expandafter\ifx\csname urlstyle\endcsname\relax
@@ -32,6 +32,11 @@ Atousa Arzanipour, Rouzbeh Behnia, Reza Ebrahimi, and Kaushik Dutta.
 \newblock \emph{arXiv preprint arXiv:2509.20324}, 2025.
 \newblock URL \url{https://arxiv.org/abs/2509.20324}.
 
+\bibitem[Brown et~al.(2001)Brown, Cai, and DasGupta]{brown2001interval}
+Lawrence~D. Brown, T.~Tony Cai, and Anirban DasGupta.
+\newblock Interval estimation for a binomial proportion.
+\newblock \emph{Statistical Science}, 16\penalty0 (2):\penalty0 101--133, 2001.
+
 \bibitem[Carlini et~al.(2024)Carlini, Tram\`er, Brendel,
   et~al.]{carlini2024poisoning}
 Nicholas Carlini, Florian Tram\`er, Wieland Brendel, et~al.
@@ -59,6 +64,12 @@ Zhaorun Chen, Zhen Tan, Hexiang Zhao, Zhengyang Cheng, Chenhui Jiang, Huan
   (NeurIPS)}, 2024.
 \newblock URL \url{https://arxiv.org/abs/2407.12784}.
 
+\bibitem[Clopper and Pearson(1934)]{clopper1934use}
+C.~J. Clopper and E.~S. Pearson.
+\newblock The use of confidence or fiducial limits illustrated in the case of
+  the binomial.
+\newblock \emph{Biometrika}, 26\penalty0 (4):\penalty0 404--413, 1934.
+
 \bibitem[Dong et~al.(2025)]{dong2025minja}
 Sicheng Dong et~al.
 \newblock {MINJA}: Memory injection attacks on {LLM} agents via query-only
@@ -74,6 +85,14 @@ Javid Ebrahimi, Anyi Rao, Daniel Lowd, and Dejing Dou.
 \newblock In \emph{Proceedings of the 56th Annual Meeting of the Association
   for Computational Linguistics (ACL)}, 2018.
 \newblock URL \url{https://arxiv.org/abs/1712.06751}.
+
+\bibitem[Edge et~al.(2024)Edge, Trinh, Cheng, Bradley, Chao, Mody, Truitt, and
+  Larson]{edge2024graphrag}
+Darren Edge, Ha~Trinh, Newman Cheng, Joshua Bradley, Alex Chao, Apurva Mody,
+  Steven Truitt, and Jonathan Larson.
+\newblock From local to global: {A} {Graph RAG} approach to query-focused
+  summarization.
+\newblock \emph{arXiv preprint arXiv:2404.16130}, 2024.
 
 \bibitem[Efron and Tibshirani(1993)]{efron1993bootstrap}
 Bradley Efron and Robert~J. Tibshirani.
@@ -111,6 +130,16 @@ Tianyu Gu, Kang Liu, Brendan Dolan-Gavitt, and Siddharth Garg.
 \newblock {BadNets}: Evaluating backdooring attacks on deep neural networks.
 \newblock In \emph{IEEE Access}, 2019.
 
+\bibitem[Gu et~al.(2024)Gu, Zheng, Pang, Du, Liu, Wang, Jiang, and
+  Lin]{gu2024agentsmith}
+Xiangming Gu, Xiaosen Zheng, Tianyu Pang, Chao Du, Qian Liu, Ye~Wang, Jing
+  Jiang, and Min Lin.
+\newblock {AGENT-SMITH}: A single image can jailbreak one million multimodal
+  {LLM} agents instantly.
+\newblock In \emph{Proceedings of the 41st International Conference on Machine
+  Learning (ICML)}, 2024.
+\newblock URL \url{https://arxiv.org/abs/2402.08567}.
+
 \bibitem[Hayase et~al.(2021)Hayase, Kong, Somani, and Oh]{hayase2021spectre}
 Jonathan Hayase, Weihao Kong, Raghav Somani, and Sewoong Oh.
 \newblock {SPECTRE}: Defending against backdoor attacks using robust
@@ -139,6 +168,14 @@ John Kirchenbauer, Jonas Geiping, Yuxin Wen, Jonathan Katz, Ian Miers, and Tom
   Goldstein.
 \newblock A watermark for large language models.
 \newblock In \emph{International Conference on Machine Learning (ICML)}, 2023.
+
+\bibitem[Kornblith et~al.(2019)Kornblith, Norouzi, Lee, and
+  Hinton]{kornblith2019similarity}
+Simon Kornblith, Mohammad Norouzi, Honglak Lee, and Geoffrey Hinton.
+\newblock Similarity of neural network representations revisited.
+\newblock In \emph{Proceedings of the 36th International Conference on Machine
+  Learning (ICML)}, 2019.
+\newblock URL \url{https://arxiv.org/abs/1905.00414}.
 
 \bibitem[Lee et~al.(2018)Lee, Lee, Lee, and Shin]{lee2018simple}
 Kimin Lee, Kibok Lee, Honglak Lee, and Jinwoo Shin.

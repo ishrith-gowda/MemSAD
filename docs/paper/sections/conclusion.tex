@@ -50,6 +50,27 @@ $0.51$, $0.29$ for the three attacks) confirm that modelled upper bounds are
 conservative and that even a weak local proxy demonstrates meaningful adversarial
 action execution in retrieved-context scenarios.
 
+\textbf{Seventh}, we evaluate attack transferability and \sad{} generalization
+across seven retrieval encoders using linear CKA \citep{kornblith2019similarity},
+finding that inter-encoder CKA predicts cross-encoder ASR-R transferability.
+AgentPoison with triggered-query calibration achieves $\tpr=1.000$ on all tested
+encoders (Section~\ref{app:encoder_generalization}).
+
+\textbf{Eighth}, a discrete-step SIR epidemic model
+\citep{gu2024agentsmith} over a shared FAISS knowledge base shows that
+a single poisoned entry amplifies via re-storage; \sad{}-based write-time
+quarantine eliminates secondary infection for high-AUROC attack-defense pairs.
+
+\textbf{Ninth}, we extend the threat model to graph-structured memory by
+implementing three topology-exploiting attacks (hub insertion, edge-hijack,
+subgraph cluster) and two graph-native defenses (degree-anomaly detection,
+adjacency contamination scoring) over a GraphRAG-style entity-relation store.
+
+\textbf{Tenth}, FPR is validated over 20 independent trials using Clopper-Pearson
+exact binomial confidence intervals \citep{clopper1934use}, and production-scale
+$\asra$ is directly measured using a GPT-4o-mini agent evaluator with
+\texttt{text-embedding-3-large} retrieval.
+
 The $3 \times 5$ attack-defense interaction matrix confirms that no single defense
 dominates across all attack types.  Composite portfolios---combining watermark-based
 provenance verification with similarity-based anomaly detection---consistently
@@ -57,13 +78,12 @@ outperform individual defenses, motivating a defense-in-depth strategy for
 production memory systems.
 
 \paragraph{Open challenges.}
-Two challenges remain unsolved.  (1)~\emph{Production-scale live evaluation}:
-while our GPT-2 agent provides a lower bound, true $\asra$ measurement at scale
-requires production-scale LLMs (GPT-4, Llama-3) across thousands of evaluation
-queries.  (2)~\emph{Formal robustness bounds for composite defenses}: while the
-gradient-coupling property holds for \sad{} in isolation, no formal guarantee
-exists for the composite portfolio under adversaries that simultaneously optimize
-against all defense components.
+One key challenge remains: \emph{formal robustness bounds for composite defenses}.
+While the gradient-coupling property holds for \sad{} in isolation
+(Proposition~\ref{prop:gradient_tension}), no formal guarantee exists for the
+composite portfolio under adversaries that simultaneously optimize against all
+defense components.  Extending the coupling proof to the composite objective
+is a natural direction for future theoretical work.
 
 \paragraph{Reproducibility.}
 All code, the 200-entry synthetic corpus, evaluation scripts, and generated figures
