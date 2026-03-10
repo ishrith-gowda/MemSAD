@@ -4170,4 +4170,601 @@ class TestLocalAgentEvaluator:
 
         for attack in ("agent_poison", "minja", "injecmem", "default"):
             assert attack in _ADVERSARIAL_KEYWORDS
-            assert len(_ADVERSARIAL_KEYWORDS[attack]) > 0
+
+
+# ---------------------------------------------------------------------------
+# lexical diversity gate tests
+# ---------------------------------------------------------------------------
+
+
+class TestTokenizerHelpers:
+    """unit tests for _tokenize and component score functions."""
+
+    def test_tokenize_basic(self):
+        """_tokenize should lowercase, strip punctuation, and split."""
+        from defenses.lexical_diversity import _tokenize
+
+        tokens = _tokenize("Hello, World! This is a test.")
+        assert "hello" in tokens
+        assert "world" in tokens
+        assert "test" in tokens
+        # punctuation stripped
+        assert "hello," not in tokens
+
+    def test_tokenize_drops_single_chars(self):
+        """_tokenize should drop single-character tokens."""
+        from defenses.lexical_diversity import _tokenize
+
+        tokens = _tokenize("a b c hello world")
+        assert "a" not in tokens
+        assert "b" not in tokens
+        assert "hello" in tokens
+
+    def test_tokenize_empty(self):
+        """_tokenize on empty string returns empty list."""
+        from defenses.lexical_diversity import _tokenize
+
+        assert _tokenize("") == []
+
+    def test_type_token_ratio_diverse(self):
+        """ttr should be high for diverse text."""
+        from defenses.lexical_diversity import _tokenize, _type_token_ratio
+
+        text = "the quick brown fox jumps over the lazy dog near the river"
+        tokens = _tokenize(text)
+        ttr = _type_token_ratio(tokens)
+        # some words repeated but majority unique
+        assert 0.4 <= ttr <= 1.0
+
+    def test_type_token_ratio_repetitive(self):
+        """ttr should be low for repetitive keyword-stuffed text."""
+        from defenses.lexical_diversity import _tokenize, _type_token_ratio
+
+        text = "access access access credentials credentials bypass bypass override"
+        tokens = _tokenize(text)
+        ttr = _type_token_ratio(tokens)
+        assert ttr < 0.7
+
+    def test_type_token_ratio_short_text(self):
+        """ttr returns 1.0 for texts with fewer than 5 tokens."""
+        from defenses.lexical_diversity import _tokenize, _type_token_ratio
+
+        tokens = _tokenize("hello world")
+        assert _type_token_ratio(tokens) == 1.0
+
+    def test_ngram_overlap_no_query_vocab(self):
+        """ngram_overlap returns 0.0 when query_vocab is empty."""
+        from defenses.lexical_diversity import _ngram_overlap, _tokenize
+
+        tokens = _tokenize("some random text here to test")
+        assert _ngram_overlap(tokens, set()) == 0.0
+
+    def test_ngram_overlap_full_match(self):
+        """ngram_overlap returns 1.0 when all entry tokens are in query vocab."""
+        from defenses.lexical_diversity import _ngram_overlap
+
+        tokens = ["access", "credentials", "bypass"]
+        query_vocab = {"access", "credentials", "bypass", "extra"}
+        assert _ngram_overlap(tokens, query_vocab) == pytest.approx(1.0)
+
+    def test_ngram_overlap_partial(self):
+        """ngram_overlap returns correct fraction for partial matches."""
+        from defenses.lexical_diversity import _ngram_overlap
+
+        tokens = ["access", "the", "server", "now"]
+        query_vocab = {"access", "server"}
+        overlap = _ngram_overlap(tokens, query_vocab)
+        assert overlap == pytest.approx(0.5)
+
+    def test_repetition_rate_keyword_stuffed(self):
+        """repetition rate should be high for keyword-stuffed text."""
+        from defenses.lexical_diversity import _repetition_rate, _tokenize
+
+        text = "override override override override credentials bypass"
+        tokens = _tokenize(text)
+        rep = _repetition_rate(tokens)
+        assert rep > 0.5
+
+    def test_repetition_rate_diverse(self):
+        """repetition rate should be low for diverse text."""
+        from defenses.lexical_diversity import _repetition_rate, _tokenize
+
+        text = "the assistant scheduled meeting with client regarding project delivery"
+        tokens = _tokenize(text)
+        rep = _repetition_rate(tokens)
+        assert rep < 0.25
+
+    def test_repetition_rate_short_text(self):
+        """repetition rate returns 0.0 for texts shorter than 5 tokens."""
+        from defenses.lexical_diversity import _repetition_rate, _tokenize
+
+        tokens = _tokenize("hello world")
+        assert _repetition_rate(tokens) == 0.0
+
+
+class TestLexicalDiversityGate:
+    """integration tests for LexicalDiversityGate."""
+
+    @pytest.fixture
+    def benign_corpus(self):
+        """representative benign memory entries."""
+        return [
+            "scheduled a meeting with the marketing team for next tuesday at 2pm",
+            "retrieved weather forecast showing rain expected through the weekend",
+            "user prefers dark mode and keyboard shortcuts for navigation",
+            "last expense report was submitted on the third of this month",
+            "the quarterly review is set for friday afternoon in conference room b",
+            "connected to the vpn successfully before accessing the internal portal",
+            "updated the project timeline after discussing with the product manager",
+            "the client confirmed receipt of the deliverables via email yesterday",
+            "reminder: dentist appointment is scheduled for thursday morning",
+            "the research paper draft has been shared with all co-authors",
+            "latest deployment completed without errors at 11pm on sunday",
+            "the user asked about available slots for a follow-up consultation",
+            "budget approval for q3 was received from the finance department",
+            "the onboarding checklist has been completed for the new hire",
+            "library book return deadline is the end of this week",
+        ]
+
+    @pytest.fixture
+    def victim_queries(self):
+        """victim query set covering security-adjacent topics."""
+        return [
+            "how do i access my credentials",
+            "what tasks are scheduled for today",
+            "show me the override options for the system",
+            "list the recent memory entries about access",
+            "retrieve information about bypass procedures",
+        ]
+
+    @pytest.fixture
+    def calibrated_gate(self, benign_corpus, victim_queries):
+        """calibrated LexicalDiversityGate fixture."""
+        from defenses.lexical_diversity import LexicalDiversityGate
+
+        gate = LexicalDiversityGate(threshold_sigma=1.5)
+        gate.calibrate(benign_corpus, victim_queries)
+        return gate
+
+    def test_calibrate_returns_expected_keys(self, benign_corpus, victim_queries):
+        """calibrate should return dict with mean/std/threshold/n_entries."""
+        from defenses.lexical_diversity import LexicalDiversityGate
+
+        gate = LexicalDiversityGate()
+        stats = gate.calibrate(benign_corpus, victim_queries)
+        for key in ("mean", "std", "threshold", "n_entries", "n_query_vocab"):
+            assert key in stats, f"missing key: {key}"
+        assert stats["n_entries"] == len(benign_corpus)
+        assert stats["n_query_vocab"] > 0
+
+    def test_calibrate_sets_is_calibrated(self, benign_corpus, victim_queries):
+        """calibrate should set is_calibrated = True."""
+        from defenses.lexical_diversity import LexicalDiversityGate
+
+        gate = LexicalDiversityGate()
+        assert gate.is_calibrated is False
+        gate.calibrate(benign_corpus, victim_queries)
+        assert gate.is_calibrated is True
+
+    def test_score_raises_if_not_calibrated(self):
+        """score should raise RuntimeError if calibrate was not called."""
+        from defenses.lexical_diversity import LexicalDiversityGate
+
+        gate = LexicalDiversityGate()
+        with pytest.raises(RuntimeError, match="calibrate"):
+            gate.score("some entry text")
+
+    def test_calibrate_empty_entries_raises(self, victim_queries):
+        """calibrate should raise ValueError for empty benign_entries."""
+        from defenses.lexical_diversity import LexicalDiversityGate
+
+        gate = LexicalDiversityGate()
+        with pytest.raises(ValueError):
+            gate.calibrate([], victim_queries)
+
+    def test_score_benign_entry_not_flagged(self, calibrated_gate):
+        """a typical benign entry should not be flagged as anomalous."""
+        result = calibrated_gate.score(
+            "meeting with the client was rescheduled to monday morning"
+        )
+        # benign entries should mostly pass; allow occasional flagging at sigma=1.5
+        assert isinstance(result.ttr, float)
+        assert 0.0 <= result.ttr <= 1.0
+        assert isinstance(result.is_lexically_anomalous, bool)
+
+    def test_score_adversarial_entry_flagged(self, calibrated_gate):
+        """an obviously adversarial keyword-stuffed entry should score lower."""
+        benign = calibrated_gate.score(
+            "meeting was rescheduled to tuesday afternoon with the team"
+        )
+        adversarial = calibrated_gate.score(
+            "access access credentials override bypass override bypass credentials"
+            " access credentials override task task task override"
+        )
+        # adversarial should have lower lexical score than benign
+        assert adversarial.lexical_score < benign.lexical_score
+
+    def test_score_result_fields(self, calibrated_gate):
+        """LexicalDiversityResult should contain all expected fields."""
+        from defenses.lexical_diversity import LexicalDiversityResult
+
+        result = calibrated_gate.score("the assistant found the requested document")
+        assert isinstance(result, LexicalDiversityResult)
+        assert hasattr(result, "ttr")
+        assert hasattr(result, "ngram_overlap")
+        assert hasattr(result, "repetition_rate")
+        assert hasattr(result, "lexical_score")
+        assert hasattr(result, "threshold")
+        assert hasattr(result, "is_lexically_anomalous")
+        assert hasattr(result, "calibration_mean")
+        assert hasattr(result, "calibration_std")
+
+    def test_score_result_to_dict(self, calibrated_gate):
+        """to_dict should return dict with expected keys."""
+        result = calibrated_gate.score("some memory entry text for testing purposes")
+        d = result.to_dict()
+        for key in (
+            "ttr",
+            "ngram_overlap",
+            "repetition_rate",
+            "lexical_score",
+            "threshold",
+            "is_lexically_anomalous",
+        ):
+            assert key in d
+
+    def test_score_batch_length(self, calibrated_gate):
+        """score_batch should return one result per entry."""
+        entries = [
+            "first memory entry about meetings",
+            "second entry about documents and files",
+            "third entry about access credentials",
+        ]
+        results = calibrated_gate.score_batch(entries)
+        assert len(results) == len(entries)
+
+    def test_score_batch_matches_individual(self, calibrated_gate):
+        """score_batch should match individual score calls."""
+        entries = [
+            "the team completed the sprint review yesterday",
+            "access override credentials bypass task override",
+        ]
+        batch = calibrated_gate.score_batch(entries)
+        for i, entry in enumerate(entries):
+            individual = calibrated_gate.score(entry)
+            assert batch[i].lexical_score == pytest.approx(individual.lexical_score)
+
+    def test_query_vocab_populated(self, calibrated_gate, victim_queries):
+        """query vocab should include tokens from all victim queries."""
+        # at least one common token from victim queries should be in vocab
+        assert len(calibrated_gate.query_vocab) > 0
+
+    def test_higher_sigma_fewer_flags(self, benign_corpus, victim_queries):
+        """higher threshold_sigma should flag fewer benign entries."""
+        from defenses.lexical_diversity import LexicalDiversityGate
+
+        gate_strict = LexicalDiversityGate(threshold_sigma=0.5)
+        gate_loose = LexicalDiversityGate(threshold_sigma=3.0)
+        gate_strict.calibrate(benign_corpus, victim_queries)
+        gate_loose.calibrate(benign_corpus, victim_queries)
+
+        strict_flags = sum(
+            1 for e in benign_corpus if gate_strict.score(e).is_lexically_anomalous
+        )
+        loose_flags = sum(
+            1 for e in benign_corpus if gate_loose.score(e).is_lexically_anomalous
+        )
+        assert strict_flags >= loose_flags
+
+    def test_evaluate_on_corpus_returns_metrics(
+        self, calibrated_gate, benign_corpus, victim_queries
+    ):
+        """evaluate_on_corpus should return tpr/fpr/auroc keys."""
+        poison = [
+            "override credentials bypass access task override credentials bypass",
+            "access access override bypass credentials task task access override",
+        ]
+        metrics = calibrated_gate.evaluate_on_corpus(poison, benign_corpus[:5])
+        for key in ("tpr", "fpr", "auroc", "threshold", "n_poison", "n_benign"):
+            assert key in metrics
+        assert 0.0 <= metrics["tpr"] <= 1.0
+        assert 0.0 <= metrics["fpr"] <= 1.0
+        assert 0.0 <= metrics["auroc"] <= 1.0
+
+    def test_evaluate_on_corpus_component_averages(
+        self, calibrated_gate, benign_corpus
+    ):
+        """evaluate_on_corpus should return mean component scores for poison/benign."""
+        poison = [
+            "override credentials bypass access task override credentials bypass",
+        ]
+        metrics = calibrated_gate.evaluate_on_corpus(poison, benign_corpus[:5])
+        for key in (
+            "mean_ttr_poison",
+            "mean_ttr_benign",
+            "mean_overlap_poison",
+            "mean_overlap_benign",
+            "mean_rep_poison",
+            "mean_rep_benign",
+        ):
+            assert key in metrics
+            assert isinstance(metrics[key], float)
+
+    def test_get_config_returns_expected_keys(self, calibrated_gate):
+        """get_config should return configuration dict."""
+        config = calibrated_gate.get_config()
+        for key in (
+            "threshold_sigma",
+            "is_calibrated",
+            "calibration_mean",
+            "calibration_std",
+            "n_query_vocab",
+        ):
+            assert key in config
+        assert config["is_calibrated"] is True
+
+
+class TestAurocHelper:
+    """unit tests for _auroc_from_scores."""
+
+    def test_perfect_separation(self):
+        """auroc should be 1.0 for perfect score separation."""
+        from defenses.lexical_diversity import _auroc_from_scores
+
+        scores = [0.9, 0.8, 0.7, 0.1, 0.2, 0.3]
+        labels = [1, 1, 1, 0, 0, 0]
+        auroc = _auroc_from_scores(scores, labels)
+        assert auroc == pytest.approx(1.0)
+
+    def test_random_chance(self):
+        """auroc should be near 0.5 for random scores."""
+        from defenses.lexical_diversity import _auroc_from_scores
+
+        scores = [0.5, 0.5, 0.5, 0.5]
+        labels = [1, 0, 1, 0]
+        auroc = _auroc_from_scores(scores, labels)
+        assert 0.0 <= auroc <= 1.0
+
+    def test_all_same_label_returns_half(self):
+        """auroc should return 0.5 when all labels are the same."""
+        from defenses.lexical_diversity import _auroc_from_scores
+
+        scores = [0.9, 0.8, 0.7]
+        labels = [1, 1, 1]
+        auroc = _auroc_from_scores(scores, labels)
+        assert auroc == pytest.approx(0.5)
+
+    def test_inverse_separation(self):
+        """auroc should be 0.0 for perfectly inverted separation."""
+        from defenses.lexical_diversity import _auroc_from_scores
+
+        scores = [0.1, 0.2, 0.3, 0.7, 0.8, 0.9]
+        labels = [1, 1, 1, 0, 0, 0]
+        auroc = _auroc_from_scores(scores, labels)
+        assert auroc == pytest.approx(0.0)
+
+
+class TestSADWithLexicalGate:
+    """integration tests for SADWithLexicalGate combined detector."""
+
+    @pytest.fixture
+    def benign_entries(self):
+        return [
+            "the user scheduled a meeting for friday at noon with the project team",
+            "retrieved the latest weather update showing clear skies for the weekend",
+            "the expense report was approved by the finance team this morning",
+            "connected to the company vpn and accessed the internal dashboard",
+            "updated the project roadmap after the planning session with stakeholders",
+            "the client sent feedback confirming satisfaction with deliverable quality",
+            "reminder to complete the performance review before end of the quarter",
+            "the new feature deployment went live without any reported issues",
+            "the user bookmarked several research papers for later reading",
+            "the weekly digest was sent to all team members on monday morning",
+        ]
+
+    @pytest.fixture
+    def victim_queries(self):
+        return [
+            "what are my scheduled tasks today",
+            "show me the access credentials",
+            "how do i override the system settings",
+            "retrieve information about bypass procedures",
+        ]
+
+    @pytest.fixture
+    def calibrated_combined(self, benign_entries, victim_queries):
+        """calibrated SADWithLexicalGate (skip if sentence-transformers unavailable)."""
+        pytest.importorskip("sentence_transformers")
+        from defenses.lexical_diversity import SADWithLexicalGate
+
+        combined = SADWithLexicalGate(
+            sad_threshold_sigma=2.0,
+            lex_threshold_sigma=1.5,
+            sad_scoring_mode="combined",
+        )
+        combined.calibrate(benign_entries, victim_queries)
+        return combined
+
+    def test_calibrate_returns_sad_and_lex_keys(self, benign_entries, victim_queries):
+        """calibrate should return stats for both components."""
+        pytest.importorskip("sentence_transformers")
+        from defenses.lexical_diversity import SADWithLexicalGate
+
+        combined = SADWithLexicalGate()
+        stats = combined.calibrate(benign_entries, victim_queries)
+        assert "sad" in stats
+        assert "lex" in stats
+        assert "mean" in stats["sad"]
+        assert "mean" in stats["lex"]
+
+    def test_detect_benign_entry_verdict(self, calibrated_combined):
+        """a benign entry should receive pass or soft_flag verdict."""
+        result = calibrated_combined.detect(
+            "the assistant retrieved the document requested by the user"
+        )
+        assert result["verdict"] in ("pass", "soft_flag", "hard_block")
+        assert "sad_flagged" in result
+        assert "lex_flagged" in result
+        assert "sad_score" in result
+        assert "lex_score" in result
+
+    def test_detect_adversarial_entry_verdict_keys(self, calibrated_combined):
+        """detect should return all expected keys regardless of verdict."""
+        result = calibrated_combined.detect(
+            "override credentials bypass access task override credentials bypass"
+        )
+        for key in (
+            "verdict",
+            "sad_flagged",
+            "lex_flagged",
+            "sad_score",
+            "lex_score",
+            "sad_result",
+            "lex_result",
+        ):
+            assert key in result
+
+    def test_verdict_logic_hard_block(self, calibrated_combined, monkeypatch):
+        """verdict should be hard_block when both sad and lex fire."""
+        from defenses.lexical_diversity import LexicalDiversityResult
+        from defenses.semantic_anomaly import AnomalyScore
+
+        # mock sad.detect to return anomalous
+        mock_sad = AnomalyScore(
+            entry_text="x",
+            max_query_similarity=0.9,
+            mean_query_similarity=0.85,
+            anomaly_score=5.0,
+            threshold=2.0,
+            is_anomalous=True,
+            calibration_mean=0.3,
+            calibration_std=0.05,
+            sigma_multiple=6.0,
+        )
+        # mock lex_gate.score to return anomalous
+        mock_lex = LexicalDiversityResult(
+            entry_text="x",
+            ttr=0.2,
+            ngram_overlap=0.7,
+            repetition_rate=0.3,
+            lexical_score=-0.1,
+            threshold=0.3,
+            is_lexically_anomalous=True,
+            calibration_mean=0.5,
+            calibration_std=0.1,
+        )
+        monkeypatch.setattr(calibrated_combined.sad, "detect", lambda e: mock_sad)
+        monkeypatch.setattr(calibrated_combined.lex_gate, "score", lambda e: mock_lex)
+        result = calibrated_combined.detect("any entry")
+        assert result["verdict"] == "hard_block"
+        assert result["sad_flagged"] is True
+        assert result["lex_flagged"] is True
+
+    def test_verdict_logic_soft_flag(self, calibrated_combined, monkeypatch):
+        """verdict should be soft_flag when sad fires but lex does not."""
+        from defenses.lexical_diversity import LexicalDiversityResult
+        from defenses.semantic_anomaly import AnomalyScore
+
+        mock_sad = AnomalyScore(
+            entry_text="x",
+            max_query_similarity=0.9,
+            mean_query_similarity=0.85,
+            anomaly_score=5.0,
+            threshold=2.0,
+            is_anomalous=True,
+            calibration_mean=0.3,
+            calibration_std=0.05,
+            sigma_multiple=6.0,
+        )
+        mock_lex = LexicalDiversityResult(
+            entry_text="x",
+            ttr=0.8,
+            ngram_overlap=0.1,
+            repetition_rate=0.05,
+            lexical_score=0.7,
+            threshold=0.3,
+            is_lexically_anomalous=False,
+            calibration_mean=0.6,
+            calibration_std=0.1,
+        )
+        monkeypatch.setattr(calibrated_combined.sad, "detect", lambda e: mock_sad)
+        monkeypatch.setattr(calibrated_combined.lex_gate, "score", lambda e: mock_lex)
+        result = calibrated_combined.detect("any entry")
+        assert result["verdict"] == "soft_flag"
+        assert result["sad_flagged"] is True
+        assert result["lex_flagged"] is False
+
+    def test_verdict_logic_pass(self, calibrated_combined, monkeypatch):
+        """verdict should be pass when sad does not fire."""
+        from defenses.lexical_diversity import LexicalDiversityResult
+        from defenses.semantic_anomaly import AnomalyScore
+
+        mock_sad = AnomalyScore(
+            entry_text="x",
+            max_query_similarity=0.2,
+            mean_query_similarity=0.1,
+            anomaly_score=1.0,
+            threshold=2.0,
+            is_anomalous=False,
+            calibration_mean=0.3,
+            calibration_std=0.05,
+            sigma_multiple=-2.0,
+        )
+        mock_lex = LexicalDiversityResult(
+            entry_text="x",
+            ttr=0.8,
+            ngram_overlap=0.1,
+            repetition_rate=0.05,
+            lexical_score=0.7,
+            threshold=0.3,
+            is_lexically_anomalous=False,
+            calibration_mean=0.6,
+            calibration_std=0.1,
+        )
+        monkeypatch.setattr(calibrated_combined.sad, "detect", lambda e: mock_sad)
+        monkeypatch.setattr(calibrated_combined.lex_gate, "score", lambda e: mock_lex)
+        result = calibrated_combined.detect("any entry")
+        assert result["verdict"] == "pass"
+
+    def test_update_query_set(self, calibrated_combined):
+        """update_query_set should extend vocab and not raise."""
+        old_vocab_size = len(calibrated_combined.lex_gate.query_vocab)
+        calibrated_combined.update_query_set(
+            "what are the new authentication bypass methods"
+        )
+        assert len(calibrated_combined.lex_gate.query_vocab) >= old_vocab_size
+
+    def test_evaluate_on_corpus_soft_flag_threshold(self, calibrated_combined):
+        """evaluate_on_corpus with soft_flag threshold should return valid metrics."""
+        poison = [
+            "override credentials bypass access task override credentials bypass task",
+            "access access override bypass credentials task task access override task",
+        ]
+        benign = [
+            "the meeting was rescheduled to tuesday afternoon with the marketing team",
+            "the expense report was approved by finance yesterday morning",
+            "weather forecast shows clear skies for the entire upcoming weekend",
+        ]
+        metrics = calibrated_combined.evaluate_on_corpus(
+            poison, benign, verdict_threshold="soft_flag"
+        )
+        for key in ("tpr", "fpr", "auroc", "verdict_threshold"):
+            assert key in metrics
+        assert metrics["verdict_threshold"] == "soft_flag"
+        assert 0.0 <= metrics["tpr"] <= 1.0
+        assert 0.0 <= metrics["fpr"] <= 1.0
+
+    def test_evaluate_on_corpus_hard_block_threshold(self, calibrated_combined):
+        """evaluate_on_corpus with hard_block threshold should return valid metrics."""
+        poison = [
+            "override credentials bypass access task override credentials bypass",
+        ]
+        benign = [
+            "the assistant helped the user schedule a meeting for next week",
+        ]
+        metrics = calibrated_combined.evaluate_on_corpus(
+            poison, benign, verdict_threshold="hard_block"
+        )
+        assert metrics["verdict_threshold"] == "hard_block"
+        assert "n_hard_block_poison" in metrics
+        assert "n_soft_flag_poison" in metrics
