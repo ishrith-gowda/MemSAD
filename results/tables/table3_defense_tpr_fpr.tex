@@ -1,16 +1,18 @@
-\begin{table*}[t]
+\begin{table}[t]
 \centering
-\small
-\caption{Defense detection rates: TPR (true positive — poison flagged) and FPR (false positive — benign flagged) per (attack, defense) pair.}
+\caption{Defense detection performance (TPR, FPR) per (attack, defense) pair. SAD = Semantic Anomaly Detection (ours).}
 \label{tab:defense_tpr_fpr}
-\begin{tabular}{l|cc|cc|cc|cc|cc}
+\begin{tabular}{lccc}
 \toprule
-Attack & \multicolumn{2}{c}{Watermark} & \multicolumn{2}{c}{Validation} & \multicolumn{2}{c}{Proactive} & \multicolumn{2}{c}{Composite} & \multicolumn{2}{c}{SAD (Ours)} \\
- & TPR & FPR & TPR & FPR & TPR & FPR & TPR & FPR & TPR & FPR \\
+\multicolumn{4}{c}{TPR / FPR by (Defense, Attack)} \\
 \midrule
-AgentPoison & 1.000 & 0.860 & 1.000 & 0.000 & 1.000 & 1.000 & 1.000 & 1.000 & 0.000 & 0.047 \\
-MINJA & 1.000 & 0.860 & 1.000 & 0.000 & 1.000 & 1.000 & 1.000 & 1.000 & 1.000 & 0.047 \\
-InjecMEM & 1.000 & 0.860 & 0.000 & 0.000 & 1.000 & 1.000 & 1.000 & 1.000 & 0.200 & 0.047 \\
+Defense & AgentPoison & MINJA & InjecMEM \\
+\midrule
+Watermark & 1.00 / 0.00 & 1.00 / 0.00 & 1.00 / 0.00 \\
+Validation & 1.00 / 0.00 & 1.00 / 0.00 & 0.00 / 0.00 \\
+Proactive & 1.00 / 0.01 & 0.07 / 0.01 & 0.60 / 0.01 \\
+Composite & 1.00 / 0.00 & 1.00 / 0.00 & 1.00 / 0.00 \\
+SAD (ours) & 0.00 / 0.05 & 1.00 / 0.05 & 0.20 / 0.05 \\
 \bottomrule
 \end{tabular}
-\end{table*}
+\end{table}

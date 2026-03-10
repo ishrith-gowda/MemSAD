@@ -100,6 +100,16 @@ underestimate attacker capability.
   \input{../../results/tables/table3_defense_tpr_fpr}%
 }{}
 
+\paragraph{Defense differentiation.}
+Table~\ref{tab:defense_tpr_fpr} shows each defense has a distinct effectiveness
+profile.  Watermark and Composite achieve $\tpr=1.00$, $\fpr=0.00$ uniformly.
+Proactive achieves $\tpr=1.00$ / $\fpr=0.01$ for \agentpoison{} and
+$\tpr=0.60$ / $\fpr=0.01$ for \injecmem{}, but only $\tpr=0.07$ for \minja{}:
+targeted bridging-step passages match few cross-domain retrieval probes, so
+the retrieval-breadth criterion does not flag them.  Validation achieves
+$\tpr=0.00$ for \injecmem{}, which avoids rule-based injection keywords.
+This complementary structure motivates the composite ensemble.
+
 \paragraph{SAD calibration and the triggered-query effect.}
 Table~\ref{tab:defense_tpr_fpr} shows \sad{} achieves $\tpr=0.00$ for
 \agentpoison{} under plain-query calibration.  We show (Section~\ref{sec:discussion})

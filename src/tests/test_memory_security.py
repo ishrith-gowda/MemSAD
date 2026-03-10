@@ -287,11 +287,18 @@ class TestDefenseImplementations:
         defense.deactivate()
 
     def test_proactive_defense_returns_simulation_results(self):
-        """test proactive defense returns simulation results."""
+        """test proactive defense returns retrieval-breadth detection result."""
         defense = create_defense("proactive")
         defense.activate()
         result = defense.detect_attack("test content for simulation")
-        assert "simulation_results" in result
+        # proactive defense uses retrieval-breadth analysis (not mock attacks);
+        # result has mean_similarity and detection_method, not simulation_results
+        assert "attack_detected" in result
+        assert "detection_method" in result
+        assert result["detection_method"] in (
+            "proactive_retrieval_breadth",
+            "proactive_monitoring",
+        )
         defense.deactivate()
 
     def test_defense_suite_activate_all_returns_booleans(self):

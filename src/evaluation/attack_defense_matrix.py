@@ -211,6 +211,50 @@ def _detect_with_defense(
             latency_ms,
         )
 
+    elif defense_type in ("watermark", "composite"):
+        # watermark and composite defenses: in production, all legitimate writes go
+        # through the provenance encoder before storage.  fpr must therefore be
+        # computed on pre-watermarked benign entries — measuring whether the detector
+        # incorrectly rejects an entry it just signed.  evaluating on un-watermarked
+        # benign entries inflates fpr artificially, since the watermark component is
+        # designed to flag entries without a valid watermark signature.
+        try:
+            from watermark.watermarking import create_watermark_encoder
+
+            defense = create_defense(defense_type)
+            defense.activate()
+            encoder = create_watermark_encoder("unigram")
+        except Exception:
+            return (
+                [False] * len(poison_entries),
+                [False] * len(benign_sample),
+                0.0,
+            )
+
+        # poison entries: not watermarked (attacker cannot obtain the key)
+        poison_flagged: List[bool] = []
+        for text in poison_texts:
+            t0 = time.perf_counter()
+            result = defense.detect_attack(text)
+            latencies.append((time.perf_counter() - t0) * 1000)
+            poison_flagged.append(bool(result.get("attack_detected", False)))
+
+        # benign entries: watermarked at write time, then verified by the defense
+        benign_flagged: List[bool] = []
+        for text in benign_sample:
+            try:
+                wm_id = f"benign_{abs(hash(text)) % 100000}"
+                watermarked_text = encoder.embed(text, wm_id)
+            except Exception:
+                watermarked_text = text
+            t0 = time.perf_counter()
+            result = defense.detect_attack(watermarked_text)
+            latencies.append((time.perf_counter() - t0) * 1000)
+            benign_flagged.append(bool(result.get("attack_detected", False)))
+
+        avg_latency = sum(latencies) / len(latencies) if latencies else 0.0
+        return poison_flagged, benign_flagged, avg_latency
+
     else:
         # standard defense api: detect_attack(content) → {"attack_detected": bool}
         try:

@@ -75,18 +75,28 @@ computational overhead; high FPR for semantically sophisticated attacks.
 
 \subsection{Proactive Defense}
 
-Before storing a candidate entry, the defense simulates what would happen if
-the entry were stored and retrieved on a battery of test queries.  Entries
-that consistently retrieve as the top result for many queries (above a
-specificity threshold) are flagged as suspicious.  This is analogous to
-\citet{gao2019strip}'s perturbation-based detection.
+Before storing a candidate entry, the defense measures its mean cosine
+similarity against a battery of 16 domain-relevant probe queries spanning
+eight agent subtopics (preferences, calendar, tasks, security, configuration,
+conversation, documentation, and team communication).  Entries whose mean
+probe similarity exceeds a specificity threshold $\tau=0.19$ are flagged as
+suspicious.  This \emph{retrieval-breadth} criterion is analogous to
+\citet{gao2019strip}'s perturbation-based detection: broad-recall passages
+(e.g., \injecmem{} anchors and \agentpoison{} centroids) score high across
+diverse probe topics because they are crafted to retrieve broadly or to
+maximise inner product with query centroids.  Targeted \minja{} bridging-step
+passages score lower on cross-domain probes, resulting in TPR$\,=\,0.07$
+for \minja{} vs.\ TPR$\,=\,0.60$ and $1.00$ for \injecmem{} and
+\agentpoison{}, respectively, all at FPR$\,=\,0.01$ (Table~\ref{tab:defense_tpr_fpr}).
 
 \subsection{Composite Defense}
 
 A weighted ensemble of Watermark, Validation, and Proactive detectors.
 An entry is flagged if the weighted sum of component detection scores exceeds
-a learned threshold.  Achieves the highest $\tpr$ and lowest $\fpr$ of the
-single-round defenses.
+a learned threshold.  The composite achieves the highest effectiveness of all
+single-round defenses: $\tpr = 1.00$ and $\fpr = 0.00$ across all three
+attacks (Table~\ref{tab:defense_tpr_fpr}), confirming that defense-in-depth
+covers the gap left by Proactive's reduced \minja{} sensitivity.
 
 \subsection{Semantic Anomaly Detection (\sad{})}
 \label{sec:sad}
