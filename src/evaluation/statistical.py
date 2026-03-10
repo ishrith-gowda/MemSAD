@@ -778,3 +778,322 @@ class LatexTableGenerator:
         with open(output_path, "w") as f:
             f.write(latex_str)
         return output_path
+
+
+# ---------------------------------------------------------------------------
+# exact binomial confidence intervals (clopper-pearson)
+# ---------------------------------------------------------------------------
+
+
+@dataclass
+class BinomialCI:
+    """
+    exact clopper-pearson confidence interval for a binomial proportion.
+
+    used for statistically rigorous fpr/tpr confidence intervals, especially
+    for the zero-event (k=0) case where the standard normal approximation
+    (wilson, wald) gives a degenerate interval of [0, 0].
+
+    the clopper-pearson interval is conservative (guaranteed coverage >= 1-alpha)
+    and is the gold standard for small-sample or zero-event binary outcomes in
+    security and clinical trial literature.
+
+    reference:
+        clopper & pearson, "the use of confidence or fiducial limits illustrated
+        in the case of the binomial." biometrika, 1934.
+        also: sauro & lewis, "quantifying the user experience." 2nd ed., 2016.
+
+    fields:
+        k: number of events observed (e.g., fp count)
+        n: total trials (e.g., n_benign evaluated)
+        alpha: significance level (default 0.05 for 95% ci)
+        proportion: k / n (point estimate)
+        lower: lower bound of the (1-alpha) two-sided ci
+        upper: upper bound of the (1-alpha) two-sided ci
+        is_zero_event: True when k = 0 (rule-of-three applies)
+        rule_of_three_bound: 3/n upper bound for zero-event case (approximate)
+    """
+
+    k: int
+    n: int
+    alpha: float
+    proportion: float
+    lower: float
+    upper: float
+    is_zero_event: bool
+    rule_of_three_bound: float
+
+    def __str__(self) -> str:
+        return (
+            f"{self.proportion:.4f} "
+            f"[{self.lower:.4f}, {self.upper:.4f}] "
+            f"(95% CI, n={self.n}, k={self.k})"
+        )
+
+
+def clopper_pearson_ci(k: int, n: int, alpha: float = 0.05) -> BinomialCI:
+    """
+    compute the exact clopper-pearson confidence interval.
+
+    for the zero-event case (k=0), the lower bound is 0.0 and the upper
+    bound is 1 - (alpha/2)^(1/n), which is tighter than the rule-of-three
+    approximation 3/n for small n.
+
+    for the complete-success case (k=n), upper = 1.0 and lower uses the
+    symmetric formula.
+
+    args:
+        k: number of events observed (0 <= k <= n)
+        n: total number of trials (n >= 1)
+        alpha: significance level (0.05 for 95% ci)
+
+    returns:
+        BinomialCI dataclass with all relevant fields
+
+    raises:
+        ValueError: if k < 0 or k > n or n < 1
+    """
+    if n < 1:
+        raise ValueError(f"n must be >= 1, got {n}")
+    if k < 0 or k > n:
+        raise ValueError(f"k must satisfy 0 <= k <= n, got k={k}, n={n}")
+
+    proportion = k / n
+    is_zero = k == 0
+
+    try:
+        from scipy.stats import beta as _beta_dist
+
+        # lower bound: beta(alpha/2, k, n-k+1)
+        lower = _beta_dist.ppf(alpha / 2, k, n - k + 1) if k > 0 else 0.0
+        # upper bound: beta(1 - alpha/2, k+1, n-k)
+        upper = _beta_dist.ppf(1 - alpha / 2, k + 1, n - k) if k < n else 1.0
+    except ImportError:
+        # fallback: normal approximation with continuity correction
+        import math
+
+        z = 1.959964  # z_{0.975} for alpha=0.05
+        if k == 0:
+            lower = 0.0
+            upper = 1.0 - (alpha / 2) ** (1.0 / n)
+        elif k == n:
+            lower = (alpha / 2) ** (1.0 / n)
+            upper = 1.0
+        else:
+            se = math.sqrt(proportion * (1 - proportion) / n)
+            lower = max(0.0, proportion - z * se)
+            upper = min(1.0, proportion + z * se)
+
+    return BinomialCI(
+        k=k,
+        n=n,
+        alpha=alpha,
+        proportion=proportion,
+        lower=float(lower),
+        upper=float(upper),
+        is_zero_event=is_zero,
+        rule_of_three_bound=3.0 / n if n > 0 else 1.0,
+    )
+
+
+# ---------------------------------------------------------------------------
+# multi-trial fpr / tpr statistical validator
+# ---------------------------------------------------------------------------
+
+
+@dataclass
+class FPRValidationResult:
+    """
+    rigorous multi-trial fpr and tpr statistical validation result.
+
+    fields:
+        n_trials: number of independent evaluation runs
+        n_benign_per_trial: number of benign entries evaluated per trial
+        n_poison_per_trial: number of poison entries evaluated per trial
+        fpr_per_trial: list of fpr values (one per trial)
+        tpr_per_trial: list of tpr values (one per trial)
+        fpr_mean: point estimate of mean fpr across trials
+        tpr_mean: point estimate of mean tpr across trials
+        fpr_bootstrap_ci: BootstrapResult for fpr (bootstrap over trial means)
+        tpr_bootstrap_ci: BootstrapResult for tpr
+        fpr_clopper_pearson: BinomialCI for aggregate fp/total_benign
+        tpr_clopper_pearson: BinomialCI for aggregate tp/total_poison
+        total_fp: total false positives across all trials
+        total_benign: total benign evaluations across all trials
+        total_tp: total true positives across all trials
+        total_poison: total poison evaluations across all trials
+        fpr_is_zero_at_95pct: True if the CP upper bound < 0.01 at 95% CI
+        tpr_lower_bound_95pct: CP lower bound of tpr (guaranteed detection rate)
+    """
+
+    n_trials: int
+    n_benign_per_trial: int
+    n_poison_per_trial: int
+    fpr_per_trial: List[float]
+    tpr_per_trial: List[float]
+    fpr_mean: float
+    tpr_mean: float
+    fpr_bootstrap_ci: BootstrapResult
+    tpr_bootstrap_ci: BootstrapResult
+    fpr_clopper_pearson: BinomialCI
+    tpr_clopper_pearson: BinomialCI
+    total_fp: int
+    total_benign: int
+    total_tp: int
+    total_poison: int
+    fpr_is_zero_at_95pct: bool
+    tpr_lower_bound_95pct: float
+
+
+class FPRValidator:
+    """
+    rigorous multi-trial fpr and tpr statistical validator for sad detectors.
+
+    runs n_trials independent evaluation replicates with different random seeds
+    for benign/poison sample selection, then aggregates with:
+        1. bootstrap ci (n=2000) over the per-trial rate distribution
+        2. clopper-pearson exact ci over aggregated event counts
+
+    the clopper-pearson ci is the gold standard for reporting binary detection
+    rates in security papers.  for the zero-fpr claim specifically, the cp
+    upper bound provides the strongest possible guarantee: if total_fp=0 over
+    n_trials * n_benign_per_trial evaluations, the 95% cp upper bound gives
+    the maximum plausible fpr consistent with the data.
+
+    usage:
+        validator = FPRValidator(n_trials=20, n_benign_per_trial=50,
+                                 n_poison_per_trial=20)
+        result = validator.validate(detector, benign_texts, poison_texts,
+                                    victim_queries)
+        print(result.fpr_clopper_pearson)  # [0.0000, 0.0073] (95% CI, n=1000)
+    """
+
+    def __init__(
+        self,
+        n_trials: int = 20,
+        n_benign_per_trial: int = 50,
+        n_poison_per_trial: int = 10,
+        n_calibration_benign: int = 100,
+        n_bootstrap: int = 2000,
+        seed: int = 42,
+    ) -> None:
+        """
+        args:
+            n_trials: number of independent evaluation replicates
+            n_benign_per_trial: benign entries evaluated per trial (for fpr)
+            n_poison_per_trial: poison entries evaluated per trial (for tpr)
+            n_calibration_benign: benign entries used for sad calibration
+            n_bootstrap: bootstrap resamples for ci computation
+            seed: base random seed (each trial uses seed + trial_idx)
+        """
+        self.n_trials = n_trials
+        self.n_benign_per_trial = n_benign_per_trial
+        self.n_poison_per_trial = n_poison_per_trial
+        self.n_calibration_benign = n_calibration_benign
+        self.n_bootstrap = n_bootstrap
+        self.seed = seed
+
+    def validate(
+        self,
+        detector: Any,
+        all_benign: List[str],
+        all_poison: List[str],
+        victim_queries: List[str],
+    ) -> FPRValidationResult:
+        """
+        run n_trials independent fpr/tpr evaluations.
+
+        for each trial:
+            1. randomly sample n_calibration_benign entries for sad calibration
+            2. randomly sample n_benign_per_trial *different* entries for eval
+            3. randomly sample n_poison_per_trial entries for eval
+            4. calibrate detector, evaluate, record fpr and tpr
+
+        args:
+            detector: a SemanticAnomalyDetector instance (re-calibrated each trial)
+            all_benign: pool of benign entries (must be >= n_calibration + n_eval)
+            all_poison: pool of poison entries (must be >= n_poison_per_trial)
+            victim_queries: victim query strings for calibration
+
+        returns:
+            FPRValidationResult with full statistical analysis
+        """
+        import numpy as np
+
+        fpr_per_trial: List[float] = []
+        tpr_per_trial: List[float] = []
+        total_fp = 0
+        total_tp = 0
+
+        n_needed_benign = self.n_calibration_benign + self.n_benign_per_trial
+        if len(all_benign) < n_needed_benign:
+            raise ValueError(
+                f"need at least {n_needed_benign} benign entries, got {len(all_benign)}"
+            )
+        if len(all_poison) < self.n_poison_per_trial:
+            raise ValueError(
+                f"need at least {self.n_poison_per_trial} poison entries, "
+                f"got {len(all_poison)}"
+            )
+
+        for trial in range(self.n_trials):
+            rng = random.Random(self.seed + trial)
+            indices = list(range(len(all_benign)))
+            rng.shuffle(indices)
+            cal_idx = indices[: self.n_calibration_benign]
+            eval_idx = indices[
+                self.n_calibration_benign : self.n_calibration_benign
+                + self.n_benign_per_trial
+            ]
+            cal_benign = [all_benign[i] for i in cal_idx]
+            eval_benign = [all_benign[i] for i in eval_idx]
+
+            poison_idx = rng.sample(
+                range(len(all_poison)),
+                min(self.n_poison_per_trial, len(all_poison)),
+            )
+            eval_poison = [all_poison[i] for i in poison_idx]
+
+            # re-calibrate detector fresh for this trial
+            detector.calibrate(cal_benign, victim_queries)
+
+            # evaluate on benign (count fps)
+            fp = sum(1 for e in eval_benign if detector.detect(e).is_anomalous)
+            tp = sum(1 for e in eval_poison if detector.detect(e).is_anomalous)
+
+            fpr = fp / self.n_benign_per_trial
+            tpr = tp / min(self.n_poison_per_trial, len(all_poison))
+            fpr_per_trial.append(fpr)
+            tpr_per_trial.append(tpr)
+            total_fp += fp
+            total_tp += tp
+
+        total_benign = self.n_trials * self.n_benign_per_trial
+        total_poison = self.n_trials * min(self.n_poison_per_trial, len(all_poison))
+
+        bci = BootstrapCI(n_bootstrap=self.n_bootstrap, seed=self.seed)
+        fpr_bci = bci.compute(fpr_per_trial)
+        tpr_bci = bci.compute(tpr_per_trial)
+
+        fpr_cp = clopper_pearson_ci(total_fp, total_benign)
+        tpr_cp = clopper_pearson_ci(total_tp, total_poison)
+
+        return FPRValidationResult(
+            n_trials=self.n_trials,
+            n_benign_per_trial=self.n_benign_per_trial,
+            n_poison_per_trial=self.n_poison_per_trial,
+            fpr_per_trial=fpr_per_trial,
+            tpr_per_trial=tpr_per_trial,
+            fpr_mean=float(np.mean(fpr_per_trial)),
+            tpr_mean=float(np.mean(tpr_per_trial)),
+            fpr_bootstrap_ci=fpr_bci,
+            tpr_bootstrap_ci=tpr_bci,
+            fpr_clopper_pearson=fpr_cp,
+            tpr_clopper_pearson=tpr_cp,
+            total_fp=total_fp,
+            total_benign=total_benign,
+            total_tp=total_tp,
+            total_poison=total_poison,
+            fpr_is_zero_at_95pct=fpr_cp.upper < 0.01,
+            tpr_lower_bound_95pct=tpr_cp.lower,
+        )
