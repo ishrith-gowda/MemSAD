@@ -7,11 +7,12 @@ substantially by attack type.  Watermark detection reliably identifies
 unsigned memory writes ($\tpr=1.00$, $\fpr=0.00$ for all attacks) but
 provides no protection if the attacker obtains the watermark key or
 bypasses the ingestion path.  \sad{} excels against \minja{} (bridging-step
-passages carry high query-aligned similarity, $\tpr=1.00$) but is less
-effective against \injecmem{} ($\tpr=0.20$; broad-anchor passages avoid
-high similarity to any specific query) and provides near-zero detection
-against \agentpoison{} under plain-query calibration ($\tpr=0.00$;
-the centroid passage falls within the benign similarity distribution).
+passages carry high query-aligned similarity, $\tpr=1.00$, AUROC\,=\,1.000)
+but is less effective against \injecmem{} ($\tpr=0.40$, AUROC\,=\,0.920
+in combined mode; broad-anchor passages avoid high similarity to any specific
+query) and provides near-zero detection against \agentpoison{} under
+plain-query calibration ($\tpr=0.00$, AUROC\,=\,0.870; the centroid passage
+falls within the benign similarity distribution).
 The Proactive defense exhibits a complementary pattern: it achieves
 $\tpr=1.00$ against \agentpoison{} (centroids score high on all domain
 probes) and $\tpr=0.60$ against \injecmem{} (broad anchors match many
@@ -89,9 +90,9 @@ Three practical recommendations emerge from our evaluation.
 check on all incoming memory writes costs $O(|entry|)$ compute and
 eliminates unsigned injections entirely.
 (ii)~\emph{Monitor per-entry anomaly scores continuously}: a rolling
-\sad{} calibration window (100 recent queries, $k=2.0$) adds negligible
-retrieval latency while maintaining $\tpr > 0.80$ for bridging-step
-attacks.
+\sad{} calibration window (100 recent queries, $k=2.0$, combined scoring
+mode) adds negligible retrieval latency, achieves $\fpr=0.00$, and
+maintains $\tpr=1.00$ for bridging-step attacks (AUROC\,=\,1.000).
 (iii)~\emph{Apply composite portfolios}: our matrix shows the composite
 defense achieves $\asrr = 0.000$ for all three attacks
 (Table~\ref{tab:attack_defense_matrix}).  Even the weaker combination of
