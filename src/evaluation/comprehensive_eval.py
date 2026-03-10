@@ -28,7 +28,7 @@ import json
 import os
 import time
 from dataclasses import dataclass, field
-from datetime import datetime
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 
@@ -431,7 +431,7 @@ class ComprehensiveEvaluator:
         )
 
         result = ComprehensiveResult(
-            generated_at=datetime.utcnow().isoformat() + "Z",
+            generated_at=datetime.now(timezone.utc).isoformat(),
             config={
                 "corpus_size": self.corpus_size,
                 "n_poison": self.n_poison,
