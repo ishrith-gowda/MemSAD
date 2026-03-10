@@ -130,6 +130,15 @@ class SemanticAnomalyDetector:
     by flagging those with anomalously high cosine similarity to observed
     victim queries.  operates on any sentence-transformer embedding space.
 
+    two scoring modes are supported:
+        "max"  (default): score = max cosine similarity to any observed query.
+            best for targeted attacks (agentpoison, minja) whose passages are
+            optimised for maximum similarity to a specific query.
+        "combined": score = 0.5 * max_sim + 0.5 * mean_sim.  gives equal
+            weight to targeted (max) and broad-recall (mean) signals.
+            improves tpr for injecmem-style broad-anchor passages at the cost
+            of a small fpr increase.
+
     usage:
         detector = SemanticAnomalyDetector(threshold_sigma=2.0)
         # calibrate on known-clean corpus + sample queries
@@ -148,6 +157,7 @@ class SemanticAnomalyDetector:
         threshold_sigma: float = 2.0,
         model_name: str = "all-MiniLM-L6-v2",
         max_query_history: int = 100,
+        scoring_mode: str = "max",
     ):
         """
         args:
@@ -157,10 +167,19 @@ class SemanticAnomalyDetector:
             model_name: sentence-transformer model to use.  must match the
                 retriever used by the target memory system.
             max_query_history: rolling window size for observed queries.
+            scoring_mode: "max" (default) or "combined".
+                "max" uses max cosine similarity to any observed query.
+                "combined" uses 0.5 * max_sim + 0.5 * mean_sim, improving
+                detection of broad-recall (injecmem-style) passages.
         """
+        if scoring_mode not in ("max", "combined"):
+            raise ValueError(
+                f"scoring_mode must be 'max' or 'combined'; got {scoring_mode!r}"
+            )
         self.threshold_sigma = threshold_sigma
         self.model_name = model_name
         self.max_query_history = max_query_history
+        self.scoring_mode = scoring_mode
 
         # lazy-loaded encoder (avoids heavy import at module load time)
         self._encoder = None
@@ -254,8 +273,17 @@ class SemanticAnomalyDetector:
         sim_matrix = e_embs @ q_embs.T  # (n_e, n_q)
         max_sims = sim_matrix.max(axis=1)  # (n_e,)
 
-        self.calibration_mean = float(np.mean(max_sims))
-        self.calibration_std = float(np.std(max_sims)) + 1e-8
+        mean_sims = sim_matrix.mean(axis=1)  # (n_e,) — used in combined mode
+
+        if self.scoring_mode == "combined":
+            # combined score = 0.5 * max + 0.5 * mean captures both targeted
+            # (high-max) and broad-recall (high-mean) attack signatures.
+            combined = 0.5 * max_sims + 0.5 * mean_sims
+            self.calibration_mean = float(np.mean(combined))
+            self.calibration_std = float(np.std(combined)) + 1e-8
+        else:
+            self.calibration_mean = float(np.mean(max_sims))
+            self.calibration_std = float(np.std(max_sims)) + 1e-8
         self.is_calibrated = True
 
         threshold = self.calibration_mean + self.threshold_sigma * self.calibration_std
@@ -266,6 +294,7 @@ class SemanticAnomalyDetector:
             "threshold": threshold,
             "n_entries": len(benign_entries),
             "n_queries": len(sample_queries),
+            "scoring_mode": self.scoring_mode,
         }
 
     def calibrate_triggered(
@@ -329,7 +358,9 @@ class SemanticAnomalyDetector:
         e_emb = self._embed([entry])[0]  # (d,)
         q_stack = np.stack(self._query_embeddings)  # (n_q, d)
         sims = q_stack @ e_emb  # (n_q,)
-        return float(np.max(sims)), float(np.mean(sims))
+        max_sim = float(np.max(sims))
+        mean_sim = float(np.mean(sims))
+        return max_sim, mean_sim
 
     def detect(self, entry: str) -> AnomalyScore:
         """
@@ -351,16 +382,20 @@ class SemanticAnomalyDetector:
             )
 
         max_sim, mean_sim = self.score_entry(entry)
+        if self.scoring_mode == "combined":
+            anomaly_score = 0.5 * max_sim + 0.5 * mean_sim
+        else:
+            anomaly_score = max_sim
         threshold = self.calibration_mean + self.threshold_sigma * self.calibration_std
-        sigma_mult = (max_sim - self.calibration_mean) / self.calibration_std
+        sigma_mult = (anomaly_score - self.calibration_mean) / self.calibration_std
 
         return AnomalyScore(
             entry_text=entry,
             max_query_similarity=max_sim,
             mean_query_similarity=mean_sim,
-            anomaly_score=max_sim,
+            anomaly_score=anomaly_score,
             threshold=threshold,
-            is_anomalous=max_sim > threshold,
+            is_anomalous=anomaly_score > threshold,
             calibration_mean=self.calibration_mean,
             calibration_std=self.calibration_std,
             sigma_multiple=sigma_mult,
@@ -404,19 +439,25 @@ class SemanticAnomalyDetector:
         mean_sims = sim_matrix.mean(axis=1)  # (n_e,)
         threshold = self.calibration_mean + self.threshold_sigma * self.calibration_std
 
+        if self.scoring_mode == "combined":
+            anomaly_scores = 0.5 * max_sims + 0.5 * mean_sims
+        else:
+            anomaly_scores = max_sims
+
         results = []
         for i, entry in enumerate(entries):
             max_s = float(max_sims[i])
             mean_s = float(mean_sims[i])
-            sigma_mult = (max_s - self.calibration_mean) / self.calibration_std
+            a_score = float(anomaly_scores[i])
+            sigma_mult = (a_score - self.calibration_mean) / self.calibration_std
             results.append(
                 AnomalyScore(
                     entry_text=entry,
                     max_query_similarity=max_s,
                     mean_query_similarity=mean_s,
-                    anomaly_score=max_s,
+                    anomaly_score=a_score,
                     threshold=threshold,
-                    is_anomalous=max_s > threshold,
+                    is_anomalous=a_score > threshold,
                     calibration_mean=self.calibration_mean,
                     calibration_std=self.calibration_std,
                     sigma_multiple=sigma_mult,

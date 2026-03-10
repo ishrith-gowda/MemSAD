@@ -123,6 +123,25 @@ entries and observed queries.  An entry is flagged as anomalous if:
   \label{eq:sad_threshold}
 \end{equation}
 
+\paragraph{Combined scoring mode.}
+The default \emph{max} scoring ($s(c) = \max_q \cos(E(c), E(q))$) is
+optimal for targeted attacks whose passages maximise similarity to a
+specific query.  We additionally propose a \emph{combined} scoring mode:
+\begin{equation}
+  s_{\text{comb}}(c)
+  = \tfrac{1}{2} \max_{q \in \mathcal{H}} \cos(E(c), E(q))
+  + \tfrac{1}{2} \operatorname{mean}_{q \in \mathcal{H}} \cos(E(c), E(q)).
+  \label{eq:sad_combined}
+\end{equation}
+Combining max and mean similarity captures both targeted-attack signatures
+(high-max) and broad-recall signatures (high-mean, characteristic of
+\injecmem{} anchors).  Calibrating on $s_{\text{comb}}$ instead of
+$s_{\text{max}}$ tightens the benign distribution (lower variance from
+averaging), reducing FPR at equivalent TPR.  At $k=2.0$, combined mode
+achieves FPR\,=\,0.00 for all three attacks (Table~\ref{tab:defense_tpr_fpr})
+and improves AUROC for \agentpoison{} from $0.550$ to $0.870$ and for
+\injecmem{} from $0.810$ to $0.920$.
+
 \paragraph{Properties.}
 \sad{} does not require labeled examples of adversarial entries, only a
 benign reference corpus for calibration (which is always available as the
@@ -134,8 +153,10 @@ entries in a single forward pass.
 \paragraph{Limitations.}
 \sad{} is less effective against \injecmem{}, whose broad-anchor passages are
 specifically designed \emph{not} to be suspiciously similar to any particular
-query.  It may also miss \minja{} entries that use bridging-step framing
-which dilutes direct similarity to victim queries.
+query (TPR\,=\,0.40 at $k=2.0$; AUROC\,=\,0.920 reflects better ranking
+than binary classification).  \minja{} is detected reliably (TPR\,=\,1.00,
+AUROC\,=\,1.00) because bridging-step passages replicate query vocabulary
+closely.
 
 \subsection{Adaptive Adversary Analysis}
 \label{sec:adaptive}

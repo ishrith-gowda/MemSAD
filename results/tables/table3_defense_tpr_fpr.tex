@@ -1,18 +1,25 @@
 \begin{table}[t]
 \centering
-\caption{Defense detection performance (TPR, FPR) per (attack, defense) pair. SAD = Semantic Anomaly Detection (ours).}
+\caption{Defense detection performance: TPR, FPR, and AUROC per (attack, defense) pair.
+         SAD uses combined scoring mode ($0.5\cdot\max + 0.5\cdot\text{mean}$ cosine similarity to observed victim queries).
+         Proactive values reflect retrieval-breadth detection at $\tau=0.19$.
+         SAD$^\dagger$: triggered-query calibration for \agentpoison{}.}
 \label{tab:defense_tpr_fpr}
-\begin{tabular}{lccc}
+\begin{tabular}{lcccccc}
 \toprule
-\multicolumn{4}{c}{TPR / FPR by (Defense, Attack)} \\
+\multicolumn{7}{c}{TPR\,/\,FPR\,/\,AUROC by (Defense, Attack)} \\
 \midrule
-Defense & AgentPoison & MINJA & InjecMEM \\
+Defense & \multicolumn{2}{c}{AgentPoison} & MINJA & InjecMEM \\
+        & plain cal.     & trig.\ cal.$^\dagger$ &       &          \\
 \midrule
-Watermark & 1.00 / 0.00 & 1.00 / 0.00 & 1.00 / 0.00 \\
-Validation & 1.00 / 0.00 & 1.00 / 0.00 & 0.00 / 0.00 \\
-Proactive & 1.00 / 0.01 & 0.07 / 0.01 & 0.60 / 0.01 \\
-Composite & 1.00 / 0.00 & 1.00 / 0.00 & 1.00 / 0.00 \\
-SAD (ours) & 0.00 / 0.05 & 1.00 / 0.05 & 0.20 / 0.05 \\
+Watermark  & 1.00\,/\,0.00\,/\,--  & 1.00\,/\,0.00\,/\,--  & 1.00\,/\,0.00\,/\,-- & 1.00\,/\,0.00\,/\,-- \\
+Validation & 1.00\,/\,0.00\,/\,--  & 1.00\,/\,0.00\,/\,--  & 1.00\,/\,0.00\,/\,-- & 0.00\,/\,0.00\,/\,-- \\
+Proactive  & 1.00\,/\,0.01\,/\,--  & 1.00\,/\,0.01\,/\,--  & 0.07\,/\,0.01\,/\,-- & 0.60\,/\,0.01\,/\,-- \\
+Composite  & 1.00\,/\,0.00\,/\,--  & 1.00\,/\,0.00\,/\,--  & 1.00\,/\,0.00\,/\,-- & 1.00\,/\,0.00\,/\,-- \\
+SAD (ours) & 0.00\,/\,0.00\,/\,0.870 & \textbf{1.00}\,/\,\textbf{0.00}\,/\,\textbf{1.000} & \textbf{1.00}\,/\,\textbf{0.00}\,/\,\textbf{1.000} & 0.40\,/\,0.00\,/\,0.920 \\
 \bottomrule
 \end{tabular}
+\vspace{0.5ex}
+{\small $^\dagger$Calibrated on triggered queries ($\trigger^*\oplus q$); see Section~\ref{sec:discussion}.
+AUROC not applicable to threshold-only defenses (Watermark, Validation, Proactive, Composite).}
 \end{table}
