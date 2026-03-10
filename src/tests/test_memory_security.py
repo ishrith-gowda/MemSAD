@@ -4768,3 +4768,676 @@ class TestSADWithLexicalGate:
         assert metrics["verdict_threshold"] == "hard_block"
         assert "n_hard_block_poison" in metrics
         assert "n_soft_flag_poison" in metrics
+
+
+# ---------------------------------------------------------------------------
+# clopper-pearson and fpr validator tests
+# ---------------------------------------------------------------------------
+
+
+class TestCloppperPearsonCI:
+    """unit tests for clopper_pearson_ci."""
+
+    def test_zero_events_lower_is_zero(self):
+        """lower bound must be 0.0 for zero-event case."""
+        from evaluation.statistical import clopper_pearson_ci
+
+        ci = clopper_pearson_ci(0, 100)
+        assert ci.lower == pytest.approx(0.0)
+
+    def test_zero_events_upper_positive(self):
+        """upper bound must be strictly positive for zero-event case."""
+        from evaluation.statistical import clopper_pearson_ci
+
+        ci = clopper_pearson_ci(0, 100)
+        assert ci.upper > 0.0
+        assert ci.upper < 0.1  # must be less than 10% for n=100
+
+    def test_zero_events_is_zero_event_flag(self):
+        """is_zero_event should be True when k=0."""
+        from evaluation.statistical import clopper_pearson_ci
+
+        ci = clopper_pearson_ci(0, 100)
+        assert ci.is_zero_event is True
+
+    def test_nonzero_events_not_zero_event_flag(self):
+        """is_zero_event should be False when k>0."""
+        from evaluation.statistical import clopper_pearson_ci
+
+        ci = clopper_pearson_ci(5, 100)
+        assert ci.is_zero_event is False
+
+    def test_proportion_correct(self):
+        """proportion should equal k/n."""
+        from evaluation.statistical import clopper_pearson_ci
+
+        ci = clopper_pearson_ci(10, 100)
+        assert ci.proportion == pytest.approx(0.1)
+
+    def test_ci_contains_proportion(self):
+        """confidence interval must contain the point estimate."""
+        from evaluation.statistical import clopper_pearson_ci
+
+        ci = clopper_pearson_ci(10, 100)
+        assert ci.lower <= ci.proportion <= ci.upper
+
+    def test_ci_ordered(self):
+        """lower bound must be <= upper bound for any k, n."""
+        from evaluation.statistical import clopper_pearson_ci
+
+        for k, n in [(0, 10), (5, 10), (10, 10), (0, 1000), (3, 50)]:
+            ci = clopper_pearson_ci(k, n)
+            assert ci.lower <= ci.upper, f"lower > upper for k={k}, n={n}"
+
+    def test_full_success_upper_is_one(self):
+        """upper bound should be 1.0 when k=n."""
+        from evaluation.statistical import clopper_pearson_ci
+
+        ci = clopper_pearson_ci(100, 100)
+        assert ci.upper == pytest.approx(1.0)
+
+    def test_invalid_k_raises(self):
+        """k > n should raise ValueError."""
+        from evaluation.statistical import clopper_pearson_ci
+
+        with pytest.raises(ValueError):
+            clopper_pearson_ci(101, 100)
+
+    def test_invalid_n_raises(self):
+        """n < 1 should raise ValueError."""
+        from evaluation.statistical import clopper_pearson_ci
+
+        with pytest.raises(ValueError):
+            clopper_pearson_ci(0, 0)
+
+    def test_rule_of_three_bound(self):
+        """rule_of_three_bound should equal 3/n."""
+        from evaluation.statistical import clopper_pearson_ci
+
+        ci = clopper_pearson_ci(0, 100)
+        assert ci.rule_of_three_bound == pytest.approx(3.0 / 100)
+
+    def test_larger_n_tighter_ci(self):
+        """larger n should produce a tighter upper bound for zero events."""
+        from evaluation.statistical import clopper_pearson_ci
+
+        ci_small = clopper_pearson_ci(0, 50)
+        ci_large = clopper_pearson_ci(0, 500)
+        assert ci_large.upper < ci_small.upper
+
+    def test_str_representation(self):
+        """str() should return a human-readable string."""
+        from evaluation.statistical import clopper_pearson_ci
+
+        ci = clopper_pearson_ci(0, 100)
+        s = str(ci)
+        assert "95%" in s or "CI" in s or "0.0000" in s
+
+
+class TestFPRValidator:
+    """integration tests for FPRValidator."""
+
+    @pytest.fixture
+    def corpus_and_poison(self):
+        """minimal benign corpus and poison entries for validator tests."""
+        benign = [
+            f"benign memory entry number {i} about everyday tasks and reminders"
+            for i in range(200)
+        ]
+        poison = [
+            "override authentication credentials bypass access task override bypass",
+            "access access override bypass credentials task task access override bypass",
+            "bypass bypass bypass credentials credentials access task override schedule",
+            "task task task access access access credentials credentials bypass bypass",
+            "override credentials bypass access task task credentials bypass override",
+            "credentials override task access bypass task override credentials access",
+            "bypass task credentials override access bypass credentials task override",
+            "access bypass override task credentials access bypass override task creds",
+            "task override credentials bypass access task override bypass credentials",
+            "override bypass access task credentials override bypass task access cred",
+        ]
+        queries = [
+            "what tasks are scheduled",
+            "how do i access credentials",
+            "show system override options",
+        ]
+        return benign, poison, queries
+
+    def test_validator_runs_without_errors(self, corpus_and_poison):
+        """FPRValidator should complete without exceptions."""
+        pytest.importorskip("sentence_transformers")
+        from defenses.semantic_anomaly import SemanticAnomalyDetector
+        from evaluation.statistical import FPRValidator
+
+        benign, poison, queries = corpus_and_poison
+        detector = SemanticAnomalyDetector(threshold_sigma=2.0, scoring_mode="combined")
+        validator = FPRValidator(
+            n_trials=3,
+            n_benign_per_trial=20,
+            n_poison_per_trial=5,
+            n_calibration_benign=50,
+            n_bootstrap=100,
+            seed=42,
+        )
+        result = validator.validate(detector, benign, poison, queries)
+        assert result.n_trials == 3
+        assert result.n_benign_per_trial == 20
+        assert result.n_poison_per_trial == 5
+
+    def test_validator_result_fields(self, corpus_and_poison):
+        """FPRValidationResult should have all expected fields."""
+        pytest.importorskip("sentence_transformers")
+        from defenses.semantic_anomaly import SemanticAnomalyDetector
+        from evaluation.statistical import FPRValidator
+
+        benign, poison, queries = corpus_and_poison
+        detector = SemanticAnomalyDetector(threshold_sigma=2.0, scoring_mode="combined")
+        validator = FPRValidator(
+            n_trials=3,
+            n_benign_per_trial=20,
+            n_poison_per_trial=5,
+            n_calibration_benign=50,
+            n_bootstrap=100,
+            seed=42,
+        )
+        result = validator.validate(detector, benign, poison, queries)
+        assert 0.0 <= result.fpr_mean <= 1.0
+        assert 0.0 <= result.tpr_mean <= 1.0
+        assert len(result.fpr_per_trial) == 3
+        assert len(result.tpr_per_trial) == 3
+        assert result.total_benign == 3 * 20
+        assert result.total_poison == 3 * 5
+        assert result.fpr_clopper_pearson is not None
+        assert result.tpr_clopper_pearson is not None
+        assert isinstance(result.fpr_is_zero_at_95pct, bool)
+        assert 0.0 <= result.tpr_lower_bound_95pct <= 1.0
+
+    def test_validator_insufficient_benign_raises(self, corpus_and_poison):
+        """validator should raise ValueError if benign pool is too small."""
+        from defenses.semantic_anomaly import SemanticAnomalyDetector
+        from evaluation.statistical import FPRValidator
+
+        benign, poison, queries = corpus_and_poison
+        detector = SemanticAnomalyDetector(threshold_sigma=2.0)
+        validator = FPRValidator(
+            n_trials=2,
+            n_benign_per_trial=100,
+            n_poison_per_trial=5,
+            n_calibration_benign=150,
+            seed=42,
+        )
+        # 200 benign but need 250 — should raise
+        with pytest.raises(ValueError, match="benign"):
+            validator.validate(detector, benign, poison, queries)
+
+
+# ---------------------------------------------------------------------------
+# graph memory system tests
+# ---------------------------------------------------------------------------
+
+
+class TestGraphMemorySystem:
+    """tests for GraphMemorySystem node operations and attacks."""
+
+    @pytest.fixture
+    def small_graph(self):
+        """small populated graph memory system for testing."""
+        pytest.importorskip("sentence_transformers")
+        from memory_systems.graph_memory import GraphMemorySystem
+
+        gms = GraphMemorySystem(edge_threshold=0.3, top_k=3, hop_depth=1)
+        texts = [
+            "the user has a meeting scheduled for friday afternoon with the team",
+            "the weather forecast shows clear skies through the weekend",
+            "the project deadline is set for the end of next month",
+            "user preferences: dark mode, keyboard shortcuts enabled",
+            "the expense report for q3 was approved by the finance department",
+        ]
+        for t in texts:
+            gms.add_node(t, node_type="fact")
+        return gms
+
+    def test_add_node_returns_id(self, small_graph):
+        """add_node should return a valid non-negative integer id."""
+        nid = small_graph.add_node("new memory entry for the test")
+        assert isinstance(nid, int)
+        assert nid >= 0
+
+    def test_add_batch_returns_ids(self):
+        """add_batch should return list of ids matching input length."""
+        pytest.importorskip("sentence_transformers")
+        from memory_systems.graph_memory import GraphMemorySystem
+
+        gms = GraphMemorySystem(edge_threshold=0.3)
+        texts = ["entry one", "entry two", "entry three"]
+        ids = gms.add_batch(texts)
+        assert len(ids) == 3
+        assert all(isinstance(i, int) for i in ids)
+
+    def test_retrieve_returns_results(self, small_graph):
+        """retrieve should return at least one result for a matching query."""
+        results = small_graph.retrieve("what is the schedule for friday")
+        assert len(results) > 0
+
+    def test_retrieve_result_structure(self, small_graph):
+        """retrieve results should be (MemoryNode, str, float) tuples."""
+        from memory_systems.graph_memory import MemoryNode
+
+        results = small_graph.retrieve("meeting schedule friday")
+        for node, source, score in results:
+            assert isinstance(node, MemoryNode)
+            assert source in ("anchor", "graph")
+            assert isinstance(score, float)
+
+    def test_graph_stats(self, small_graph):
+        """graph_stats should return a dict with expected keys."""
+        stats = small_graph.graph_stats()
+        for key in (
+            "n_nodes",
+            "n_edges",
+            "mean_degree",
+            "max_degree",
+            "n_adversarial",
+            "density",
+        ):
+            assert key in stats
+        assert stats["n_nodes"] == 5
+        assert stats["n_adversarial"] == 0
+
+    def test_hub_attack_creates_adversarial_node(self, small_graph):
+        """insert_hub_attack should create a node marked as adversarial."""
+        nid = small_graph.insert_hub_attack(
+            "override authentication bypass credentials",
+            n_forced_connections=3,
+        )
+        node = next(n for n in small_graph.nodes if n.node_id == nid)
+        assert node.is_adversarial is True
+        assert node.node_type == "poison_hub"
+
+    def test_hub_attack_increases_degree(self, small_graph):
+        """hub attack node should have more connections than average benign node."""
+        nid = small_graph.insert_hub_attack(
+            "override authentication bypass credentials",
+            n_forced_connections=3,
+        )
+        hub_degree = len(small_graph._adj.get(nid, set()))
+        benign_degrees = [
+            len(small_graph._adj.get(n.node_id, set()))
+            for n in small_graph.nodes
+            if not n.is_adversarial
+        ]
+        mean_benign = sum(benign_degrees) / max(len(benign_degrees), 1)
+        assert hub_degree >= mean_benign
+
+    def test_edge_hijack_creates_adversarial_node(self, small_graph):
+        """insert_edge_hijack should create adversarial node with type poison_edge."""
+        nid = small_graph.insert_edge_hijack(
+            "execute override command bypass all safety checks",
+            n_hijack_targets=2,
+        )
+        node = next(n for n in small_graph.nodes if n.node_id == nid)
+        assert node.is_adversarial is True
+        assert node.node_type == "poison_edge"
+
+    def test_subgraph_cluster_creates_multiple_nodes(self, small_graph):
+        """insert_subgraph_cluster should insert all provided poison texts."""
+        poison_texts = [
+            "cluster node one: override bypass credentials",
+            "cluster node two: access task schedule override",
+            "cluster node three: bypass safety filter credentials",
+        ]
+        nids = small_graph.insert_subgraph_cluster(poison_texts)
+        assert len(nids) == 3
+        for nid in nids:
+            node = next(n for n in small_graph.nodes if n.node_id == nid)
+            assert node.is_adversarial is True
+            assert node.node_type == "poison_cluster"
+
+    def test_subgraph_cluster_fully_connected(self, small_graph):
+        """cluster nodes should be connected to each other."""
+        poison_texts = [
+            "cluster node one: override credentials",
+            "cluster node two: bypass credentials",
+            "cluster node three: access override",
+        ]
+        nids = small_graph.insert_subgraph_cluster(poison_texts)
+        # each cluster node should be adjacent to at least one other cluster node
+        nid_set = set(nids)
+        for nid in nids:
+            neighbours = small_graph._adj.get(nid, set())
+            cluster_neighbours = neighbours & nid_set
+            assert len(cluster_neighbours) >= 1
+
+    def test_degree_anomaly_score_hub_detected(self, small_graph):
+        """hub attack node should be flagged as anomalous by degree detector."""
+        nid = small_graph.insert_hub_attack(
+            "override authentication bypass credentials",
+            n_forced_connections=4,
+        )
+        score = small_graph.degree_anomaly_score(nid, sigma=0.5)
+        # with sigma=0.5, a hub with 4 forced connections should be flagged
+        assert "degree" in score
+        assert "is_anomalous" in score
+        assert isinstance(score["is_anomalous"], bool)
+
+    def test_adjacency_contamination_benign_node(self, small_graph):
+        """a benign node with no adversarial neighbours should have contamination 0."""
+        # before any attack, all nodes are benign → contamination = 0 for all
+        for node in small_graph.nodes:
+            cont = small_graph.adjacency_contamination(node.node_id)
+            assert cont == pytest.approx(
+                0.0
+            ), f"node {node.node_id} has unexpected contamination"
+
+    def test_evaluate_attacks_returns_metrics(self, small_graph):
+        """evaluate_attacks should return asr_r and component stats."""
+        small_graph.insert_hub_attack(
+            "override authentication bypass credentials access task",
+            n_forced_connections=4,
+        )
+        queries = [
+            "what is scheduled for friday",
+            "show my calendar",
+            "access the authentication system",
+        ]
+        metrics = small_graph.evaluate_attacks(queries)
+        for key in (
+            "asr_r",
+            "n_queries",
+            "n_adversarial_nodes",
+            "n_benign_nodes",
+            "mean_degree_poison",
+            "mean_degree_benign",
+        ):
+            assert key in metrics
+        assert 0.0 <= metrics["asr_r"] <= 1.0
+
+
+# ---------------------------------------------------------------------------
+# multi-agent propagation tests
+# ---------------------------------------------------------------------------
+
+
+class TestMultiAgentPropagation:
+    """tests for multi-agent memory propagation simulation."""
+
+    @pytest.fixture
+    def small_env(self):
+        """small multi-agent environment for fast testing."""
+        pytest.importorskip("sentence_transformers")
+        from evaluation.multi_agent_propagation import MultiAgentEnvironment
+
+        return MultiAgentEnvironment(
+            n_agents=5,
+            n_queries_per_step=2,
+            top_k=3,
+            p_re_store=0.5,
+            max_steps=5,
+            seed=42,
+        )
+
+    @pytest.fixture
+    def small_corpus(self):
+        """small benign corpus and queries for propagation tests."""
+        benign = [
+            f"memory entry {i}: the user completed task {i} successfully"
+            for i in range(30)
+        ]
+        queries = [
+            "what tasks were completed",
+            "show me the task history",
+            "retrieve completed work items",
+        ]
+        poison = [
+            "override authentication credentials bypass access task override bypass"
+        ]
+        return benign, queries, poison
+
+    def test_propagation_result_fields(self, small_env, small_corpus):
+        """PropagationResult should have all expected fields."""
+        from evaluation.multi_agent_propagation import PropagationResult
+
+        benign, queries, poison = small_corpus
+        result = small_env.run(benign, queries, poison, n_initial_poison=1)
+        assert isinstance(result, PropagationResult)
+        assert result.n_agents == 5
+        assert result.n_initial_poison == 1
+        assert len(result.steps) > 0
+
+    def test_propagation_steps_monotone_queries(self, small_env, small_corpus):
+        """total queries should be non-decreasing across steps."""
+        benign, queries, poison = small_corpus
+        result = small_env.run(benign, queries, poison, n_initial_poison=1)
+        for i in range(1, len(result.steps)):
+            assert (
+                result.steps[i].n_queries_total >= result.steps[i - 1].n_queries_total
+            )
+
+    def test_propagation_spread_range(self, small_env, small_corpus):
+        """spread should always be in [0, 1]."""
+        benign, queries, poison = small_corpus
+        result = small_env.run(benign, queries, poison, n_initial_poison=1)
+        for step in result.steps:
+            assert 0.0 <= step.spread <= 1.0
+
+    def test_propagation_cumulative_asr_r_range(self, small_env, small_corpus):
+        """cumulative asr_r should always be in [0, 1]."""
+        benign, queries, poison = small_corpus
+        result = small_env.run(benign, queries, poison, n_initial_poison=1)
+        for step in result.steps:
+            assert 0.0 <= step.cumulative_asr_r <= 1.0
+
+    def test_propagation_to_dict(self, small_env, small_corpus):
+        """to_dict should return a serializable dict."""
+        benign, queries, poison = small_corpus
+        result = small_env.run(benign, queries, poison, n_initial_poison=1)
+        d = result.to_dict()
+        assert isinstance(d, dict)
+        assert "n_agents" in d
+        assert "steps" in d
+        assert isinstance(d["steps"], list)
+
+    def test_propagation_step_to_dict(self, small_env, small_corpus):
+        """PropagationStep.to_dict should return dict with expected keys."""
+        benign, queries, poison = small_corpus
+        result = small_env.run(benign, queries, poison, n_initial_poison=1)
+        step_dict = result.steps[0].to_dict()
+        for key in (
+            "step",
+            "spread",
+            "n_secondary",
+            "n_queries_total",
+            "n_poison_retrievals",
+            "cumulative_asr_r",
+        ):
+            assert key in step_dict
+
+    def test_sad_quarantine_reduces_spread(self, small_corpus):
+        """sad quarantine should not increase spread above undefended baseline."""
+        pytest.importorskip("sentence_transformers")
+        from evaluation.multi_agent_propagation import (
+            MultiAgentEnvironment,
+            PropagationWithSADQuarantine,
+        )
+
+        benign, queries, poison = small_corpus
+        env = MultiAgentEnvironment(
+            n_agents=5,
+            n_queries_per_step=2,
+            top_k=3,
+            p_re_store=0.3,
+            max_steps=3,
+            seed=42,
+        )
+        quarantine_runner = PropagationWithSADQuarantine(env, sad_sigma=1.5)
+        defended, qstats = quarantine_runner.run(
+            benign, queries, poison, n_initial_poison=1
+        )
+        assert 0.0 <= defended.final_spread <= 1.0
+        assert qstats.quarantine_reduction >= 0.0
+        assert (
+            qstats.spread_with_defense <= qstats.spread_without_defense + 0.01
+        )  # allow float tolerance
+
+
+# ---------------------------------------------------------------------------
+# multi-encoder evaluator tests (unit / mock)
+# ---------------------------------------------------------------------------
+
+
+class TestMultiEncoderEval:
+    """unit tests for multi-encoder evaluation infrastructure."""
+
+    def test_openai_encoder_init(self, monkeypatch):
+        """OpenAIEncoder should initialise with dim from mock api response."""
+        import types
+
+        pytest.importorskip("openai")
+
+        # create a mock openai client
+        mock_embedding = types.SimpleNamespace(embedding=[0.0] * 1536, index=0)
+        mock_data = [mock_embedding]
+        mock_resp = types.SimpleNamespace(data=mock_data)
+        mock_client = types.SimpleNamespace(
+            embeddings=types.SimpleNamespace(create=lambda model, input: mock_resp)
+        )
+
+        import openai
+
+        monkeypatch.setattr(openai, "OpenAI", lambda api_key: mock_client)
+        from evaluation.multi_encoder_eval import OpenAIEncoder
+
+        enc = OpenAIEncoder(
+            model_name="text-embedding-3-small",
+            display_name="openai-small",
+            api_key="test-key",
+        )
+        assert enc.dim == 1536
+        assert enc.name == "openai-small"
+
+    def test_sentence_transformer_encoder(self):
+        """SentenceTransformerEncoder should encode and return correct shape."""
+        pytest.importorskip("sentence_transformers")
+        from evaluation.multi_encoder_eval import SentenceTransformerEncoder
+
+        enc = SentenceTransformerEncoder("all-MiniLM-L6-v2", display_name="minilm")
+        texts = ["hello world", "second entry", "third entry"]
+        vecs = enc.encode(texts)
+        assert vecs.shape[0] == 3
+        assert vecs.shape[1] == enc.dim
+        # check unit norm
+        norms = (vecs**2).sum(axis=1) ** 0.5
+        for n in norms:
+            assert abs(n - 1.0) < 1e-5
+
+    def test_encode_single_matches_batch(self):
+        """encode_single should match the first row of encode([text])."""
+        pytest.importorskip("sentence_transformers")
+        import numpy as np
+
+        from evaluation.multi_encoder_eval import SentenceTransformerEncoder
+
+        enc = SentenceTransformerEncoder("all-MiniLM-L6-v2", display_name="minilm")
+        text = "the user scheduled a meeting for friday morning"
+        single = enc.encode_single(text)
+        batch = enc.encode([text])[0]
+        np.testing.assert_array_almost_equal(single, batch, decimal=5)
+
+    def test_linear_cka_self_similarity(self):
+        """cka of a matrix with itself should be 1.0."""
+        import numpy as np
+
+        from evaluation.multi_encoder_eval import _linear_cka
+
+        rng = np.random.default_rng(42)
+        X = rng.standard_normal((50, 64)).astype(np.float32)
+        cka = _linear_cka(X, X)
+        assert cka == pytest.approx(1.0, abs=1e-4)
+
+    def test_linear_cka_range(self):
+        """cka between random matrices should be in [0, 1]."""
+        import numpy as np
+
+        from evaluation.multi_encoder_eval import _linear_cka
+
+        rng = np.random.default_rng(0)
+        X = rng.standard_normal((50, 32)).astype(np.float32)
+        Y = rng.standard_normal((50, 16)).astype(np.float32)
+        cka = _linear_cka(X, Y)
+        assert 0.0 <= cka <= 1.0
+
+    def test_build_encoder_minilm(self):
+        """_build_encoder should return a SentenceTransformerEncoder for minilm."""
+        pytest.importorskip("sentence_transformers")
+        from evaluation.multi_encoder_eval import (
+            MultiEncoderEvaluator,
+            SentenceTransformerEncoder,
+        )
+
+        ev = MultiEncoderEvaluator(encoders=["minilm"])
+        enc = ev._build_encoder("minilm")
+        assert isinstance(enc, SentenceTransformerEncoder)
+        assert enc.name == "minilm"
+
+    def test_build_encoder_unknown_raises(self):
+        """_build_encoder should raise ValueError for unknown encoder name."""
+        from evaluation.multi_encoder_eval import MultiEncoderEvaluator
+
+        ev = MultiEncoderEvaluator(encoders=["minilm"])
+        with pytest.raises(ValueError, match="unknown encoder"):
+            ev._build_encoder("nonexistent-model-xyz")
+
+    def test_multi_encoder_result_get_attack_table(self):
+        """get_attack_table should return nested dict keyed by encoder and attack."""
+        from evaluation.multi_encoder_eval import (
+            EncoderAttackResult,
+            MultiEncoderResult,
+        )
+
+        result = MultiEncoderResult(
+            encoder_names=["minilm"],
+            attack_types=["agent_poison"],
+        )
+        result.attack_results.append(
+            EncoderAttackResult(
+                encoder_name="minilm",
+                attack_type="agent_poison",
+                asr_r=0.8,
+                mean_poison_sim=0.6,
+                mean_benign_sim=0.2,
+                rank_of_poison=1.5,
+                n_queries=20,
+            )
+        )
+        table = result.get_attack_table()
+        assert "minilm" in table
+        assert "agent_poison" in table["minilm"]
+        assert table["minilm"]["agent_poison"] == pytest.approx(0.8)
+
+    def test_multi_encoder_result_latex_attack_table(self):
+        """to_latex_attack_table should return a non-empty string with tabular."""
+        from evaluation.multi_encoder_eval import (
+            EncoderAttackResult,
+            MultiEncoderResult,
+        )
+
+        result = MultiEncoderResult(
+            encoder_names=["minilm"],
+            attack_types=["agent_poison", "minja", "injecmem"],
+        )
+        for atk in ["agent_poison", "minja", "injecmem"]:
+            result.attack_results.append(
+                EncoderAttackResult(
+                    encoder_name="minilm",
+                    attack_type=atk,
+                    asr_r=0.5,
+                    mean_poison_sim=0.4,
+                    mean_benign_sim=0.2,
+                    rank_of_poison=2.0,
+                    n_queries=20,
+                )
+            )
+        latex = result.to_latex_attack_table()
+        assert "\\begin{tabular}" in latex
+        assert "\\toprule" in latex
+        assert "minilm" in latex
