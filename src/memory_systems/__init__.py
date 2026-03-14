@@ -7,8 +7,12 @@ vector memory system for realistic retrieval-based evaluation.
 all comments are lowercase.
 """
 
-from memory_systems.base import MemorySystem
-from memory_systems.wrappers import MockMemorySystem, create_memory_system
+try:
+    from memory_systems.base import MemorySystem
+    from memory_systems.wrappers import MockMemorySystem, create_memory_system
+except ImportError:
+    from src.memory_systems.base import MemorySystem
+    from src.memory_systems.wrappers import MockMemorySystem, create_memory_system
 
 __all__ = [
     "MemorySystem",
