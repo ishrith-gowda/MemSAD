@@ -450,6 +450,18 @@ $k$ is held fixed at $2.0$ across encoders.  The Appendix
 (Section~\ref{app:encoder_generalization}) reports encoder-level TPR/FPR
 and AUROC.
 
+\IfFileExists{figures/fig_p22_cka_heatmap.pdf}{%
+\begin{figure}[t]
+  \centering
+  \includegraphics[width=0.65\linewidth]{fig_p22_cka_heatmap.pdf}
+  \caption{Centered Kernel Alignment (CKA) between three retrieval encoders.
+           High CKA ($>0.8$) predicts cross-encoder attack transferability:
+           attacks optimized against one encoder transfer to the other
+           with minimal ASR-R degradation.}
+  \label{fig:cka_heatmap}
+\end{figure}%
+}{}
+
 \subsubsection{Multi-Agent Epidemic Propagation}
 
 We model inter-agent poison propagation using \textsc{MultiAgentEnvironment}
@@ -488,6 +500,20 @@ the poison count.
 injection only.  For \injecmem{} (AUROC $= 0.920$), quarantine reduces
 but does not fully eliminate spread, consistent with the lower per-entry
 TPR ($0.40$) under plain-query calibration.
+
+\IfFileExists{figures/fig_p22_propagation.pdf}{%
+\begin{figure}[t]
+  \centering
+  \includegraphics[width=0.95\linewidth]{fig_p22_propagation.pdf}
+  \caption{Multi-agent epidemic propagation ($N$=5 agents,
+           $p_{\mathrm{re\text{-}store}}$=0.4) for each attack type.
+           Red: undefended spread; green: \sad{} quarantine.
+           Bars show cumulative secondary poison entries.
+           \sad{} quarantine eliminates secondary infection for \agentpoison{}
+           and \minja{}, containing spread to the initial injection.}
+  \label{fig:propagation}
+\end{figure}%
+}{}
 
 \subsubsection{Graph-Structured Memory Attacks and Defenses}
 
@@ -529,6 +555,20 @@ We implement three structural attacks:
         inserted forced edges from trusted hubs.
 \end{itemize}
 
+\IfFileExists{figures/fig_p22_graph_attacks.pdf}{%
+\begin{figure}[t]
+  \centering
+  \includegraphics[width=0.95\linewidth]{fig_p22_graph_attacks.pdf}
+  \caption{Graph-structured memory attack analysis.
+           Top row: node degree distributions (benign vs.\ poison) for each
+           attack type.  Bottom row: ASR-R, mean degree comparison, and
+           benign node contamination score.  Hub insertion achieves the
+           highest mean poison degree and contamination, making it
+           detectable by degree-anomaly scoring.}
+  \label{fig:graph_attacks}
+\end{figure}%
+}{}
+
 \subsubsection{Production-Scale \texorpdfstring{$\asra$}{ASR-A} and Exact FPR Validation}
 
 \paragraph{GPT-4o-mini agent evaluation.}
@@ -541,6 +581,20 @@ prompt; the model response is scored for adversarial action execution via
 keyword matching with threshold $\geq 1$ keyword hit.  This evaluator
 provides a directly measured production-scale $\asra$ rather than a
 modelled or proxy bound.
+
+\IfFileExists{figures/fig_p22_production_asr_a.pdf}{%
+\begin{figure}[t]
+  \centering
+  \includegraphics[width=0.72\linewidth]{fig_p22_production_asr_a.pdf}
+  \caption{Action execution rate comparison across evaluation scales.
+           GPT-2 provides a measured lower bound; GPT-4o-mini provides a
+           production-scale measurement; modelled values are calibrated
+           from paper-reported means.  The narrowing gap from GPT-2 to
+           GPT-4o-mini confirms that production LLMs follow adversarial
+           instructions in retrieved context more faithfully.}
+  \label{fig:production_asr_a}
+\end{figure}%
+}{}
 
 \paragraph{Clopper-Pearson exact FPR validation.}
 We validate FPR using \textsc{FPRValidator} over $n_{\mathrm{trials}}=20$
@@ -559,3 +613,18 @@ yielding an upper bound of $< 0.003$ on FPR at $95\%$ confidence for
 watermark and \sad{} combined-mode, substantially tighter than a normal
 approximation (which collapses to $0.000 \pm 0.000$ and provides no
 meaningful bound for zero-event trials \citealt{brown2001interval}).
+
+\IfFileExists{figures/fig_p22_fpr_validation.pdf}{%
+\begin{figure}[t]
+  \centering
+  \includegraphics[width=0.95\linewidth]{fig_p22_fpr_validation.pdf}
+  \caption{Clopper-Pearson exact FPR validation.
+           Left: per-trial FPR across 20 independent trials ($n$=50
+           benign entries per trial); all trials yield FPR\,$=0.000$.
+           Right: CP 95\% upper bound as a function of total observations
+           for the zero-event case ($k=0$), compared to the normal
+           approximation.  At $n=1{,}000$ observations, the CP bound
+           guarantees FPR\,$< 0.003$ at 95\% confidence.}
+  \label{fig:fpr_validation}
+\end{figure}%
+}{}
