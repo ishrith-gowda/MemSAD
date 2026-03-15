@@ -41,7 +41,7 @@ from memory_systems.vector_store import VectorMemorySystem
 from utils.logging import logger
 
 # attacks and defenses evaluated in the matrix
-ATTACK_TYPES = ["agent_poison", "minja", "injecmem"]
+ATTACK_TYPES = ["agent_poison", "minja", "injecmem", "poisonedrag"]
 DEFENSE_TYPES = [
     "watermark",
     "validation",
@@ -55,6 +55,7 @@ ATTACK_DISPLAY = {
     "agent_poison": "AgentPoison",
     "minja": "MINJA",
     "injecmem": "InjecMEM",
+    "poisonedrag": "PoisonedRAG",
 }
 DEFENSE_DISPLAY = {
     "watermark": "Watermark",
