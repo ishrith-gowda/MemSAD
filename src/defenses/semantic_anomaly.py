@@ -246,6 +246,8 @@ class SemanticAnomalyDetector:
         self,
         benign_entries: List[str],
         sample_queries: List[str],
+        train_fraction: float = 1.0,
+        seed: int = 42,
     ) -> Dict[str, float]:
         """
         fit calibration statistics on a labeled benign corpus.
@@ -253,48 +255,93 @@ class SemanticAnomalyDetector:
         computes the baseline distribution of max-query-similarity over
         benign entries.  should be called once before detect() is used.
 
+        when train_fraction < 1.0, only the first train_fraction of benign
+        entries (shuffled by seed) are used for fitting mu/sigma.  the held-out
+        entries can then be used for unbiased fpr estimation via evaluate_on_corpus.
+        this avoids information leakage where the same entries are used for both
+        calibration and fpr measurement.
+
         args:
             benign_entries: list of known-clean memory strings
             sample_queries: representative victim queries (calibration set).
                 does not need to be the exact test queries; diversity helps.
+            train_fraction: fraction of benign_entries used for calibration
+                (default 1.0 = use all, for backwards compatibility).
+                recommended: 0.7 for proper train/test split.
+            seed: random seed for train/test split shuffle.
 
         returns:
-            dict with keys: mean, std, threshold, n_entries, n_queries
+            dict with keys: mean, std, threshold, n_entries, n_queries,
+            normality_p (shapiro-wilk p-value), train_indices, test_indices
         """
         import numpy as np
 
         if not benign_entries or not sample_queries:
             raise ValueError("benign_entries and sample_queries must be non-empty")
 
+        # train/test split for unbiased fpr estimation
+        n = len(benign_entries)
+        indices = list(range(n))
+        if train_fraction < 1.0:
+            rng = np.random.RandomState(seed)
+            rng.shuffle(indices)
+        n_train = max(1, int(n * train_fraction))
+        train_idx = indices[:n_train]
+        test_idx = indices[n_train:]
+        train_entries = [benign_entries[i] for i in train_idx]
+
         q_embs = self._embed(sample_queries)  # (n_q, d)
-        e_embs = self._embed(benign_entries)  # (n_e, d)
+        e_embs = self._embed(train_entries)  # (n_train, d)
 
         # sim_matrix[i, j] = cos(e_i, q_j)
-        sim_matrix = e_embs @ q_embs.T  # (n_e, n_q)
-        max_sims = sim_matrix.max(axis=1)  # (n_e,)
+        sim_matrix = e_embs @ q_embs.T  # (n_train, n_q)
+        max_sims = sim_matrix.max(axis=1)  # (n_train,)
 
-        mean_sims = sim_matrix.mean(axis=1)  # (n_e,) — used in combined mode
+        mean_sims = sim_matrix.mean(axis=1)  # (n_train,) — used in combined mode
 
         if self.scoring_mode == "combined":
             # combined score = 0.5 * max + 0.5 * mean captures both targeted
             # (high-max) and broad-recall (high-mean) attack signatures.
             combined = 0.5 * max_sims + 0.5 * mean_sims
-            self.calibration_mean = float(np.mean(combined))
-            self.calibration_std = float(np.std(combined)) + 1e-8
+            cal_scores = combined
         else:
-            self.calibration_mean = float(np.mean(max_sims))
-            self.calibration_std = float(np.std(max_sims)) + 1e-8
+            cal_scores = max_sims
+
+        self.calibration_mean = float(np.mean(cal_scores))
+        self.calibration_std = float(np.std(cal_scores)) + 1e-8
         self.is_calibrated = True
 
         threshold = self.calibration_mean + self.threshold_sigma * self.calibration_std
+
+        # normality test (shapiro-wilk) — validates the z-score assumption.
+        # if p < 0.05, the gaussian assumption may not hold and the theoretical
+        # fpr guarantee (e.g. 2.3% at k=2) is unreliable.
+        normality_p = 1.0
+        if len(cal_scores) >= 8:
+            try:
+                from scipy import stats as sp_stats
+
+                _, normality_p = sp_stats.shapiro(cal_scores[:5000])
+            except ImportError:
+                # scipy not available; skip normality test
+                normality_p = float("nan")
+
+        # store split indices for downstream use
+        self._train_indices = train_idx
+        self._test_indices = test_idx
 
         return {
             "mean": self.calibration_mean,
             "std": self.calibration_std,
             "threshold": threshold,
             "n_entries": len(benign_entries),
+            "n_train": n_train,
+            "n_test": len(test_idx),
             "n_queries": len(sample_queries),
             "scoring_mode": self.scoring_mode,
+            "normality_p": float(normality_p),
+            "train_indices": train_idx,
+            "test_indices": test_idx,
         }
 
     def calibrate_triggered(

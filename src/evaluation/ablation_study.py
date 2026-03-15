@@ -424,17 +424,29 @@ class AblationStudy:
                                 generate_injecmem_passage(q, variant_index=i)
                             )
 
-                    # run sad: calibrate on benign entries, use victim queries as sample
+                    # run sad: calibrate with 70/30 train/test split to avoid
+                    # information leakage in fpr estimation
                     det = SemanticAnomalyDetector(threshold_sigma=sigma)
                     victim_query_strs = [
                         q if isinstance(q, str) else q.get("query", str(q))
                         for q in victim_queries
                     ]
-                    det.calibrate(benign_texts, victim_query_strs[:10])
+                    cal_stats = det.calibrate(
+                        benign_texts,
+                        victim_query_strs[:10],
+                        train_fraction=0.7,
+                        seed=seed,
+                    )
                     for q in victim_query_strs[:10]:
                         det.update_query_set(q)
-
-                    result = det.evaluate_on_corpus(poison_entries, benign_texts[:20])
+                    # use held-out test set for unbiased fpr
+                    test_idx = cal_stats.get("test_indices", [])
+                    test_benign = (
+                        [benign_texts[i] for i in test_idx]
+                        if test_idx
+                        else benign_texts[:20]
+                    )
+                    result = det.evaluate_on_corpus(poison_entries, test_benign)
                     tpr_samples.append(result["tpr"])
                     fpr_samples.append(result["fpr"])
 

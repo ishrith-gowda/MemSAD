@@ -186,7 +186,10 @@ def _detect_with_defense(
     latencies: List[float] = []
 
     if defense_type == "semantic_anomaly":
-        # sad requires calibration + query observations
+        # sad requires calibration + query observations.
+        # use a 70/30 train/test split on benign entries to avoid information
+        # leakage: calibration statistics (mu, sigma) are fit on the train set,
+        # and fpr is measured on the held-out test set.
         cal_entries = [e["content"] for e in (corpus_entries or [])]
         cal_queries = list(victim_queries or [])[:10]
         if not cal_entries or not cal_queries:
@@ -197,12 +200,18 @@ def _detect_with_defense(
                 0.0,
             )
         det = SemanticAnomalyDetector(threshold_sigma=2.0)
-        det.calibrate(cal_entries, cal_queries)
+        cal_stats = det.calibrate(cal_entries, cal_queries, train_fraction=0.7, seed=42)
+        # use held-out benign entries for fpr estimation (no info leak)
+        test_idx = cal_stats.get("test_indices", [])
+        if test_idx:
+            benign_sample_clean = [cal_entries[i] for i in test_idx]
+        else:
+            benign_sample_clean = list(benign_sample)
         for q in victim_queries or []:
             det.update_query_set(q)
         t0 = time.perf_counter()
         poison_results = det.detect_batch(poison_texts)
-        benign_results = det.detect_batch(list(benign_sample))
+        benign_results = det.detect_batch(benign_sample_clean)
         elapsed = time.perf_counter() - t0
         latency_ms = elapsed * 1000 / max(len(all_texts), 1)
         return (
