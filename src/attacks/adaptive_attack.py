@@ -145,6 +145,8 @@ class AdaptivePassageResult:
     evasion_successful: bool
     retrieval_preserved: bool
     substitution_log: List[Tuple[str, str]] = field(default_factory=list)
+    original_perplexity: float = 0.0
+    evasive_perplexity: float = 0.0
 
     def to_dict(self) -> Dict[str, Any]:
         return {
@@ -155,6 +157,8 @@ class AdaptivePassageResult:
             "evasion_successful": self.evasion_successful,
             "retrieval_preserved": self.retrieval_preserved,
             "similarity_delta": self.evasive_similarity - self.original_similarity,
+            "original_perplexity": self.original_perplexity,
+            "evasive_perplexity": self.evasive_perplexity,
         }
 
 
@@ -234,6 +238,41 @@ class AdaptiveSADResult:
 # ---------------------------------------------------------------------------
 
 
+def compute_perplexity(text: str) -> float:
+    """
+    compute gpt-2 perplexity of a text passage.
+
+    perplexity measures fluency: lower = more natural language.
+    adversarial passages with high perplexity are more detectable
+    by language-model-based filters.
+
+    uses gpt-2 small (117m params) as the reference model, consistent
+    with the token-level watermark encoder and local agent evaluator.
+
+    returns nan if gpt-2 is not available (graceful degradation).
+    """
+    try:
+        import torch
+        from transformers import GPT2LMHeadModel, GPT2Tokenizer
+
+        tokenizer = GPT2Tokenizer.from_pretrained("gpt2")
+        model = GPT2LMHeadModel.from_pretrained("gpt2")
+        model.eval()
+
+        encodings = tokenizer(
+            text, return_tensors="pt", truncation=True, max_length=512
+        )
+        input_ids = encodings["input_ids"]
+
+        with torch.no_grad():
+            outputs = model(input_ids, labels=input_ids)
+            loss = outputs.loss
+
+        return float(torch.exp(loss).item())
+    except Exception:
+        return float("nan")
+
+
 class AdaptivePassageCrafter:
     """
     crafts adversarial passages that evade sad detection.
@@ -250,6 +289,9 @@ class AdaptivePassageCrafter:
     the vocabulary-constrained substitution approach preserves semantic
     coherence: replacements come from a hand-curated domain synonym dictionary,
     ensuring the modified passage is still a plausible memory entry.
+
+    perplexity scoring (via gpt-2) is computed for both original and evasive
+    passages to quantify fluency degradation from synonym substitution.
     """
 
     def __init__(
@@ -411,6 +453,11 @@ class AdaptivePassageCrafter:
         final_sims = q_embs @ final_emb
         retrieval_preserved = float(np.max(final_sims)) > calibration_mean * 0.8
 
+        # compute perplexity for both passages to quantify fluency impact.
+        # high perplexity after evasion indicates detectable degradation.
+        orig_ppl = compute_perplexity(initial_passage)
+        evasive_ppl = compute_perplexity(current_passage)
+
         return AdaptivePassageResult(
             original_passage=initial_passage,
             evasive_passage=current_passage,
@@ -421,6 +468,8 @@ class AdaptivePassageCrafter:
             evasion_successful=evasion_successful,
             retrieval_preserved=retrieval_preserved,
             substitution_log=substitution_log,
+            original_perplexity=orig_ppl,
+            evasive_perplexity=evasive_ppl,
         )
 
 
