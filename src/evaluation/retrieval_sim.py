@@ -1048,7 +1048,7 @@ class RetrievalSimulator:
         returns:
             dict mapping attack_type str → AttackMetrics
         """
-        attack_types = ["agent_poison", "minja", "injecmem"]
+        attack_types = ["agent_poison", "minja", "injecmem", "poisonedrag"]
         results: Dict[str, AttackMetrics] = {}
 
         for at in attack_types:
@@ -1059,6 +1059,70 @@ class RetrievalSimulator:
                 results[at] = AttackMetrics(attack_type=at)
 
         return results
+
+    def evaluate_on_nq(
+        self,
+        attack_type: str,
+        n_questions: int = 50,
+    ) -> AttackMetrics:
+        """
+        evaluate an attack against the natural questions (nq) corpus.
+
+        provides external validation that attack asr-r results generalize
+        beyond the synthetic corpus to a realistic qa distribution.  uses
+        real google search questions paired with wikipedia knowledge entries.
+
+        args:
+            attack_type: attack to evaluate
+            n_questions: number of nq questions to use (max 50)
+
+        returns:
+            AttackMetrics measured on the nq corpus
+        """
+        from data.nq_subset import NQSubset
+
+        nq = NQSubset()
+        nq_entries = nq.get_corpus_entries()
+        nq_questions = nq.get_questions()[:n_questions]
+
+        # build a fresh memory system with nq corpus
+        mem = VectorMemorySystem()
+        for entry in nq_entries:
+            mem.store(entry["key"], entry["content"], entry.get("metadata", {}))
+
+        # generate poison entries targeting nq questions
+        poison = self._generate_poison_entries(attack_type, nq_questions)
+        poison_keys = []
+        for pe in poison:
+            mem.store(pe["key"], pe["content"], pe.get("metadata", {}))
+            poison_keys.append(pe["key"])
+
+        # measure asr-r
+        metrics = AttackMetrics(attack_type=attack_type)
+        use_triggered = (
+            attack_type == "agent_poison" and self._last_trigger_string is not None
+        )
+        for q in nq_questions:
+            rq = f"{self._last_trigger_string} {q}" if use_triggered else q
+            result = mem.poison_retrieval_test(rq, poison_keys, self.top_k)
+            metrics.total_queries += 1
+            if result["retrieved_any_poison"]:
+                metrics.queries_retrieved_poison += 1
+
+        # model asr-a
+        mean_a, std_a = _MODELLED_ASR_A.get(attack_type, (0.60, 0.08))
+        for _ in range(metrics.queries_retrieved_poison):
+            prob = max(0.0, min(1.0, self._rng.gauss(mean_a, std_a)))
+            if self._rng.random() < prob:
+                metrics.retrievals_with_target_action += 1
+                metrics.successful_task_hijacks += 1
+
+        metrics.calculate_rates()
+        self.logger.logger.info(
+            f"nq validation {attack_type}: asr-r={metrics.asr_r:.3f} "
+            f"asr-t={metrics.asr_t:.3f} (n={n_questions})"
+        )
+        return metrics
 
     def get_corpus_stats(self) -> Dict[str, Any]:
         """return statistics about the benign corpus and query sets."""
