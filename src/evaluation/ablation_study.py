@@ -593,6 +593,205 @@ class AblationStudy:
             )
         return points
 
+    def sad_weight_ablation(
+        self,
+        attack_type: Optional[str] = None,
+        weight_values: Optional[List[float]] = None,
+        n_trials: int = 3,
+    ) -> List[AblationPoint]:
+        """
+        ablate the combined scoring weight alpha in score = alpha*max + (1-alpha)*mean.
+
+        justifies the 0.5/0.5 default or identifies a better operating point.
+        only meaningful when scoring_mode="combined".
+
+        default weight_values: [0.0, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 1.0].
+        """
+        at = attack_type or self.attack_type
+        weights = weight_values or [0.0, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 1.0]
+        _test = os.environ.get("MEMORY_SECURITY_TEST", "false").lower() == "true"
+        if _test:
+            weights = [0.0, 0.5, 1.0]
+            n_trials = min(n_trials, 2)
+
+        points: List[AblationPoint] = []
+        for alpha in weights:
+            t0 = time.time()
+            tpr_samples, fpr_samples = [], []
+
+            for trial in range(n_trials):
+                seed = self.seed_base + trial * 17
+                try:
+                    from data.synthetic_corpus import SyntheticCorpus
+                    from defenses.semantic_anomaly import SemanticAnomalyDetector
+                    from evaluation.retrieval_sim import (
+                        generate_centroid_agentpoison_passage,
+                        generate_injecmem_passage,
+                        generate_minja_passage,
+                    )
+
+                    corpus = SyntheticCorpus(seed=seed)
+                    benign_entries = corpus.get_entries(100)
+                    benign_texts = [e["content"] for e in benign_entries]
+                    victim_queries = corpus.get_victim_queries()
+                    victim_query_strs = [
+                        q if isinstance(q, str) else q.get("query", str(q))
+                        for q in victim_queries
+                    ]
+
+                    # generate poison entries
+                    poison_entries: List[str] = []
+                    if at == "agent_poison":
+                        p = generate_centroid_agentpoison_passage(victim_queries)
+                        poison_entries = [p] * 5
+                    elif at == "minja":
+                        for i in range(10):
+                            q = victim_queries[i % len(victim_queries)]
+                            poison_entries.append(generate_minja_passage(q))
+                    else:
+                        for i in range(15):
+                            q = victim_queries[i % len(victim_queries)]
+                            poison_entries.append(
+                                generate_injecmem_passage(q, variant_index=i)
+                            )
+
+                    # custom combined-mode detector with ablated alpha
+                    det = SemanticAnomalyDetector(
+                        threshold_sigma=2.0, scoring_mode="combined"
+                    )
+                    # monkey-patch the weight for this trial
+                    det._combined_alpha = alpha
+                    cal_stats = det.calibrate(
+                        benign_texts,
+                        victim_query_strs[:10],
+                        train_fraction=0.7,
+                        seed=seed,
+                    )
+                    for q in victim_query_strs[:10]:
+                        det.update_query_set(q)
+                    test_idx = cal_stats.get("test_indices", [])
+                    test_benign = (
+                        [benign_texts[i] for i in test_idx]
+                        if test_idx
+                        else benign_texts[:20]
+                    )
+                    result = det.evaluate_on_corpus(poison_entries, test_benign)
+                    tpr_samples.append(result["tpr"])
+                    fpr_samples.append(result["fpr"])
+                except Exception as exc:
+                    logger.log_error(
+                        "sad_weight_ablation_trial",
+                        exc,
+                        {"alpha": alpha, "trial": trial},
+                    )
+
+            mean_tpr = sum(tpr_samples) / max(len(tpr_samples), 1)
+            mean_fpr = sum(fpr_samples) / max(len(fpr_samples), 1)
+
+            points.append(
+                AblationPoint(
+                    param_name="sad_combined_alpha",
+                    param_value=float(alpha),
+                    attack_type=at,
+                    asr_r_mean=0.0,
+                    asr_r_ci_lower=0.0,
+                    asr_r_ci_upper=0.0,
+                    tpr_mean=mean_tpr,
+                    fpr_mean=mean_fpr,
+                    n_trials=n_trials,
+                    elapsed_s=time.time() - t0,
+                )
+            )
+            logger.logger.info(
+                "sad weight ablation alpha=%.1f: tpr=%.3f fpr=%.3f",
+                alpha,
+                mean_tpr,
+                mean_fpr,
+            )
+        return points
+
+    def asr_a_sensitivity_analysis(
+        self,
+        attack_types: Optional[List[str]] = None,
+        asr_a_offsets: Optional[List[float]] = None,
+        n_trials: int = 3,
+    ) -> List[AblationPoint]:
+        """
+        sensitivity analysis on modelled asr-a values.
+
+        the retrieval simulator uses hardcoded (mean, std) for asr-a per attack.
+        this ablation varies asr-a by offsets to show how sensitive asr-t is
+        to the modelled action success probability.
+
+        default offsets: [-0.20, -0.10, 0.0, +0.10, +0.20].
+        """
+        ats = attack_types or ["agent_poison", "minja", "injecmem"]
+        offsets = asr_a_offsets or [-0.20, -0.10, 0.0, 0.10, 0.20]
+        _test = os.environ.get("MEMORY_SECURITY_TEST", "false").lower() == "true"
+        if _test:
+            offsets = [-0.10, 0.0, 0.10]
+            n_trials = min(n_trials, 2)
+
+        from evaluation.retrieval_sim import _MODELLED_ASR_A, RetrievalSimulator
+
+        points: List[AblationPoint] = []
+        for at in ats:
+            base_mean, base_std = _MODELLED_ASR_A.get(at, (0.60, 0.08))
+            for offset in offsets:
+                t0 = time.time()
+                asr_t_samples = []
+                adjusted_mean = max(0.0, min(1.0, base_mean + offset))
+
+                for trial in range(n_trials):
+                    seed = self.seed_base + trial * 17
+                    try:
+                        sim = RetrievalSimulator(
+                            corpus_size=200,
+                            n_poison_per_attack=5,
+                            top_k=5,
+                            seed=seed,
+                        )
+                        # temporarily override asr-a model
+                        import evaluation.retrieval_sim as rs_mod
+
+                        orig = rs_mod._MODELLED_ASR_A.get(at)
+                        rs_mod._MODELLED_ASR_A[at] = (adjusted_mean, base_std)
+                        m = sim.evaluate_attack(at)
+                        asr_t_samples.append(m.asr_t)
+                        # restore original
+                        if orig is not None:
+                            rs_mod._MODELLED_ASR_A[at] = orig
+                    except Exception as exc:
+                        logger.log_error(
+                            "asr_a_sensitivity_trial",
+                            exc,
+                            {"attack": at, "offset": offset, "trial": trial},
+                        )
+
+                mean_t, lo_t, hi_t = _bootstrap_ci(
+                    asr_t_samples, self.n_bootstrap, seed=self.seed_base
+                )
+                points.append(
+                    AblationPoint(
+                        param_name="asr_a_offset",
+                        param_value=float(offset),
+                        attack_type=at,
+                        asr_r_mean=0.0,
+                        asr_r_ci_lower=0.0,
+                        asr_r_ci_upper=0.0,
+                        asr_t_mean=mean_t,
+                        n_trials=n_trials,
+                        elapsed_s=time.time() - t0,
+                    )
+                )
+                logger.logger.info(
+                    "asr-a sensitivity %s offset=%.2f: asr_t=%.3f",
+                    at,
+                    offset,
+                    mean_t,
+                )
+        return points
+
     def run_all(
         self,
         n_trials: int = 3,
@@ -642,6 +841,18 @@ class AblationStudy:
         logger.logger.info("running watermark threshold ablation")
         results["watermark_z_threshold"] = self.watermark_threshold_ablation(
             n_trials=n_trials
+        )
+
+        # sad combined-mode weight ablation (all attacks)
+        for at in ats:
+            key = f"sad_weight_{at}"
+            logger.logger.info("running sad weight ablation (%s)", at)
+            results[key] = self.sad_weight_ablation(attack_type=at, n_trials=n_trials)
+
+        # asr-a sensitivity analysis
+        logger.logger.info("running asr-a sensitivity analysis")
+        results["asr_a_sensitivity"] = self.asr_a_sensitivity_analysis(
+            attack_types=ats, n_trials=n_trials
         )
 
         return results

@@ -189,6 +189,14 @@ class SemanticAnomalyDetector:
         self.calibration_std: Optional[float] = None
         self.is_calibrated: bool = False
 
+        # combined mode weight: alpha*max + (1-alpha)*mean.
+        # default 0.5 gives equal weight; can be overridden for ablation.
+        self._combined_alpha: float = 0.5
+
+        # train/test split indices from most recent calibration
+        self._train_indices: List[int] = []
+        self._test_indices: List[int] = []
+
         # rolling query embedding store (FIFO list of np arrays)
         self._query_embeddings: List[Any] = []
 
@@ -302,7 +310,8 @@ class SemanticAnomalyDetector:
         if self.scoring_mode == "combined":
             # combined score = 0.5 * max + 0.5 * mean captures both targeted
             # (high-max) and broad-recall (high-mean) attack signatures.
-            combined = 0.5 * max_sims + 0.5 * mean_sims
+            alpha = self._combined_alpha
+            combined = alpha * max_sims + (1.0 - alpha) * mean_sims
             cal_scores = combined
         else:
             cal_scores = max_sims
@@ -430,7 +439,8 @@ class SemanticAnomalyDetector:
 
         max_sim, mean_sim = self.score_entry(entry)
         if self.scoring_mode == "combined":
-            anomaly_score = 0.5 * max_sim + 0.5 * mean_sim
+            alpha = self._combined_alpha
+            anomaly_score = alpha * max_sim + (1.0 - alpha) * mean_sim
         else:
             anomaly_score = max_sim
         threshold = self.calibration_mean + self.threshold_sigma * self.calibration_std
@@ -487,7 +497,8 @@ class SemanticAnomalyDetector:
         threshold = self.calibration_mean + self.threshold_sigma * self.calibration_std
 
         if self.scoring_mode == "combined":
-            anomaly_scores = 0.5 * max_sims + 0.5 * mean_sims
+            alpha = self._combined_alpha
+            anomaly_scores = alpha * max_sims + (1.0 - alpha) * mean_sims
         else:
             anomaly_scores = max_sims
 
