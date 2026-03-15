@@ -505,12 +505,15 @@ TPR ($0.40$) under plain-query calibration.
 \begin{figure}[t]
   \centering
   \includegraphics[width=0.95\linewidth]{fig_p22_propagation.pdf}
-  \caption{Multi-agent epidemic propagation ($N$=5 agents,
-           $p_{\mathrm{re\text{-}store}}$=0.4) for each attack type.
-           Red: undefended spread; green: \sad{} quarantine.
-           Bars show cumulative secondary poison entries.
-           \sad{} quarantine eliminates secondary infection for \agentpoison{}
-           and \minja{}, containing spread to the initial injection.}
+  \caption{Multi-agent epidemic propagation ($N$=10 agents,
+           $p_{\mathrm{re\text{-}store}}$=0.5, 3 initial poison entries) for each
+           attack type.
+           Red: undefended spread (fraction of agents exposed); bars:
+           cumulative secondary poison entries from re-storage.
+           Green: \sad{} quarantine halts propagation entirely by blocking
+           poisoned entries at the ingestion gate.
+           \agentpoison{} reaches 100\% spread by step 3; \minja{} by step 5;
+           \injecmem{} shows gradual escalation over 15 steps.}
   \label{fig:propagation}
 \end{figure}%
 }{}
