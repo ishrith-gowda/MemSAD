@@ -157,7 +157,7 @@ class EncoderAttackResult:
 
     fields:
         encoder_name: display name of the encoder
-        attack_type: "agent_poison" | "minja" | "injecmem"
+        attack_type: "agent_poison" | "minja" | "injecmem" | "poisonedrag"
         asr_r: retrieval attack success rate (fraction of queries that retrieve poison)
         mean_poison_sim: mean cos similarity of poison entry to victim queries
         mean_benign_sim: mean cos similarity of top benign entry to victim queries
@@ -181,7 +181,7 @@ class EncoderDefenseResult:
 
     fields:
         encoder_name: display name of the encoder
-        attack_type: "agent_poison" | "minja" | "injecmem"
+        attack_type: "agent_poison" | "minja" | "injecmem" | "poisonedrag"
         tpr: true positive rate of sad on this encoder
         fpr: false positive rate of sad on this encoder
         auroc: area under roc curve

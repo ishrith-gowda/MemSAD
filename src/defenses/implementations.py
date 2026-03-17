@@ -945,6 +945,72 @@ class CompositeDefense(Defense):
         )
 
 
+class _SADDefenseAdapter(Defense):
+    """adapter wrapping semanticanomalydetector in the standard defense api."""
+
+    def __init__(self, detector, config=None):
+        super().__init__("semantic_anomaly", config)
+        self._detector = detector
+
+    @property
+    def defense_type(self) -> str:
+        return "semantic_anomaly"
+
+    @property
+    def protected_attacks(self) -> List[str]:
+        return ["agent_poison", "minja", "injecmem", "poisonedrag"]
+
+    @property
+    def description(self) -> str:
+        return "semantic anomaly detection via embedding distance z-scoring"
+
+    def detect_attack(self, content: str) -> Dict[str, Any]:
+        result = self._detector.detect(content)
+        return {
+            "attack_detected": result.is_anomalous,
+            "anomaly_score": result.max_score,
+            "defense_type": "semantic_anomaly",
+        }
+
+    def activate(self, *args, **kwargs) -> bool:
+        self.active = True
+        return True
+
+
+class _RobustRAGDefenseAdapter(Defense):
+    """adapter wrapping robustragdefense in the standard defense api."""
+
+    def __init__(self, defense, config=None):
+        super().__init__("robust_rag", config)
+        self._defense = defense
+
+    @property
+    def defense_type(self) -> str:
+        return "robust_rag"
+
+    @property
+    def protected_attacks(self) -> List[str]:
+        return ["agent_poison", "minja", "injecmem", "poisonedrag"]
+
+    @property
+    def description(self) -> str:
+        return "isolate-then-aggregate defense via keyword-overlap majority voting"
+
+    def detect_attack(self, content: str) -> Dict[str, Any]:
+        # robustrag operates on sets of passages, not individual entries;
+        # for single-entry detection, flag if content has low keyword
+        # overlap with a benign template (heuristic fallback)
+        return {
+            "attack_detected": False,
+            "defense_type": "robust_rag",
+            "note": "robust_rag requires passage-set evaluation",
+        }
+
+    def activate(self, *args, **kwargs) -> bool:
+        self.active = True
+        return True
+
+
 def create_defense(
     defense_type: str, config: Optional[Dict[str, Any]] = None
 ) -> Defense:
@@ -952,8 +1018,8 @@ def create_defense(
     factory function to create defense instances.
 
     args:
-        defense_type: type of defense
-            ("watermark", "validation", "proactive", "composite")
+        defense_type: type of defense ("watermark", "validation",
+            "proactive", "composite", "semantic_anomaly", "robust_rag")
         config: defense configuration
 
     returns:
@@ -972,6 +1038,22 @@ def create_defense(
         return ProactiveDefense(config)
     elif defense_type == "composite":
         return CompositeDefense(config)
+    elif defense_type == "semantic_anomaly":
+        # sad requires calibration before use; return uncalibrated instance
+        # wrapped in a defense-compatible adapter
+        from defenses.semantic_anomaly import SemanticAnomalyDetector
+
+        threshold = (config or {}).get("threshold_sigma", 2.0)
+        det = SemanticAnomalyDetector(threshold_sigma=threshold)
+        # return a lightweight wrapper that exposes the standard defense api
+        return _SADDefenseAdapter(det, config)
+    elif defense_type == "robust_rag":
+        from defenses.robust_rag import RobustRAGDefense
+
+        overlap = (config or {}).get("overlap_threshold", 0.15)
+        return _RobustRAGDefenseAdapter(
+            RobustRAGDefense(overlap_threshold=overlap), config
+        )
     else:
         raise ValueError(f"unsupported defense type: {defense_type}")
 

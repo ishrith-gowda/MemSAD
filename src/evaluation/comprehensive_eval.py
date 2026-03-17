@@ -46,7 +46,7 @@ class ComprehensiveResult:
 
     fields:
         attack_summaries: multi-trial bootstrap summaries per attack.
-            keys: "agent_poison", "minja", "injecmem".
+            keys: "agent_poison", "minja", "injecmem", "poisonedrag".
             values: serializable dicts with asr_r/asr_t/benign_acc ci fields.
         matrix_result_dict: serialized MatrixResult (attack × defense table).
         evasion_results: dict from evasion strategy name → EvasionResult summary.
@@ -577,9 +577,15 @@ class ComprehensiveEvaluator:
             "agent_poison": "AgentPoison \\citep{chen2024agentpoison}",
             "minja": "MINJA \\citep{dong2025minja}",
             "injecmem": "InjecMEM \\citep{injecmem2026}",
+            "poisonedrag": "PoisonedRAG \\citep{zou2024poisonedrag}",
         }
         # modelled asr-a values (from paper definitions)
-        asr_a_vals = {"agent_poison": 0.68, "minja": 0.76, "injecmem": 0.57}
+        asr_a_vals = {
+            "agent_poison": 0.68,
+            "minja": 0.76,
+            "injecmem": 0.57,
+            "poisonedrag": 0.82,
+        }
 
         lines = [
             r"\begin{table}[t]",
@@ -780,6 +786,7 @@ class ComprehensiveEvaluator:
             "agent_poison": "AgentPoison",
             "minja": "MINJA",
             "injecmem": "InjecMEM",
+            "poisonedrag": "PoisonedRAG",
         }
         lines = [
             r"\begin{table}[t]",

@@ -172,7 +172,7 @@ class AdaptiveSADResult:
     effectiveness, since both depend on the same similarity metric.
 
     fields:
-        attack_type: "agent_poison", "minja", or "injecmem"
+        attack_type: "agent_poison", "minja", "injecmem", or "poisonedrag"
         n_trials: number of seeds evaluated
         # standard attack (no sad awareness)
         asr_r_standard: mean asr-r without adaptive evasion
@@ -750,7 +750,7 @@ class AdaptiveSADEvaluator:
         computes means, and sweeps over sigma values for tradeoff curves.
 
         args:
-            attack_type: "agent_poison", "minja", or "injecmem"
+            attack_type: "agent_poison", "minja", "injecmem", or "poisonedrag"
             sigma_values: threshold sigma values to sweep.  defaults to
                 [0.5, 1.0, 1.5, 2.0, 2.5, 3.0, 3.5, 4.0].
             n_trials: number of seeds for mean estimation.

@@ -679,7 +679,7 @@ class RetrievalSimulator:
         breadth via multiple semantically-varied anchor copies.
 
         args:
-            attack_type: "agent_poison", "minja", or "injecmem"
+            attack_type: "agent_poison", "minja", "injecmem", or "poisonedrag"
             victim_queries: list of victim query strings
 
         returns:
@@ -905,7 +905,7 @@ class RetrievalSimulator:
         also measures benign_accuracy on off-target queries.
 
         args:
-            attack_type: "agent_poison", "minja", or "injecmem"
+            attack_type: "agent_poison", "minja", "injecmem", or "poisonedrag"
             extra_victim_queries: additional victim queries from the caller
                                   (e.g. pipeline test_content); merged with
                                   the standard synthetic victim queries

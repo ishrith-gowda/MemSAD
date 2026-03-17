@@ -437,7 +437,7 @@ class MultiTrialEvaluator:
         evaluate one attack type over n_trials independent seeds.
 
         args:
-            attack_type: "agent_poison", "minja", or "injecmem"
+            attack_type: "agent_poison", "minja", "injecmem", or "poisonedrag"
             n_trials: number of trials (ignored if seeds provided)
             seeds: explicit seed list; if None, uses range(n_trials)
 

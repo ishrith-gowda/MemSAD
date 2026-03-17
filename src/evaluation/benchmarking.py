@@ -270,7 +270,7 @@ class AttackEvaluator:
         legacy string-based simulation if the vector stack is unavailable.
 
         args:
-            attack_type: "agent_poison", "minja", or "injecmem"
+            attack_type: "agent_poison", "minja", "injecmem", or "poisonedrag"
             test_content: test content (strings treated as extra victim queries)
             num_trials: used only in legacy fallback mode
 
