@@ -744,7 +744,7 @@ class OpenAIAgentEvaluator:
         benign_entries: List[str],
     ) -> Dict[str, AgentEvalResult]:
         """
-        evaluate all three attacks in sequence.
+        evaluate all four attacks in sequence.
 
         args:
             victim_queries: shared victim query pool

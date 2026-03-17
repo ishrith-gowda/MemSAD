@@ -146,7 +146,7 @@ def _plot_attack_asr_bars(attack_summaries: Dict[str, Any], save_stem: str) -> s
     generate publication-quality grouped bar chart of attack success rates.
 
     shows asr-r (with bootstrap ci), modelled asr-a, and asr-t for all
-    three attacks.  matches the paper's table 1 in visual form.
+    four attacks.  matches the paper's table 1 in visual form.
     """
     import matplotlib
 

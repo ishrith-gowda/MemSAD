@@ -805,7 +805,7 @@ class AblationStudy:
 
         args:
             n_trials: seeds per ablation point (bootstrap ci quality)
-            attack_types: attacks to ablate. defaults to all three attack types.
+            attack_types: attacks to ablate. defaults to all four attack types.
 
         returns:
             dict mapping study_name → List[AblationPoint]

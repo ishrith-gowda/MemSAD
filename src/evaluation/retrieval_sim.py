@@ -1040,7 +1040,7 @@ class RetrievalSimulator:
         extra_victim_queries: Optional[List[str]] = None,
     ) -> Dict[str, AttackMetrics]:
         """
-        evaluate all three attack types and return a metrics dict.
+        evaluate all four attack types and return a metrics dict.
 
         args:
             extra_victim_queries: additional victim queries from the caller

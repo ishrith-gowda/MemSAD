@@ -492,7 +492,7 @@ class MultiTrialEvaluator:
         return summary
 
     def evaluate_all_attacks(self, n_trials: int = 5) -> Dict[str, MultiTrialSummary]:
-        """evaluate all three attacks over n_trials seeds."""
+        """evaluate all four attacks over n_trials seeds."""
         results: Dict[str, MultiTrialSummary] = {}
         for attack in ["agent_poison", "minja", "injecmem", "poisonedrag"]:
             results[attack] = self.evaluate_attack(attack, n_trials=n_trials)

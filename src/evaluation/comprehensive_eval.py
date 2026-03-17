@@ -155,7 +155,7 @@ class ComprehensiveEvaluator:
 
     def _run_attack_evaluation(self) -> Dict[str, Any]:
         """
-        run multi-trial bootstrap evaluation for all three attacks.
+        run multi-trial bootstrap evaluation for all four attacks.
 
         returns dict mapping attack_type → serializable ci summary.
         """

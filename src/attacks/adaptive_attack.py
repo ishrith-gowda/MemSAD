@@ -851,7 +851,7 @@ class AdaptiveSADEvaluator:
         n_trials: int = 3,
     ) -> Dict[str, AdaptiveSADResult]:
         """
-        run adaptive sad evaluation for all three attacks.
+        run adaptive sad evaluation for all four attacks.
 
         returns:
             dict mapping attack_type → AdaptiveSADResult
