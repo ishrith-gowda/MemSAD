@@ -48,6 +48,7 @@ DEFENSE_TYPES = [
     "proactive",
     "composite",
     "semantic_anomaly",
+    "robust_rag",
 ]
 
 # human-readable labels for tables
@@ -63,6 +64,7 @@ DEFENSE_DISPLAY = {
     "proactive": "Proactive",
     "composite": "Composite",
     "semantic_anomaly": "SAD (ours)",
+    "robust_rag": "RobustRAG",
 }
 
 
@@ -261,6 +263,52 @@ def _detect_with_defense(
             result = defense.detect_attack(watermarked_text)
             latencies.append((time.perf_counter() - t0) * 1000)
             benign_flagged.append(bool(result.get("attack_detected", False)))
+
+        avg_latency = sum(latencies) / len(latencies) if latencies else 0.0
+        return poison_flagged, benign_flagged, avg_latency
+
+    elif defense_type == "robust_rag":
+        # robustrag is a post-retrieval defense: it operates on the full set
+        # of retrieved passages (mix of poison + benign) and flags outliers
+        # via keyword-overlap majority voting.  to evaluate tpr/fpr, we
+        # simulate a retrieval set containing both poison and benign entries,
+        # then check which entries get flagged.
+        try:
+            from defenses.robust_rag import RobustRAGDefense
+
+            defense = RobustRAGDefense(overlap_threshold=0.15)
+        except Exception:
+            return (
+                [False] * len(poison_entries),
+                [False] * len(benign_sample),
+                0.0,
+            )
+
+        # evaluate poison entries: simulate a retrieval set where 1 poison
+        # entry is mixed with 4 benign entries (typical top_k=5 scenario)
+        poison_flagged: List[bool] = []
+        benign_subset = (
+            list(benign_sample)[:4] if len(benign_sample) >= 4 else list(benign_sample)
+        )
+        for text in poison_texts:
+            mixed = benign_subset + [text]
+            t0 = time.perf_counter()
+            result = defense.evaluate(mixed)
+            latencies.append((time.perf_counter() - t0) * 1000)
+            # poison entry is the last one in the mixed list
+            poison_idx = len(mixed) - 1
+            poison_flagged.append(poison_idx in result.flagged_indices)
+
+        # evaluate benign entries: all-benign retrieval set should flag nothing
+        benign_flagged: List[bool] = []
+        for i, text in enumerate(benign_sample):
+            others = [b for j, b in enumerate(benign_sample) if j != i][:4]
+            mixed = others + [text]
+            t0 = time.perf_counter()
+            result = defense.evaluate(mixed)
+            latencies.append((time.perf_counter() - t0) * 1000)
+            target_idx = len(mixed) - 1
+            benign_flagged.append(target_idx in result.flagged_indices)
 
         avg_latency = sum(latencies) / len(latencies) if latencies else 0.0
         return poison_flagged, benign_flagged, avg_latency
