@@ -57,6 +57,7 @@ ATTACK_COLORS = {
     "agent_poison": "#E63946",
     "minja": "#F4A261",
     "injecmem": "#2A9D8F",
+    "poisonedrag": "#9B5DE5",
 }
 
 DEFENSE_COLORS = {
@@ -70,6 +71,7 @@ ATTACK_LABELS = {
     "agent_poison": "AgentPoison",
     "minja": "MINJA",
     "injecmem": "InjecMEM",
+    "poisonedrag": "PoisonedRAG",
 }
 
 DEFENSE_LABELS = {
@@ -1007,16 +1009,24 @@ def plot_matrix_asr_heatmap(
     returns:
         matplotlib figure
     """
-    attack_order = ["agent_poison", "minja", "injecmem"]
-    attack_labels = ["AgentPoison", "MINJA", "InjecMEM"]
+    attack_order = ["agent_poison", "minja", "injecmem", "poisonedrag"]
+    attack_labels = ["AgentPoison", "MINJA", "InjecMEM", "PoisonedRAG"]
     defense_order = [
         "watermark",
         "validation",
         "proactive",
         "composite",
         "semantic_anomaly",
+        "robust_rag",
     ]
-    defense_labels = ["Watermark", "Validation", "Proactive", "Composite", "SAD (ours)"]
+    defense_labels = [
+        "Watermark",
+        "Validation",
+        "Proactive",
+        "Composite",
+        "SAD (ours)",
+        "RobustRAG",
+    ]
 
     # filter to attacks/defenses present in matrix
     atk_present = [a for a in attack_order if a in matrix_result.results]
@@ -1109,8 +1119,8 @@ def plot_retrieval_asr_bars(
     returns:
         matplotlib figure
     """
-    attack_order = ["agent_poison", "minja", "injecmem"]
-    attack_labels = ["AgentPoison", "MINJA", "InjecMEM"]
+    attack_order = ["agent_poison", "minja", "injecmem", "poisonedrag"]
+    attack_labels = ["AgentPoison", "MINJA", "InjecMEM", "PoisonedRAG"]
     metric_keys = ["asr_r", "asr_a", "asr_t"]
     metric_labels = ["ASR-R", "ASR-A", "ASR-T"]
     metric_colors = ["#E63946", "#F4A261", "#2A9D8F"]
@@ -1436,7 +1446,7 @@ class BenchmarkVisualizer:
 
         # adaptive tradeoff per attack
         if adaptive_results:
-            for at in ["agent_poison", "minja", "injecmem"]:
+            for at in ["agent_poison", "minja", "injecmem", "poisonedrag"]:
                 r = adaptive_results.get(at)
                 if r and "error" not in r:
                     try:
@@ -1911,7 +1921,7 @@ def plot_comprehensive_summary(
     returns:
         matplotlib figure
     """
-    attacks = ["agent_poison", "minja", "injecmem"]
+    attacks = ["agent_poison", "minja", "injecmem", "poisonedrag"]
     attack_labels = ["AgentPoison", "MINJA", "InjecMEM"]
     colors = ["#d7191c", "#fdae61", "#2c7bb6"]
 

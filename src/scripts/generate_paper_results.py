@@ -158,10 +158,13 @@ def _plot_attack_asr_bars(attack_summaries: Dict[str, Any], save_stem: str) -> s
         "agent_poison": "AgentPoison",
         "minja": "MINJA",
         "injecmem": "InjecMEM",
+        "poisonedrag": "PoisonedRAG",
     }
 
     attacks = [
-        k for k in ["agent_poison", "minja", "injecmem"] if k in attack_summaries
+        k
+        for k in ["agent_poison", "minja", "injecmem", "poisonedrag"]
+        if k in attack_summaries
     ]
     labels = [attack_labels.get(a, a) for a in attacks]
 
@@ -377,16 +380,24 @@ def _plot_matrix_heatmap_from_dict(matrix_dict: Dict[str, Any], save_stem: str) 
     import matplotlib.pyplot as plt
     import numpy as np
 
-    attack_order = ["agent_poison", "minja", "injecmem"]
-    attack_labels = ["AgentPoison", "MINJA", "InjecMEM"]
+    attack_order = ["agent_poison", "minja", "injecmem", "poisonedrag"]
+    attack_labels = ["AgentPoison", "MINJA", "InjecMEM", "PoisonedRAG"]
     defense_order = [
         "watermark",
         "validation",
         "proactive",
         "composite",
         "semantic_anomaly",
+        "robust_rag",
     ]
-    defense_labels = ["Watermark", "Validation", "Proactive", "Composite", "SAD (ours)"]
+    defense_labels = [
+        "Watermark",
+        "Validation",
+        "Proactive",
+        "Composite",
+        "SAD (ours)",
+        "RobustRAG",
+    ]
 
     results_raw = matrix_dict.get("results", {})
 

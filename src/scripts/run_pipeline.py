@@ -338,7 +338,7 @@ def run_pipeline(
             use_trigger_optimization=False,  # keep fast; trigger opt is slow without gpu
             seed=42,
         )
-        for at in ["agent_poison", "minja", "injecmem"]:
+        for at in ["agent_poison", "minja", "injecmem", "poisonedrag"]:
             retrieval_metrics[at] = sim.evaluate_attack(at)
         print(f"  retrieval simulation complete for {len(retrieval_metrics)} attacks")
         for at, m in retrieval_metrics.items():
@@ -349,6 +349,30 @@ def run_pipeline(
     except Exception as exc:
         logger.log_error("run_pipeline", exc, {"phase": "retrieval_sim"})
         print(f"  retrieval simulation failed: {exc}")
+
+    # nq external validation — evaluate attacks on natural questions corpus
+    nq_metrics: Dict[str, Any] = {}
+    if full_mode:
+        try:
+            nq_sim = RetrievalSimulator(
+                corpus_size=corpus_size,
+                n_poison_per_attack=n_poison,
+                top_k=5,
+                use_trigger_optimization=False,
+                seed=42,
+            )
+            for at in ["agent_poison", "minja", "injecmem", "poisonedrag"]:
+                nq_m = nq_sim.evaluate_on_nq(at, n_questions=50)
+                nq_metrics[at] = nq_m
+            print(f"  nq validation complete for {len(nq_metrics)} attacks")
+            for at, m in nq_metrics.items():
+                print(
+                    f"    {at:<18} nq-asr-r={m.asr_r:.3f}  "
+                    f"nq-benign_acc={m.benign_accuracy:.3f}"
+                )
+        except Exception as exc:
+            logger.log_error("run_pipeline", exc, {"phase": "nq_validation"})
+            print(f"  nq validation failed: {exc}")
 
     # multi-trial bootstrap ci evaluation (phase 11) — quick: 3 trials, full: 5
     multi_trial_summaries: Dict[str, Any] = {}

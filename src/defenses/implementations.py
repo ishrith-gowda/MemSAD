@@ -42,7 +42,7 @@ class WatermarkDefense(Defense):
     @property
     def protected_attacks(self) -> List[str]:
         """list of attack types this defense can protect against."""
-        return ["agent_poison", "minja", "injecmem"]
+        return ["agent_poison", "minja", "injecmem", "poisonedrag"]
 
     @property
     def description(self) -> str:
@@ -271,7 +271,7 @@ class ContentValidationDefense(Defense):
     @property
     def protected_attacks(self) -> List[str]:
         """list of attack types this defense can protect against."""
-        return ["agent_poison", "minja", "injecmem"]
+        return ["agent_poison", "minja", "injecmem", "poisonedrag"]
 
     @property
     def description(self) -> str:
@@ -549,7 +549,7 @@ class ProactiveDefense(Defense):
     @property
     def protected_attacks(self) -> List[str]:
         """list of attack types this defense can protect against."""
-        return ["agent_poison", "minja", "injecmem"]
+        return ["agent_poison", "minja", "injecmem", "poisonedrag"]
 
     @property
     def description(self) -> str:
@@ -782,7 +782,7 @@ class CompositeDefense(Defense):
     @property
     def protected_attacks(self) -> List[str]:
         """list of attack types this defense can protect against."""
-        return ["agent_poison", "minja", "injecmem"]
+        return ["agent_poison", "minja", "injecmem", "poisonedrag"]
 
     @property
     def description(self) -> str:

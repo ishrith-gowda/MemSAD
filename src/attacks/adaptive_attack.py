@@ -856,7 +856,7 @@ class AdaptiveSADEvaluator:
         returns:
             dict mapping attack_type → AdaptiveSADResult
         """
-        attacks = ["agent_poison", "minja", "injecmem"]
+        attacks = ["agent_poison", "minja", "injecmem", "poisonedrag"]
         results: Dict[str, AdaptiveSADResult] = {}
         for at in attacks:
             results[at] = self.evaluate(

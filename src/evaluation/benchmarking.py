@@ -373,7 +373,7 @@ class AttackEvaluator:
         returns:
             metrics for all attacks
         """
-        attack_types = ["agent_poison", "minja", "injecmem"]
+        attack_types = ["agent_poison", "minja", "injecmem", "poisonedrag"]
         results = {}
 
         for attack_type in attack_types:

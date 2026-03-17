@@ -725,7 +725,7 @@ class AblationStudy:
 
         default offsets: [-0.20, -0.10, 0.0, +0.10, +0.20].
         """
-        ats = attack_types or ["agent_poison", "minja", "injecmem"]
+        ats = attack_types or ["agent_poison", "minja", "injecmem", "poisonedrag"]
         offsets = asr_a_offsets or [-0.20, -0.10, 0.0, 0.10, 0.20]
         _test = os.environ.get("MEMORY_SECURITY_TEST", "false").lower() == "true"
         if _test:
@@ -810,7 +810,7 @@ class AblationStudy:
         returns:
             dict mapping study_name → List[AblationPoint]
         """
-        ats = attack_types or ["agent_poison", "minja", "injecmem"]
+        ats = attack_types or ["agent_poison", "minja", "injecmem", "poisonedrag"]
         results: Dict[str, Any] = {}
 
         # corpus size ablation (main attack)

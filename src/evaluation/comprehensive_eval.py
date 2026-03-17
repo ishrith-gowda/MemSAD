@@ -172,7 +172,7 @@ class ComprehensiveEvaluator:
         )
 
         attack_summaries: Dict[str, Any] = {}
-        for at in ["agent_poison", "minja", "injecmem"]:
+        for at in ["agent_poison", "minja", "injecmem", "poisonedrag"]:
             try:
                 summary = mt_eval.evaluate_attack(
                     at,
@@ -240,13 +240,14 @@ class ComprehensiveEvaluator:
             seed=self.seed_base,
         )
 
-        attacks = ["agent_poison", "minja", "injecmem"]
+        attacks = ["agent_poison", "minja", "injecmem", "poisonedrag"]
         defenses = [
             "watermark",
             "validation",
             "proactive",
             "composite",
             "semantic_anomaly",
+            "robust_rag",
         ]
 
         try:
@@ -359,7 +360,7 @@ class ComprehensiveEvaluator:
         )
 
         results: Dict[str, Any] = {}
-        for at in ["agent_poison", "minja", "injecmem"]:
+        for at in ["agent_poison", "minja", "injecmem", "poisonedrag"]:
             try:
                 r = evaluator.evaluate(at, sigma_values=sigma_values, n_trials=n_trials)
                 results[at] = r.to_dict()
@@ -394,7 +395,7 @@ class ComprehensiveEvaluator:
         study = AblationStudy(seed_base=self.seed_base, n_bootstrap=200)
         raw_results = study.run_all(
             n_trials=n_trials,
-            attack_types=["agent_poison", "minja", "injecmem"],
+            attack_types=["agent_poison", "minja", "injecmem", "poisonedrag"],
         )
 
         # serialize AblationPoint objects to dicts
@@ -629,18 +630,20 @@ class ComprehensiveEvaluator:
         self, matrix_dict: Dict[str, Any], metric: str = "asr_r"
     ) -> str:
         """generate attack × defense matrix table from serialized MatrixResult."""
-        attacks = ["agent_poison", "minja", "injecmem"]
+        attacks = ["agent_poison", "minja", "injecmem", "poisonedrag"]
         defenses = [
             "watermark",
             "validation",
             "proactive",
             "composite",
             "semantic_anomaly",
+            "robust_rag",
         ]
         attack_labels = {
             "agent_poison": "AgentPoison",
             "minja": "MINJA",
             "injecmem": "InjecMEM",
+            "poisonedrag": "PoisonedRAG",
         }
         defense_labels = {
             "watermark": "Watermark",
@@ -648,6 +651,7 @@ class ComprehensiveEvaluator:
             "proactive": "Proactive",
             "composite": "Composite",
             "semantic_anomaly": "SAD (Ours)",
+            "robust_rag": "RobustRAG",
         }
 
         results_raw = matrix_dict.get("results", {})

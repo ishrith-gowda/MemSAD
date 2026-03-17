@@ -257,7 +257,7 @@ class MultiEncoderResult:
         ]
         for enc in self.encoder_names:
             row = [enc.replace("_", "\\_")]
-            for atk in ["agent_poison", "minja", "injecmem"]:
+            for atk in ["agent_poison", "minja", "injecmem", "poisonedrag"]:
                 v = table.get(enc, {}).get(atk, float("nan"))
                 row.append(f"{v:.3f}" if not np.isnan(v) else "--")
             lines.append(" & ".join(row) + " \\\\")
@@ -278,7 +278,7 @@ class MultiEncoderResult:
             "\\midrule",
         ]
         for enc in self.encoder_names:
-            for atk in ["agent_poison", "minja", "injecmem"]:
+            for atk in ["agent_poison", "minja", "injecmem", "poisonedrag"]:
                 row_vals = table.get(enc, {}).get(atk, {})
                 tpr = row_vals.get("tpr", float("nan"))
                 fpr = row_vals.get("fpr", float("nan"))
@@ -514,7 +514,7 @@ class MultiEncoderEvaluator:
             MultiEncoderResult with per-encoder attack and defense results
         """
         start = time.time()
-        atk_types = attack_types or ["agent_poison", "minja", "injecmem"]
+        atk_types = attack_types or ["agent_poison", "minja", "injecmem", "poisonedrag"]
         result = MultiEncoderResult(
             encoder_names=list(self.encoders),
             attack_types=atk_types,
