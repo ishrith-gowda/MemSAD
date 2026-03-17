@@ -448,6 +448,19 @@ def run_pipeline(
                         }
                         for at, m in retrieval_metrics.items()
                     },
+                    "nq_validation": (
+                        {
+                            at: {
+                                "asr_r": m.asr_r,
+                                "asr_a": m.asr_a,
+                                "asr_t": m.asr_t,
+                                "benign_accuracy": m.benign_accuracy,
+                            }
+                            for at, m in nq_metrics.items()
+                        }
+                        if nq_metrics
+                        else None
+                    ),
                     "multi_trial_summaries": multi_trial_summaries,
                     "matrix_result": matrix_result.to_dict() if matrix_result else None,
                 },
