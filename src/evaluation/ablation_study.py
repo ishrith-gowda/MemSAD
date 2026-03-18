@@ -7,6 +7,7 @@ evaluates sensitivity of attack and defense performance to key hyperparameters:
     - poison count: number of adversarial entries injected
     - sad threshold (sigma): anomaly detection sensitivity (k in μ + k·σ)
     - watermark z_threshold: detection operating point
+    - robustrag overlap_threshold: keyword clustering sensitivity
 
 each ablation runs multiple seeds and reports bootstrap 95% confidence intervals
 for all primary metrics (asr-r, asr-t, benign accuracy, tpr, fpr).
@@ -593,6 +594,121 @@ class AblationStudy:
             )
         return points
 
+    # default overlap thresholds for robustrag ablation
+    ROBUSTRAG_OVERLAP_VALUES = [0.05, 0.10, 0.15, 0.20, 0.25, 0.30, 0.40]
+
+    def robustrag_overlap_ablation(
+        self,
+        attack_type: Optional[str] = None,
+        overlap_values: Optional[List[float]] = None,
+        n_trials: int = 3,
+    ) -> List[AblationPoint]:
+        """
+        ablate robustrag keyword-overlap threshold.
+
+        lower overlap_threshold → more aggressive clustering (higher tpr, higher fpr).
+        higher overlap_threshold → looser clustering (lower tpr, lower fpr).
+
+        for each threshold value, constructs a simulated retrieval set with
+        poison + benign passages and measures tpr (poison flagged) and fpr
+        (benign incorrectly flagged).
+
+        default overlap_values: [0.05, 0.10, 0.15, 0.20, 0.25, 0.30, 0.40].
+        """
+        from defenses.robust_rag import RobustRAGDefense
+
+        at = attack_type or self.attack_type
+        ov_vals = overlap_values or self.ROBUSTRAG_OVERLAP_VALUES
+        _test = os.environ.get("MEMORY_SECURITY_TEST", "false").lower() == "true"
+        if _test:
+            n_trials = min(n_trials, 2)
+
+        points: List[AblationPoint] = []
+        for ov_thresh in ov_vals:
+            t0 = time.time()
+            tpr_samples: List[float] = []
+            fpr_samples: List[float] = []
+
+            for trial in range(n_trials):
+                seed = self.seed_base + trial * 17
+                try:
+                    from data.synthetic_corpus import SyntheticCorpus
+                    from evaluation.retrieval_sim import RetrievalSimulator
+
+                    sim = RetrievalSimulator(
+                        corpus_size=self.corpus_size,
+                        n_poison_per_attack=self.n_poison,
+                        top_k=5,
+                        use_trigger_optimization=False,
+                        seed=seed,
+                    )
+                    corpus = SyntheticCorpus(seed=seed)
+                    benign_entries = corpus.get_entries()[:20]
+                    benign_texts = [e["content"] for e in benign_entries]
+                    victim_qs = corpus.get_victim_queries()[:5]
+
+                    # generate poison entries
+                    poison = sim._generate_poison_entries(at, victim_qs)
+                    poison_texts = [e["content"] for e in poison]
+
+                    defense = RobustRAGDefense(overlap_threshold=ov_thresh)
+
+                    # measure tpr: mix 1 poison with 4 benign, check if flagged
+                    tp = 0
+                    n_poison_tested = min(len(poison_texts), 5)
+                    for p_text in poison_texts[:n_poison_tested]:
+                        mixed = benign_texts[:4] + [p_text]
+                        result = defense.evaluate(mixed)
+                        if (len(mixed) - 1) in result.flagged_indices:
+                            tp += 1
+                    trial_tpr = tp / max(n_poison_tested, 1)
+
+                    # measure fpr: all-benign retrieval sets
+                    fp = 0
+                    n_benign_tested = min(len(benign_texts), 10)
+                    for i in range(n_benign_tested):
+                        others = [b for j, b in enumerate(benign_texts) if j != i][:4]
+                        mixed = others + [benign_texts[i]]
+                        result = defense.evaluate(mixed)
+                        if (len(mixed) - 1) in result.flagged_indices:
+                            fp += 1
+                    trial_fpr = fp / max(n_benign_tested, 1)
+
+                    tpr_samples.append(trial_tpr)
+                    fpr_samples.append(trial_fpr)
+                except Exception as exc:
+                    logger.log_error(
+                        "robustrag_ablation_trial",
+                        exc,
+                        {"overlap": ov_thresh, "trial": trial},
+                    )
+
+            mean_tpr = sum(tpr_samples) / max(len(tpr_samples), 1)
+            mean_fpr = sum(fpr_samples) / max(len(fpr_samples), 1)
+
+            points.append(
+                AblationPoint(
+                    param_name="robustrag_overlap",
+                    param_value=float(ov_thresh),
+                    attack_type=at,
+                    asr_r_mean=0.0,
+                    asr_r_ci_lower=0.0,
+                    asr_r_ci_upper=0.0,
+                    tpr_mean=mean_tpr,
+                    fpr_mean=mean_fpr,
+                    n_trials=n_trials,
+                    elapsed_s=time.time() - t0,
+                )
+            )
+            logger.logger.info(
+                "robustrag ablation overlap=%.2f (%s): tpr=%.3f fpr=%.3f",
+                ov_thresh,
+                at,
+                mean_tpr,
+                mean_fpr,
+            )
+        return points
+
     def sad_weight_ablation(
         self,
         attack_type: Optional[str] = None,
@@ -848,6 +964,14 @@ class AblationStudy:
             key = f"sad_weight_{at}"
             logger.logger.info("running sad weight ablation (%s)", at)
             results[key] = self.sad_weight_ablation(attack_type=at, n_trials=n_trials)
+
+        # robustrag overlap threshold ablation (all attacks)
+        for at in ats:
+            key = f"robustrag_overlap_{at}"
+            logger.logger.info("running robustrag overlap ablation (%s)", at)
+            results[key] = self.robustrag_overlap_ablation(
+                attack_type=at, n_trials=n_trials
+            )
 
         # asr-a sensitivity analysis
         logger.logger.info("running asr-a sensitivity analysis")
