@@ -354,7 +354,7 @@ class ContentValidationDefense(Defense):
         args:
             config: defense configuration
         """
-        super().__init__("content_validation", config)
+        super().__init__("validation", config)
 
         # calibration threshold: entries with combined score > mu + k*sigma
         # are flagged.  k=2.0 corresponds to ~2.3% theoretical fpr under

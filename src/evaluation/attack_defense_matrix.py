@@ -317,7 +317,8 @@ def _detect_with_defense(
         # standard defense api: detect_attack(content) → {"attack_detected": bool}
         try:
             defense = create_defense(defense_type)
-            defense.activate()
+            # pass benign corpus for calibration-based defenses (e.g. validation)
+            defense.activate(benign_entries=list(benign_sample))
         except Exception:
             return (
                 [False] * len(poison_entries),
