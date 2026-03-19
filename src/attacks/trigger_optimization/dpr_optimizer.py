@@ -34,7 +34,6 @@ from __future__ import annotations
 
 import time
 from dataclasses import dataclass, field
-from typing import List, Optional, Tuple
 
 import numpy as np
 import torch
@@ -58,10 +57,10 @@ _DPR_AVAILABLE = True
 # module-level model cache (loaded once per process)
 # ---------------------------------------------------------------------------
 
-_DPR_ENCODER_CACHE: Optional[object] = None
-_DPR_TOKENIZER_CACHE: Optional[object] = None
-_GPT2_MODEL_CACHE: Optional[object] = None
-_GPT2_TOKENIZER_CACHE: Optional[object] = None
+_DPR_ENCODER_CACHE: object | None = None
+_DPR_TOKENIZER_CACHE: object | None = None
+_GPT2_MODEL_CACHE: object | None = None
+_GPT2_TOKENIZER_CACHE: object | None = None
 
 
 def _load_dpr_encoder():
@@ -108,7 +107,7 @@ class DPROptimizedTrigger:
     compatible with OptimizedTrigger from optimizer.py for use in RetrievalSimulator.
     """
 
-    tokens: List[str]
+    tokens: list[str]
     trigger_string: str
     final_similarity: float
     baseline_similarity: float
@@ -116,9 +115,9 @@ class DPROptimizedTrigger:
     n_queries_used: int
     optimization_time_s: float
     adversarial_passage: str
-    similarity_history: List[float] = field(default_factory=list)
-    token_ids: List[int] = field(default_factory=list)
-    perplexity: Optional[float] = None
+    similarity_history: list[float] = field(default_factory=list)
+    token_ids: list[int] = field(default_factory=list)
+    perplexity: float | None = None
     encoder_name: str = _DPR_MODEL_NAME
 
     def apply(self, query: str) -> str:
@@ -183,9 +182,9 @@ class DPRTriggerOptimizer:
         self._gpt2 = None
         self._gpt2_tok = None
         # vocabulary state
-        self._vocab_embeddings: Optional[torch.Tensor] = None
-        self._vocab_ids: Optional[List[int]] = None
-        self._vocab_tokens: Optional[List[str]] = None
+        self._vocab_embeddings: torch.Tensor | None = None
+        self._vocab_ids: list[int] | None = None
+        self._vocab_tokens: list[str] | None = None
 
     # -----------------------------------------------------------------------
     # public api
@@ -193,9 +192,9 @@ class DPRTriggerOptimizer:
 
     def optimize(
         self,
-        victim_queries: List[str],
+        victim_queries: list[str],
         adversarial_passage: str,
-        initial_tokens: Optional[List[str]] = None,
+        initial_tokens: list[str] | None = None,
     ) -> DPROptimizedTrigger:
         """run hotflip trigger optimization against the dpr encoder.
 
@@ -236,7 +235,7 @@ class DPRTriggerOptimizer:
             trigger_ids = self._random_init(target_emb, queries, baseline_embs)
 
         # run coordinate descent with hotflip gradient selection
-        similarity_history: List[float] = []
+        similarity_history: list[float] = []
         current_sim = self._eval_trigger(trigger_ids, queries, target_emb)
         similarity_history.append(current_sim)
 
@@ -299,11 +298,11 @@ class DPRTriggerOptimizer:
 
     def _hotflip_step(
         self,
-        trigger_ids: List[int],
+        trigger_ids: list[int],
         pos: int,
-        queries: List[str],
+        queries: list[str],
         target_emb: torch.Tensor,
-    ) -> Tuple[List[int], float]:
+    ) -> tuple[list[int], float]:
         """one hotflip coordinate update for trigger position `pos`.
 
         computes the first-order gradient approximation and evaluates
@@ -344,9 +343,9 @@ class DPRTriggerOptimizer:
 
     def _compute_gradient(
         self,
-        trigger_ids: List[int],
+        trigger_ids: list[int],
         pos: int,
-        queries: List[str],
+        queries: list[str],
         target_emb: torch.Tensor,
     ) -> torch.Tensor:
         """compute gradient of mean cosine sim loss w.r.t. embedding at position pos.
@@ -415,8 +414,8 @@ class DPRTriggerOptimizer:
 
     def _eval_trigger(
         self,
-        trigger_ids: List[int],
-        queries: List[str],
+        trigger_ids: list[int],
+        queries: list[str],
         target_emb: torch.Tensor,
     ) -> float:
         """compute mean cosine similarity of triggered query embeddings to target."""
@@ -429,7 +428,7 @@ class DPRTriggerOptimizer:
         )
         return float(sims.mean())
 
-    def _encode_texts(self, texts: List[str]) -> torch.Tensor:
+    def _encode_texts(self, texts: list[str]) -> torch.Tensor:
         """encode list of strings with dpr encoder, returns l2-normalized [n, d]."""
         inputs = self._tokenizer(
             texts,
@@ -450,9 +449,9 @@ class DPRTriggerOptimizer:
     def _random_init(
         self,
         target_emb: torch.Tensor,
-        queries: List[str],
+        queries: list[str],
         baseline_embs: torch.Tensor,
-    ) -> List[int]:
+    ) -> list[int]:
         """initialize trigger ids by selecting vocab tokens closest to target direction.
 
         fast linear init: project vocab embeddings onto (target - query_mean)
@@ -478,10 +477,10 @@ class DPRTriggerOptimizer:
 
     def _filter_by_ppl(
         self,
-        trigger_ids: List[int],
+        trigger_ids: list[int],
         pos: int,
-        candidate_ids: List[int],
-    ) -> List[int]:
+        candidate_ids: list[int],
+    ) -> list[int]:
         """filter candidate token ids by gpt2 perplexity.
 
         tries each candidate token in the trigger position; keeps those
@@ -549,7 +548,7 @@ class DPRTriggerOptimizer:
         """
         # access bert embedding matrix from dpr encoder
         embed_weight = (
-            self._encoder.ctx_encoder.bert_model.embeddings.word_embeddings.weight.detach()  # noqa: E501
+            self._encoder.ctx_encoder.bert_model.embeddings.word_embeddings.weight.detach()
         )  # [vocab_size, d]
 
         # filter to single-word, printable, alphabetic tokens
@@ -585,14 +584,14 @@ class DPRTriggerOptimizer:
             embed_weight[id_tensor], dim=-1
         )  # [filtered_vocab, d]
 
-    def _tokens_to_ids(self, tokens: List[str]) -> List[int]:
+    def _tokens_to_ids(self, tokens: list[str]) -> list[int]:
         """convert token strings to dpr vocab ids."""
         return [
             self._tokenizer.convert_tokens_to_ids(t) or self._vocab_ids[0]
             for t in tokens
         ]
 
-    def _ids_to_tokens(self, ids: List[int]) -> List[str]:
+    def _ids_to_tokens(self, ids: list[int]) -> list[str]:
         """convert dpr vocab ids to token strings."""
         return [self._tokenizer.convert_ids_to_tokens(i) or "unknown" for i in ids]
 
@@ -603,7 +602,7 @@ class DPRTriggerOptimizer:
 
 
 def optimize_dpr_triggers(
-    victim_queries: List[str],
+    victim_queries: list[str],
     adversarial_passage: str,
     n_tokens: int = 5,
     n_iter: int = 30,

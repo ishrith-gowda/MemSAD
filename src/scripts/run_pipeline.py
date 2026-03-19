@@ -31,7 +31,7 @@ import sys
 import time
 from datetime import datetime
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any
 
 # add src/ to path when running from project root
 _HERE = Path(__file__).resolve().parent
@@ -99,7 +99,7 @@ _REFERENCE_TEXTS = [
 def _collect_watermark_z_scores(
     n_watermarked: int = 50,
     n_clean: int = 50,
-) -> Tuple[List[float], List[float]]:
+) -> tuple[list[float], list[float]]:
     """
     collect z-scores from the unigram encoder over watermarked and clean texts.
 
@@ -117,8 +117,8 @@ def _collect_watermark_z_scores(
     encoder = create_watermark_encoder("unigram")
     rng = random.Random(42)
 
-    z_watermarked: List[float] = []
-    z_clean: List[float] = []
+    z_watermarked: list[float] = []
+    z_clean: list[float] = []
 
     texts = _REFERENCE_TEXTS * (n_watermarked // len(_REFERENCE_TEXTS) + 1)
     rng.shuffle(texts)
@@ -149,10 +149,10 @@ def _collect_watermark_z_scores(
 
 
 def _compute_threshold_ablation(
-    z_watermarked: List[float],
-    z_clean: List[float],
-    thresholds: List[float],
-) -> Tuple[List[float], List[float], List[float]]:
+    z_watermarked: list[float],
+    z_clean: list[float],
+    thresholds: list[float],
+) -> tuple[list[float], list[float], list[float]]:
     """
     compute tpr, fpr, f1 at each threshold for ablation plotting.
 
@@ -164,9 +164,9 @@ def _compute_threshold_ablation(
     returns:
         (tpr_vals, fpr_vals, f1_vals) at each threshold
     """
-    tpr_vals: List[float] = []
-    fpr_vals: List[float] = []
-    f1_vals: List[float] = []
+    tpr_vals: list[float] = []
+    fpr_vals: list[float] = []
+    f1_vals: list[float] = []
 
     for thresh in thresholds:
         tp = sum(1 for z in z_watermarked if z >= thresh)
@@ -191,7 +191,7 @@ def _compute_threshold_ablation(
 # ---------------------------------------------------------------------------
 
 
-def _quick_experiment_configs() -> List[Dict[str, Any]]:
+def _quick_experiment_configs() -> list[dict[str, Any]]:
     """return a minimal set of experiments suitable for a quick pipeline run."""
     return [
         {
@@ -222,7 +222,7 @@ def _quick_experiment_configs() -> List[Dict[str, Any]]:
 # ---------------------------------------------------------------------------
 
 
-def _print_results_summary(results: List[BenchmarkResult]):
+def _print_results_summary(results: list[BenchmarkResult]):
     """print a formatted summary table of results to stdout."""
     print("\n" + "=" * 70)
     print("experiment results summary")
@@ -261,7 +261,7 @@ def _print_results_summary(results: List[BenchmarkResult]):
 def run_pipeline(
     output_dir: str = "pipeline_output",
     full_mode: bool = False,
-    num_trials: Optional[int] = None,
+    num_trials: int | None = None,
 ) -> str:
     """
     run the complete research pipeline.
@@ -329,7 +329,7 @@ def run_pipeline(
     matrix_n_trials = 2 if full_mode else 1
 
     # single-trial retrieval simulation for all 3 attacks (phase 9 + 12)
-    retrieval_metrics: Dict[str, AttackMetrics] = {}
+    retrieval_metrics: dict[str, AttackMetrics] = {}
     try:
         sim = RetrievalSimulator(
             corpus_size=corpus_size,
@@ -351,7 +351,7 @@ def run_pipeline(
         print(f"  retrieval simulation failed: {exc}")
 
     # nq external validation — evaluate attacks on natural questions corpus
-    nq_metrics: Dict[str, Any] = {}
+    nq_metrics: dict[str, Any] = {}
     if full_mode:
         try:
             nq_sim = RetrievalSimulator(
@@ -375,7 +375,7 @@ def run_pipeline(
             print(f"  nq validation failed: {exc}")
 
     # multi-trial bootstrap ci evaluation (phase 11) — quick: 3 trials, full: 5
-    multi_trial_summaries: Dict[str, Any] = {}
+    multi_trial_summaries: dict[str, Any] = {}
     if retrieval_metrics:
         try:
             n_mt_trials = 5 if full_mode else 3
@@ -538,7 +538,7 @@ def run_pipeline(
     print(f"  generated {len(wm_saved)} watermark figure(s)")
 
     # phase 12 matrix and retrieval asr figures
-    m12_saved: Dict[str, str] = {}
+    m12_saved: dict[str, str] = {}
     if matrix_result is not None or retrieval_metrics:
         try:
             m12_saved = visualizer.generate_matrix_figures(
@@ -566,9 +566,9 @@ def run_pipeline(
     # -----------------------------------------------------------------------
     print("[5/6] running comprehensive evaluation (phase 13)...")
 
-    p13_saved: Dict[str, str] = {}
+    p13_saved: dict[str, str] = {}
     comprehensive_result = None
-    tables_saved: Dict[str, str] = {}
+    tables_saved: dict[str, str] = {}
     try:
         # quick mode: small params; full mode: research-grade params
         p13_corpus = 100 if full_mode else 40

@@ -42,7 +42,7 @@ all comments are lowercase.
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any
 
 # ---------------------------------------------------------------------------
 # result dataclass
@@ -76,7 +76,7 @@ class AnomalyScore:
     calibration_std: float
     sigma_multiple: float
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         return {
             "max_query_similarity": self.max_query_similarity,
             "mean_query_similarity": self.mean_query_similarity,
@@ -92,7 +92,7 @@ class AnomalyScore:
 # ---------------------------------------------------------------------------
 
 
-def _compute_auroc(scores: List[float], labels: List[int]) -> float:
+def _compute_auroc(scores: list[float], labels: list[int]) -> float:
     """
     compute auroc from raw scores and binary labels (1=positive/poison).
 
@@ -185,8 +185,8 @@ class SemanticAnomalyDetector:
         self._encoder = None
 
         # calibration statistics
-        self.calibration_mean: Optional[float] = None
-        self.calibration_std: Optional[float] = None
+        self.calibration_mean: float | None = None
+        self.calibration_std: float | None = None
         self.is_calibrated: bool = False
 
         # combined mode weight: alpha*max + (1-alpha)*mean.
@@ -194,11 +194,11 @@ class SemanticAnomalyDetector:
         self._combined_alpha: float = 0.5
 
         # train/test split indices from most recent calibration
-        self._train_indices: List[int] = []
-        self._test_indices: List[int] = []
+        self._train_indices: list[int] = []
+        self._test_indices: list[int] = []
 
         # rolling query embedding store (FIFO list of np arrays)
-        self._query_embeddings: List[Any] = []
+        self._query_embeddings: list[Any] = []
 
     # ------------------------------------------------------------------
     # encoder (lazy load)
@@ -213,7 +213,7 @@ class SemanticAnomalyDetector:
             self._encoder = SentenceTransformer(self.model_name)
         return self._encoder
 
-    def _embed(self, texts: List[str]):
+    def _embed(self, texts: list[str]):
         """embed a list of texts to L2-normalized vectors."""
         import numpy as np
 
@@ -237,7 +237,7 @@ class SemanticAnomalyDetector:
         if len(self._query_embeddings) > self.max_query_history:
             self._query_embeddings.pop(0)
 
-    def update_query_set_batch(self, queries: List[str]) -> None:
+    def update_query_set_batch(self, queries: list[str]) -> None:
         """batch version of update_query_set."""
         embs = self._embed(queries)
         for emb in embs:
@@ -252,11 +252,11 @@ class SemanticAnomalyDetector:
 
     def calibrate(
         self,
-        benign_entries: List[str],
-        sample_queries: List[str],
+        benign_entries: list[str],
+        sample_queries: list[str],
         train_fraction: float = 1.0,
         seed: int = 42,
-    ) -> Dict[str, float]:
+    ) -> dict[str, float]:
         """
         fit calibration statistics on a labeled benign corpus.
 
@@ -355,10 +355,10 @@ class SemanticAnomalyDetector:
 
     def calibrate_triggered(
         self,
-        benign_entries: List[str],
-        victim_queries: List[str],
+        benign_entries: list[str],
+        victim_queries: list[str],
         trigger_str: str,
-    ) -> Dict[str, float]:
+    ) -> dict[str, float]:
         """
         fit calibration statistics using triggered victim queries.
 
@@ -398,7 +398,7 @@ class SemanticAnomalyDetector:
     # detection
     # ------------------------------------------------------------------
 
-    def score_entry(self, entry: str) -> Tuple[float, float]:
+    def score_entry(self, entry: str) -> tuple[float, float]:
         """
         compute anomaly score for a single entry against the query set.
 
@@ -458,7 +458,7 @@ class SemanticAnomalyDetector:
             sigma_multiple=sigma_mult,
         )
 
-    def detect_batch(self, entries: List[str]) -> List[AnomalyScore]:
+    def detect_batch(self, entries: list[str]) -> list[AnomalyScore]:
         """
         efficiently score a batch of entries.
 
@@ -529,9 +529,9 @@ class SemanticAnomalyDetector:
 
     def evaluate_on_corpus(
         self,
-        poison_entries: List[str],
-        benign_entries: List[str],
-    ) -> Dict[str, Any]:
+        poison_entries: list[str],
+        benign_entries: list[str],
+    ) -> dict[str, Any]:
         """
         evaluate sad on a labeled corpus: poison vs benign entries.
 
@@ -587,10 +587,10 @@ class SemanticAnomalyDetector:
 
     def threshold_sweep(
         self,
-        poison_entries: List[str],
-        benign_entries: List[str],
-        sigma_values: Optional[List[float]] = None,
-    ) -> List[Dict[str, Any]]:
+        poison_entries: list[str],
+        benign_entries: list[str],
+        sigma_values: list[float] | None = None,
+    ) -> list[dict[str, Any]]:
         """
         sweep over threshold_sigma values and return tpr/fpr/f1/auroc per value.
 
@@ -618,7 +618,7 @@ class SemanticAnomalyDetector:
         self.threshold_sigma = original_sigma
         return results
 
-    def get_config(self) -> Dict[str, Any]:
+    def get_config(self) -> dict[str, Any]:
         """return current detector configuration and calibration state."""
         return {
             "threshold_sigma": self.threshold_sigma,

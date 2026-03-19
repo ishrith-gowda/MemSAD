@@ -40,7 +40,7 @@ all comments are lowercase.
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from typing import Any, Dict, List, Optional, Set, Tuple
+from typing import Any
 
 import numpy as np
 
@@ -68,8 +68,8 @@ class MemoryNode:
     text: str
     node_type: str = "fact"
     is_adversarial: bool = False
-    embedding: Optional[np.ndarray] = None
-    metadata: Dict[str, Any] = field(default_factory=dict)
+    embedding: np.ndarray | None = None
+    metadata: dict[str, Any] = field(default_factory=dict)
 
 
 # ---------------------------------------------------------------------------
@@ -124,9 +124,9 @@ class GraphMemorySystem:
         self.top_k = top_k
         self.hop_depth = hop_depth
 
-        self.nodes: List[MemoryNode] = []
+        self.nodes: list[MemoryNode] = []
         # adjacency: {node_id: set of connected node_ids}
-        self._adj: Dict[int, Set[int]] = {}
+        self._adj: dict[int, set[int]] = {}
         self._next_id: int = 0
 
     # ------------------------------------------------------------------
@@ -138,8 +138,8 @@ class GraphMemorySystem:
         text: str,
         node_type: str = "fact",
         is_adversarial: bool = False,
-        metadata: Optional[Dict[str, Any]] = None,
-        forced_edges: Optional[List[int]] = None,
+        metadata: dict[str, Any] | None = None,
+        forced_edges: list[int] | None = None,
     ) -> int:
         """
         add a new memory node and auto-construct edges to similar existing nodes.
@@ -198,10 +198,10 @@ class GraphMemorySystem:
 
     def add_batch(
         self,
-        texts: List[str],
+        texts: list[str],
         node_type: str = "fact",
         is_adversarial: bool = False,
-    ) -> List[int]:
+    ) -> list[int]:
         """
         add multiple nodes efficiently.
 
@@ -239,7 +239,7 @@ class GraphMemorySystem:
     # retrieval
     # ------------------------------------------------------------------
 
-    def retrieve(self, query: str) -> List[Tuple[MemoryNode, str, float]]:
+    def retrieve(self, query: str) -> list[tuple[MemoryNode, str, float]]:
         """
         two-phase graph retrieval for a query.
 
@@ -258,13 +258,13 @@ class GraphMemorySystem:
         sims = all_vecs @ q_vec
 
         top_ids = np.argsort(sims)[::-1][: min(self.top_k, len(sims))]
-        anchor_set: Set[int] = set(int(i) for i in top_ids)
+        anchor_set: set[int] = {int(i) for i in top_ids}
 
         # bfs expansion
-        expanded: Set[int] = set(anchor_set)
+        expanded: set[int] = set(anchor_set)
         frontier = set(anchor_set)
         for _ in range(self.hop_depth):
-            next_frontier: Set[int] = set()
+            next_frontier: set[int] = set()
             for nid in frontier:
                 for neighbour in self._adj.get(nid, set()):
                     if neighbour not in expanded:
@@ -274,7 +274,7 @@ class GraphMemorySystem:
 
         # build result
         id_to_node = {n.node_id: n for n in self.nodes}
-        results: List[Tuple[MemoryNode, str, float]] = []
+        results: list[tuple[MemoryNode, str, float]] = []
         for nid in expanded:
             node = id_to_node[nid]
             sim = float(sims[nid]) if nid < len(sims) else 0.0
@@ -358,8 +358,8 @@ class GraphMemorySystem:
 
     def insert_subgraph_cluster(
         self,
-        poison_texts: List[str],
-    ) -> List[int]:
+        poison_texts: list[str],
+    ) -> list[int]:
         """
         subgraph cluster attack: insert a fully connected clique of poison nodes.
 
@@ -395,7 +395,7 @@ class GraphMemorySystem:
         self,
         node_id: int,
         sigma: float = 2.0,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """
         flag nodes with abnormally high degree as potential hub attacks.
 
@@ -456,8 +456,8 @@ class GraphMemorySystem:
 
     def evaluate_attacks(
         self,
-        victim_queries: List[str],
-    ) -> Dict[str, Any]:
+        victim_queries: list[str],
+    ) -> dict[str, Any]:
         """
         compute asr_r (fraction of queries that retrieve any adversarial node).
 
@@ -499,7 +499,7 @@ class GraphMemorySystem:
             "mean_contamination_benign": mean_cont_ben,
         }
 
-    def graph_stats(self) -> Dict[str, Any]:
+    def graph_stats(self) -> dict[str, Any]:
         """
         return summary statistics of the graph.
 
@@ -524,7 +524,7 @@ class GraphMemorySystem:
     # internal helpers
     # ------------------------------------------------------------------
 
-    def _encode(self, texts: List[str]) -> np.ndarray:
+    def _encode(self, texts: list[str]) -> np.ndarray:
         """encode texts to normalised float32 vectors."""
         return self._st.encode(
             texts, normalize_embeddings=True, show_progress_bar=False

@@ -47,7 +47,7 @@ from __future__ import annotations
 
 import random
 from dataclasses import dataclass, field
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any
 
 import numpy as np
 
@@ -67,7 +67,7 @@ class PropagationStep:
     n_poison_retrievals: int  # poison-returning queries up to this step
     cumulative_asr_r: float  # poison_retrievals / total_queries
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         return {
             "step": self.step,
             "spread": self.spread,
@@ -101,7 +101,7 @@ class PropagationResult:
     n_initial_poison: int
     p_re_store: float
     max_steps: int
-    steps: List[PropagationStep] = field(default_factory=list)
+    steps: list[PropagationStep] = field(default_factory=list)
     time_to_50pct: int = -1
     time_to_90pct: int = -1
     final_spread: float = 0.0
@@ -109,7 +109,7 @@ class PropagationResult:
     total_cumulative_asr_r: float = 0.0
     converged: bool = False
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         return {
             "n_agents": self.n_agents,
             "n_initial_poison": self.n_initial_poison,
@@ -147,12 +147,12 @@ class SharedKnowledgeBase:
 
         self._st = SentenceTransformer(encoder_model)
         self._dim = self._st.get_sentence_embedding_dimension()
-        self._texts: List[str] = []
-        self._is_poison: List[bool] = []
-        self._poison_generation: List[int] = []  # 0=initial, 1+=secondary
-        self._vecs: Optional[np.ndarray] = None
+        self._texts: list[str] = []
+        self._is_poison: list[bool] = []
+        self._poison_generation: list[int] = []  # 0=initial, 1+=secondary
+        self._vecs: np.ndarray | None = None
 
-    def _encode(self, texts: List[str]) -> np.ndarray:
+    def _encode(self, texts: list[str]) -> np.ndarray:
         """encode to normalised float32 vectors."""
         return self._st.encode(
             texts, normalize_embeddings=True, show_progress_bar=False
@@ -160,7 +160,7 @@ class SharedKnowledgeBase:
 
     def insert_batch(
         self,
-        texts: List[str],
+        texts: list[str],
         is_poison: bool = False,
         generation: int = 0,
     ) -> None:
@@ -181,7 +181,7 @@ class SharedKnowledgeBase:
         else:
             self._vecs = np.vstack([self._vecs, vecs])
 
-    def retrieve(self, query: str, top_k: int = 5) -> List[Tuple[str, bool, float]]:
+    def retrieve(self, query: str, top_k: int = 5) -> list[tuple[str, bool, float]]:
         """
         retrieve top_k entries most similar to query.
 
@@ -283,9 +283,9 @@ class MultiAgentEnvironment:
 
     def run(
         self,
-        benign_texts: List[str],
-        victim_queries: List[str],
-        poison_texts: List[str],
+        benign_texts: list[str],
+        victim_queries: list[str],
+        poison_texts: list[str],
         n_initial_poison: int = 5,
     ) -> PropagationResult:
         """
@@ -429,11 +429,11 @@ class PropagationWithSADQuarantine:
 
     def run(
         self,
-        benign_texts: List[str],
-        victim_queries: List[str],
-        poison_texts: List[str],
+        benign_texts: list[str],
+        victim_queries: list[str],
+        poison_texts: list[str],
         n_initial_poison: int = 5,
-    ) -> Tuple[PropagationResult, QuarantineResult]:
+    ) -> tuple[PropagationResult, QuarantineResult]:
         """
         run propagation experiment with sad quarantine gate.
 
@@ -470,7 +470,7 @@ class PropagationWithSADQuarantine:
         n_quarantined_secondary = 0
 
         # attempt to insert initial poison — filter through sad
-        actual_poison_inserted: List[str] = []
+        actual_poison_inserted: list[str] = []
         for pt in poison_texts[:n_initial_poison]:
             score_result = sad.detect(pt)
             if score_result.is_anomalous:

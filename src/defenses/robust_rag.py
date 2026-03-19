@@ -40,7 +40,7 @@ from __future__ import annotations
 import math
 from collections import Counter
 from dataclasses import dataclass
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any
 
 
 @dataclass
@@ -59,16 +59,16 @@ class IsolationResult:
         certified_radius: max number of adversarial passages tolerated
     """
 
-    passages: List[str]
-    group_assignments: List[int]
-    flagged_indices: List[int]
+    passages: list[str]
+    group_assignments: list[int]
+    flagged_indices: list[int]
     majority_group: int
     n_groups: int
     n_flagged: int
     is_clean: bool
     certified_radius: int
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         return {
             "n_passages": len(self.passages),
             "n_groups": self.n_groups,
@@ -143,7 +143,6 @@ def _extract_keywords(text: str, min_length: int = 3) -> set:
         "some",
         "each",
         "every",
-        "been",
         "being",
         "into",
     }
@@ -174,7 +173,7 @@ class RobustRAGDefense:
 
     def __init__(
         self,
-        n_groups: Optional[int] = None,
+        n_groups: int | None = None,
         overlap_threshold: float = 0.15,
     ):
         """
@@ -188,7 +187,7 @@ class RobustRAGDefense:
         self.n_groups = n_groups
         self.overlap_threshold = overlap_threshold
 
-    def evaluate(self, passages: List[str]) -> IsolationResult:
+    def evaluate(self, passages: list[str]) -> IsolationResult:
         """
         run the isolate-then-aggregate defense on retrieved passages.
 
@@ -269,8 +268,8 @@ class RobustRAGDefense:
         )
 
     def filter_retrieval(
-        self, passages: List[str]
-    ) -> Tuple[List[str], IsolationResult]:
+        self, passages: list[str]
+    ) -> tuple[list[str], IsolationResult]:
         """
         filter retrieved passages, returning only majority-cluster passages.
 
@@ -286,7 +285,7 @@ class RobustRAGDefense:
         clean = [p for i, p in enumerate(passages) if i not in result.flagged_indices]
         return clean, result
 
-    def get_config(self) -> Dict[str, Any]:
+    def get_config(self) -> dict[str, Any]:
         """return defense configuration."""
         return {
             "defense_type": "robust_rag_isolation",

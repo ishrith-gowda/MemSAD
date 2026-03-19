@@ -15,12 +15,12 @@ import sys
 import time
 from datetime import datetime
 from pathlib import Path
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 from evaluation.benchmarking import BenchmarkResult, BenchmarkRunner
 from scripts.visualization import create_experiment_dashboard
 from utils.config import configmanager
-from utils.logging import logger, setup_experiment_logging
+from utils.logging import logger
 
 
 class ExperimentRunner:
@@ -54,7 +54,7 @@ class ExperimentRunner:
             {"config_dir": config_dir, "output_dir": str(self.output_dir)},
         )
 
-    def load_experiment_config(self, experiment_file: str) -> Dict[str, Any]:
+    def load_experiment_config(self, experiment_file: str) -> dict[str, Any]:
         """
         load experiment configuration from a json file.
 
@@ -69,9 +69,7 @@ class ExperimentRunner:
         """
         config_path = Path(experiment_file)
         if not config_path.exists():
-            raise FileNotFoundError(
-                f"experiment config not found: {experiment_file}"
-            )
+            raise FileNotFoundError(f"experiment config not found: {experiment_file}")
 
         with open(config_path) as f:
             config = json.load(f)
@@ -80,7 +78,7 @@ class ExperimentRunner:
         return config
 
     def run_single_experiment(
-        self, experiment_config: Dict[str, Any]
+        self, experiment_config: dict[str, Any]
     ) -> BenchmarkResult:
         """
         run a single experiment defined by experiment_config.
@@ -115,8 +113,8 @@ class ExperimentRunner:
         return result
 
     def run_batch_experiments(
-        self, experiment_configs: List[Dict[str, Any]]
-    ) -> List[BenchmarkResult]:
+        self, experiment_configs: list[dict[str, Any]]
+    ) -> list[BenchmarkResult]:
         """
         run multiple experiments sequentially with incremental result saving.
 
@@ -126,7 +124,7 @@ class ExperimentRunner:
         returns:
             list of BenchmarkResult instances
         """
-        results: List[BenchmarkResult] = []
+        results: list[BenchmarkResult] = []
         total = len(experiment_configs)
 
         for i, config in enumerate(experiment_configs):
@@ -147,15 +145,13 @@ class ExperimentRunner:
         logger.log_batch_complete(len(results), total)
         return results
 
-    def _save_results_json(
-        self, results: List[BenchmarkResult], filename: str
-    ):
+    def _save_results_json(self, results: list[BenchmarkResult], filename: str):
         """serialize results to json in the output directory."""
         output_path = self.output_dir / filename
         serializable = []
 
         for r in results:
-            entry: Dict[str, Any] = {
+            entry: dict[str, Any] = {
                 "experiment_id": r.experiment_id,
                 "timestamp": r.timestamp,
                 "test_duration": r.test_duration,
@@ -206,9 +202,7 @@ class ExperimentRunner:
 
         logger.log_results_saved(str(output_path), len(results))
 
-    def save_results(
-        self, results: List[BenchmarkResult], filename: str
-    ):
+    def save_results(self, results: list[BenchmarkResult], filename: str):
         """
         public alias for _save_results_json.
 
@@ -218,9 +212,7 @@ class ExperimentRunner:
         """
         self._save_results_json(results, filename)
 
-    def generate_experiment_report(
-        self, results: List[BenchmarkResult]
-    ) -> str:
+    def generate_experiment_report(self, results: list[BenchmarkResult]) -> str:
         """
         generate a comprehensive json experiment report.
 
@@ -233,7 +225,7 @@ class ExperimentRunner:
         timestamp = int(time.time())
         report_path = self.output_dir / f"experiment_report_{timestamp}.json"
 
-        report: Dict[str, Any] = {
+        report: dict[str, Any] = {
             "report_metadata": {
                 "generated_at": datetime.now().isoformat(),
                 "total_experiments": len(results),
@@ -245,7 +237,7 @@ class ExperimentRunner:
         }
 
         for result in results:
-            detail: Dict[str, Any] = {
+            detail: dict[str, Any] = {
                 "experiment_id": result.experiment_id,
                 "timestamp": datetime.fromtimestamp(result.timestamp).isoformat(),
                 "duration_s": result.test_duration,
@@ -284,55 +276,39 @@ class ExperimentRunner:
         return str(report_path)
 
     def _calculate_summary_stats(
-        self, results: List[BenchmarkResult]
-    ) -> Dict[str, Any]:
+        self, results: list[BenchmarkResult]
+    ) -> dict[str, Any]:
         """compute aggregate summary statistics across all experiments."""
         if not results:
             return {}
 
-        stats: Dict[str, Any] = {
+        stats: dict[str, Any] = {
             "total_experiments": len(results),
             "avg_duration_s": sum(r.test_duration for r in results) / len(results),
-            "total_memory_operations": sum(
-                r.total_memory_operations for r in results
-            ),
-            "avg_integrity_score": sum(
-                r.memory_integrity_score for r in results
-            ) / len(results),
+            "total_memory_operations": sum(r.total_memory_operations for r in results),
+            "avg_integrity_score": sum(r.memory_integrity_score for r in results)
+            / len(results),
             "attack_type_performance": {},
             "defense_type_performance": {},
         }
 
         # per-attack aggregation
-        attack_types = {
-            at for r in results for at in r.attack_metrics
-        }
+        attack_types = {at for r in results for at in r.attack_metrics}
         for at in attack_types:
-            hits = [
-                r.attack_metrics[at]
-                for r in results
-                if at in r.attack_metrics
-            ]
+            hits = [r.attack_metrics[at] for r in results if at in r.attack_metrics]
             if hits:
                 stats["attack_type_performance"][at] = {
                     "avg_asr_r": sum(m.asr_r for m in hits) / len(hits),
                     "avg_asr_a": sum(m.asr_a for m in hits) / len(hits),
                     "avg_asr_t": sum(m.asr_t for m in hits) / len(hits),
-                    "avg_exec_time_s": sum(
-                        m.execution_time_avg for m in hits
-                    ) / len(hits),
+                    "avg_exec_time_s": sum(m.execution_time_avg for m in hits)
+                    / len(hits),
                 }
 
         # per-defense aggregation
-        defense_types = {
-            dt for r in results for dt in r.defense_metrics
-        }
+        defense_types = {dt for r in results for dt in r.defense_metrics}
         for dt in defense_types:
-            hits = [
-                r.defense_metrics[dt]
-                for r in results
-                if dt in r.defense_metrics
-            ]
+            hits = [r.defense_metrics[dt] for r in results if dt in r.defense_metrics]
             if hits:
                 stats["defense_type_performance"][dt] = {
                     "avg_tpr": sum(m.tpr for m in hits) / len(hits),
@@ -344,15 +320,13 @@ class ExperimentRunner:
 
         return stats
 
-    def _generate_recommendations(
-        self, results: List[BenchmarkResult]
-    ) -> List[str]:
+    def _generate_recommendations(self, results: list[BenchmarkResult]) -> list[str]:
         """derive actionable research recommendations from results."""
         if not results:
             return []
 
         stats = self._calculate_summary_stats(results)
-        recs: List[str] = []
+        recs: list[str] = []
 
         atk_perf = stats.get("attack_type_performance", {})
         if atk_perf:
@@ -362,9 +336,7 @@ class ExperimentRunner:
                 f"(avg asr-r={best[1]['avg_asr_r']:.3f}). "
                 "prioritise defence improvements against this attack vector."
             )
-            high = [
-                a for a, p in atk_perf.items() if p["avg_asr_r"] > 0.7
-            ]
+            high = [a for a, p in atk_perf.items() if p["avg_asr_r"] > 0.7]
             if high:
                 recs.append(
                     f"high-success attacks detected: {', '.join(high)}. "
@@ -381,9 +353,7 @@ class ExperimentRunner:
                 f"most robust defence: {best[0]} "
                 f"(tpr={best[1]['avg_tpr']:.3f}, fpr={best[1]['avg_fpr']:.3f})."
             )
-            high_fpr = [
-                d for d, p in def_perf.items() if p["avg_fpr"] > 0.3
-            ]
+            high_fpr = [d for d, p in def_perf.items() if p["avg_fpr"] > 0.3]
             if high_fpr:
                 recs.append(
                     f"high false-positive defences: {', '.join(high_fpr)}. "
@@ -405,7 +375,7 @@ class ExperimentRunner:
 # ---------------------------------------------------------------------------
 
 
-def create_default_experiment_configs() -> List[Dict[str, Any]]:
+def create_default_experiment_configs() -> list[dict[str, Any]]:
     """
     create a canonical set of experiment configurations.
 
@@ -518,10 +488,8 @@ def main():
     args = parser.parse_args()
 
     try:
-        runner = ExperimentRunner(
-            config_dir=args.config, output_dir=args.output
-        )
-        results: List[BenchmarkResult] = []
+        runner = ExperimentRunner(config_dir=args.config, output_dir=args.output)
+        results: list[BenchmarkResult] = []
 
         if args.batch:
             if args.experiment:
@@ -539,9 +507,7 @@ def main():
 
         else:
             if args.experiment:
-                experiment_config = runner.load_experiment_config(
-                    args.experiment
-                )
+                experiment_config = runner.load_experiment_config(args.experiment)
             else:
                 experiment_config = create_default_experiment_configs()[0]
 

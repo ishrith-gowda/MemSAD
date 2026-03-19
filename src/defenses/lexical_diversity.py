@@ -63,7 +63,7 @@ from __future__ import annotations
 import re
 from collections import Counter
 from dataclasses import dataclass
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 # ---------------------------------------------------------------------------
 # result dataclass
@@ -97,7 +97,7 @@ class LexicalDiversityResult:
     calibration_mean: float
     calibration_std: float
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         return {
             "ttr": self.ttr,
             "ngram_overlap": self.ngram_overlap,
@@ -113,7 +113,7 @@ class LexicalDiversityResult:
 # ---------------------------------------------------------------------------
 
 
-def _tokenize(text: str) -> List[str]:
+def _tokenize(text: str) -> list[str]:
     """
     simple whitespace + punctuation tokenizer.
 
@@ -127,7 +127,7 @@ def _tokenize(text: str) -> List[str]:
     return [t for t in tokens if len(t) > 1]  # drop single-char tokens
 
 
-def _type_token_ratio(tokens: List[str]) -> float:
+def _type_token_ratio(tokens: list[str]) -> float:
     """
     compute type-token ratio: |unique tokens| / |total tokens|.
 
@@ -141,7 +141,7 @@ def _type_token_ratio(tokens: List[str]) -> float:
     return len(set(tokens)) / n
 
 
-def _ngram_overlap(tokens: List[str], query_vocab: set) -> float:
+def _ngram_overlap(tokens: list[str], query_vocab: set) -> float:
     """
     fraction of entry tokens that appear in the victim query vocabulary.
 
@@ -161,7 +161,7 @@ def _ngram_overlap(tokens: List[str], query_vocab: set) -> float:
     return overlap / len(tokens)
 
 
-def _repetition_rate(tokens: List[str]) -> float:
+def _repetition_rate(tokens: list[str]) -> float:
     """
     most-frequent-word count / total words.
 
@@ -221,8 +221,8 @@ class LexicalDiversityGate:
                 use as a secondary gate (primary gate is sad).
         """
         self.threshold_sigma = threshold_sigma
-        self.calibration_mean: Optional[float] = None
-        self.calibration_std: Optional[float] = None
+        self.calibration_mean: float | None = None
+        self.calibration_std: float | None = None
         self.query_vocab: set = set()
         self.is_calibrated: bool = False
 
@@ -232,9 +232,9 @@ class LexicalDiversityGate:
 
     def calibrate(
         self,
-        benign_entries: List[str],
-        victim_queries: List[str],
-    ) -> Dict[str, float]:
+        benign_entries: list[str],
+        victim_queries: list[str],
+    ) -> dict[str, float]:
         """
         fit the lexical score distribution on benign entries.
 
@@ -306,15 +306,15 @@ class LexicalDiversityGate:
             calibration_std=self.calibration_std,
         )
 
-    def score_batch(self, entries: List[str]) -> List[LexicalDiversityResult]:
+    def score_batch(self, entries: list[str]) -> list[LexicalDiversityResult]:
         """score multiple entries efficiently (no batch speedup needed — cpu only)."""
         return [self.score(e) for e in entries]
 
     def evaluate_on_corpus(
         self,
-        poison_entries: List[str],
-        benign_entries: List[str],
-    ) -> Dict[str, Any]:
+        poison_entries: list[str],
+        benign_entries: list[str],
+    ) -> dict[str, Any]:
         """
         evaluate lexical diversity gate on labeled corpus.
 
@@ -380,7 +380,7 @@ class LexicalDiversityGate:
             ),
         }
 
-    def get_config(self) -> Dict[str, Any]:
+    def get_config(self) -> dict[str, Any]:
         """return gate configuration and calibration state."""
         return {
             "threshold_sigma": self.threshold_sigma,
@@ -485,13 +485,13 @@ class SADWithLexicalGate:
             scoring_mode=sad_scoring_mode,
         )
         self.lex_gate = LexicalDiversityGate(threshold_sigma=lex_threshold_sigma)
-        self._victim_queries: List[str] = []
+        self._victim_queries: list[str] = []
 
     def calibrate(
         self,
-        benign_entries: List[str],
-        victim_queries: List[str],
-    ) -> Dict[str, Any]:
+        benign_entries: list[str],
+        victim_queries: list[str],
+    ) -> dict[str, Any]:
         """
         calibrate both components on the same benign corpus and victim query set.
 
@@ -515,7 +515,7 @@ class SADWithLexicalGate:
         # extend lex gate vocabulary with new query tokens
         self.lex_gate.query_vocab.update(_tokenize(query))
 
-    def detect(self, entry: str) -> Dict[str, Any]:
+    def detect(self, entry: str) -> dict[str, Any]:
         """
         run both components and return three-tier verdict.
 
@@ -554,10 +554,10 @@ class SADWithLexicalGate:
 
     def evaluate_on_corpus(
         self,
-        poison_entries: List[str],
-        benign_entries: List[str],
+        poison_entries: list[str],
+        benign_entries: list[str],
         verdict_threshold: str = "soft_flag",
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """
         evaluate combined gate on labeled corpus.
 
@@ -610,7 +610,7 @@ class SADWithLexicalGate:
 # ---------------------------------------------------------------------------
 
 
-def _auroc_from_scores(scores: List[float], labels: List[int]) -> float:
+def _auroc_from_scores(scores: list[float], labels: list[int]) -> float:
     """
     compute auroc from raw scores and binary labels (1 = positive).
 

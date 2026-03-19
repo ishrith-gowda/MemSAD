@@ -27,7 +27,7 @@ import logging
 import sys
 import time
 from pathlib import Path
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 # add src/ to python path
 _HERE = Path(__file__).resolve().parent
@@ -93,7 +93,7 @@ def run_comprehensive_evaluation(
     top_k: int,
     seed_base: int,
     run_ablations: bool,
-) -> Dict[str, Any]:
+) -> dict[str, Any]:
     """run the full comprehensive evaluation and return results dict."""
     log.info(
         "starting comprehensive evaluation: corpus=%d n_seeds=%d n_poison=%d top_k=%d",
@@ -127,7 +127,7 @@ def run_comprehensive_evaluation(
 # ---------------------------------------------------------------------------
 
 
-def generate_tables(result: Any, evaluator: Any) -> Dict[str, str]:
+def generate_tables(result: Any, evaluator: Any) -> dict[str, str]:
     """generate all latex tables and save to results/tables/."""
     log.info("generating latex tables → %s", _TABLES_DIR)
     saved = evaluator.generate_paper_tables(result, str(_TABLES_DIR))
@@ -141,7 +141,7 @@ def generate_tables(result: Any, evaluator: Any) -> Dict[str, str]:
 # ---------------------------------------------------------------------------
 
 
-def _plot_attack_asr_bars(attack_summaries: Dict[str, Any], save_stem: str) -> str:
+def _plot_attack_asr_bars(attack_summaries: dict[str, Any], save_stem: str) -> str:
     """
     generate publication-quality grouped bar chart of attack success rates.
 
@@ -258,7 +258,7 @@ def _plot_attack_asr_bars(attack_summaries: Dict[str, Any], save_stem: str) -> s
     return str(pdf_path)
 
 
-def generate_watermark_z_data() -> Dict[str, Any]:
+def generate_watermark_z_data() -> dict[str, Any]:
     """generate watermark z-score distributions for figure generation."""
     log.info("generating watermark z-score data")
     encoder = create_watermark_encoder("unigram")
@@ -366,7 +366,7 @@ def generate_watermark_z_data() -> Dict[str, Any]:
     }
 
 
-def _plot_matrix_heatmap_from_dict(matrix_dict: Dict[str, Any], save_stem: str) -> str:
+def _plot_matrix_heatmap_from_dict(matrix_dict: dict[str, Any], save_stem: str) -> str:
     """
     generate the attack-defense matrix heatmap from the serialized dict.
 
@@ -467,9 +467,9 @@ def _plot_matrix_heatmap_from_dict(matrix_dict: Dict[str, Any], save_stem: str) 
 
 def generate_all_figures(
     result: Any,
-    wm_data: Dict[str, Any],
+    wm_data: dict[str, Any],
     run_ablations: bool,
-) -> Dict[str, str]:
+) -> dict[str, str]:
     """generate all publication-quality figures for the paper."""
     import matplotlib
 
@@ -477,7 +477,7 @@ def generate_all_figures(
 
     log.info("generating all figures → %s", _FIGURES_DIR)
     vis = BenchmarkVisualizer(output_dir=str(_FIGURES_DIR))
-    saved: Dict[str, str] = {}
+    saved: dict[str, str] = {}
 
     attack_summaries = getattr(result, "attack_summaries", {})
     adaptive_results = getattr(result, "adaptive_sad_results", {})
@@ -542,7 +542,7 @@ def generate_all_figures(
 # ---------------------------------------------------------------------------
 
 
-def main(argv: Optional[List[str]] = None) -> None:
+def main(argv: list[str] | None = None) -> None:
     """run full paper result generation."""
     parser = argparse.ArgumentParser(
         description="generate all paper results, tables, and figures"

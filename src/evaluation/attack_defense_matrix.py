@@ -31,7 +31,7 @@ from __future__ import annotations
 import random
 import time
 from dataclasses import dataclass, field
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any
 
 from data.synthetic_corpus import SyntheticCorpus
 from defenses.implementations import create_defense
@@ -108,7 +108,7 @@ class PairResult:
     n_poison_survived: int = 0
     elapsed_s: float = 0.0
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         return {
             "attack_type": self.attack_type,
             "defense_type": self.defense_type,
@@ -138,12 +138,12 @@ class MatrixResult:
     corpus_size: int
     n_poison: int
     top_k: int
-    results: Dict[str, Dict[str, PairResult]] = field(default_factory=dict)
+    results: dict[str, dict[str, PairResult]] = field(default_factory=dict)
 
-    def get(self, attack: str, defense: str) -> Optional[PairResult]:
+    def get(self, attack: str, defense: str) -> PairResult | None:
         return self.results.get(attack, {}).get(defense)
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         return {
             "n_trials": self.n_trials,
             "corpus_size": self.corpus_size,
@@ -163,11 +163,11 @@ class MatrixResult:
 
 def _detect_with_defense(
     defense_type: str,
-    poison_entries: List[Dict[str, Any]],
-    benign_sample: List[str],
-    corpus_entries: Optional[List[Dict[str, Any]]] = None,
-    victim_queries: Optional[List[str]] = None,
-) -> Tuple[List[bool], List[bool], float]:
+    poison_entries: list[dict[str, Any]],
+    benign_sample: list[str],
+    corpus_entries: list[dict[str, Any]] | None = None,
+    victim_queries: list[str] | None = None,
+) -> tuple[list[bool], list[bool], float]:
     """
     run a specific defense on poison + benign entries.
 
@@ -186,7 +186,7 @@ def _detect_with_defense(
     """
     poison_texts = [e["content"] for e in poison_entries]
     all_texts = poison_texts + list(benign_sample)
-    latencies: List[float] = []
+    latencies: list[float] = []
 
     if defense_type == "semantic_anomaly":
         # sad requires calibration + query observations.
@@ -244,7 +244,7 @@ def _detect_with_defense(
             )
 
         # poison entries: not watermarked (attacker cannot obtain the key)
-        poison_flagged: List[bool] = []
+        poison_flagged: list[bool] = []
         for text in poison_texts:
             t0 = time.perf_counter()
             result = defense.detect_attack(text)
@@ -252,7 +252,7 @@ def _detect_with_defense(
             poison_flagged.append(bool(result.get("attack_detected", False)))
 
         # benign entries: watermarked at write time, then verified by the defense
-        benign_flagged: List[bool] = []
+        benign_flagged: list[bool] = []
         for text in benign_sample:
             try:
                 wm_id = f"benign_{abs(hash(text)) % 100000}"
@@ -286,7 +286,7 @@ def _detect_with_defense(
 
         # evaluate poison entries: simulate a retrieval set where 1 poison
         # entry is mixed with 4 benign entries (typical top_k=5 scenario)
-        poison_flagged: List[bool] = []
+        poison_flagged: list[bool] = []
         benign_subset = (
             list(benign_sample)[:4] if len(benign_sample) >= 4 else list(benign_sample)
         )
@@ -300,7 +300,7 @@ def _detect_with_defense(
             poison_flagged.append(poison_idx in result.flagged_indices)
 
         # evaluate benign entries: all-benign retrieval set should flag nothing
-        benign_flagged: List[bool] = []
+        benign_flagged: list[bool] = []
         for i, text in enumerate(benign_sample):
             others = [b for j, b in enumerate(benign_sample) if j != i][:4]
             mixed = others + [text]
@@ -326,14 +326,14 @@ def _detect_with_defense(
                 0.0,
             )
 
-        poison_flagged: List[bool] = []
+        poison_flagged: list[bool] = []
         for text in poison_texts:
             t0 = time.perf_counter()
             result = defense.detect_attack(text)
             latencies.append((time.perf_counter() - t0) * 1000)
             poison_flagged.append(bool(result.get("attack_detected", False)))
 
-        benign_flagged: List[bool] = []
+        benign_flagged: list[bool] = []
         for text in benign_sample:
             t0 = time.perf_counter()
             result = defense.detect_attack(text)
@@ -518,7 +518,7 @@ class AttackDefenseEvaluator:
         if n_trials == 1:
             return self._run_single_trial(attack_type, defense_type, self.seed)
 
-        results: List[PairResult] = []
+        results: list[PairResult] = []
         for trial in range(n_trials):
             r = self._run_single_trial(attack_type, defense_type, self.seed + trial)
             results.append(r)
@@ -546,8 +546,8 @@ class AttackDefenseEvaluator:
 
     def evaluate_full_matrix(
         self,
-        attacks: Optional[List[str]] = None,
-        defenses: Optional[List[str]] = None,
+        attacks: list[str] | None = None,
+        defenses: list[str] | None = None,
         n_trials: int = 3,
     ) -> MatrixResult:
         """
@@ -600,8 +600,8 @@ class AttackDefenseEvaluator:
             "Lower is better for defenses. Baseline = no defense."
         ),
         label: str = "tab:attack_defense_matrix",
-        attacks: Optional[List[str]] = None,
-        defenses: Optional[List[str]] = None,
+        attacks: list[str] | None = None,
+        defenses: list[str] | None = None,
     ) -> str:
         """
         generate booktabs latex table: rows=attacks, cols=defenses.
@@ -648,7 +648,7 @@ class AttackDefenseEvaluator:
         ]
 
         for attack in attacks:
-            row_vals: List[str] = [ATTACK_DISPLAY.get(attack, attack)]
+            row_vals: list[str] = [ATTACK_DISPLAY.get(attack, attack)]
 
             # baseline (no defense)
             any_pair = matrix.results.get(attack, {})
@@ -712,8 +712,8 @@ class AttackDefenseEvaluator:
             "SAD = Semantic Anomaly Detection (ours)."
         ),
         label: str = "tab:defense_tpr_fpr",
-        attacks: Optional[List[str]] = None,
-        defenses: Optional[List[str]] = None,
+        attacks: list[str] | None = None,
+        defenses: list[str] | None = None,
     ) -> str:
         """
         generate tpr/fpr table: secondary table for the paper.

@@ -273,49 +273,49 @@ dependencies = [
     "accelerate>=0.25.0",
     "bitsandbytes>=0.41.0",
     "safetensors>=0.4.0",
-    
+
     # Memory Systems
     "mem0ai>=0.1.0",
     "chromadb>=0.4.0",
     "qdrant-client>=1.7.0",
     "faiss-cpu>=1.7.4",
     "neo4j>=5.0.0",
-    
+
     # LLM APIs
     "openai>=1.0.0",
     "anthropic>=0.18.0",
     "tiktoken>=0.5.0",
-    
+
     # Embeddings
     "sentence-transformers>=2.2.0",
-    
+
     # Experiment Tracking
     "wandb>=0.16.0",
     "mlflow>=2.9.0",
-    
+
     # Data Processing
     "numpy>=1.24.0",
     "pandas>=2.0.0",
     "scipy>=1.11.0",
     "scikit-learn>=1.3.0",
-    
+
     # Configuration
     "hydra-core>=1.3.0",
     "omegaconf>=2.3.0",
     "python-dotenv>=1.0.0",
     "pyyaml>=6.0.0",
-    
+
     # Utilities
     "tqdm>=4.66.0",
     "rich>=13.0.0",
     "typer>=0.9.0",
     "loguru>=0.7.0",
-    
+
     # Visualization
     "matplotlib>=3.8.0",
     "seaborn>=0.13.0",
     "plotly>=5.18.0",
-    
+
     # Testing
     "pytest>=7.4.0",
     "pytest-asyncio>=0.21.0",
@@ -928,34 +928,34 @@ channels:
 dependencies:
   # Python version
   - python=3.10
-  
+
   # Core ML packages
   - pytorch=2.1.0
   - pytorch-cuda=11.8
   - torchvision
   - torchaudio
-  
+
   # Scientific computing
   - numpy>=1.24
   - scipy>=1.11
   - pandas>=2.0
   - scikit-learn>=1.3
-  
+
   # Visualization
   - matplotlib>=3.8
   - seaborn>=0.13
-  
+
   # Database drivers
   - psycopg2
   - redis-py
-  
+
   # Development
   - jupyter
   - jupyterlab
   - ipython
   - black
   - isort
-  
+
   # pip-only packages
   - pip:
     - transformers>=4.36.0
@@ -1433,19 +1433,19 @@ A-MEM configuration for Zettelkasten-style memory system.
 AMEM_CONFIG = {
     # Embedding model
     "model_name": "all-MiniLM-L6-v2",
-    
+
     # LLM backend
     "llm_backend": "openai",
     "llm_model": "gpt-4o-mini",
-    
+
     # Memory parameters
     "similarity_threshold": 0.7,
     "max_links": 5,
     "evolution_enabled": True,
-    
+
     # Storage
     "chroma_persist_directory": "./data/cache/amem_chroma",
-    
+
     # Keyword extraction
     "max_keywords": 10,
     "keyword_model": "yake",
@@ -1505,14 +1505,14 @@ LETTA_CONFIG = {
     # API configuration
     "api_key": os.getenv("LETTA_API_KEY"),
     "base_url": os.getenv("LETTA_BASE_URL", "http://localhost:8283"),
-    
+
     # Agent configuration
     "agent": {
         "model": "openai/gpt-4.1",
         "embedding_model": "openai/text-embedding-3-small",
         "context_window": 128000,
     },
-    
+
     # Memory blocks
     "memory_blocks": [
         {
@@ -1526,7 +1526,7 @@ LETTA_CONFIG = {
             "limit": 2000,
         },
     ],
-    
+
     # Archival memory settings
     "archival": {
         "embedding_dim": 1536,
@@ -1681,7 +1681,7 @@ from .shortening import ProgressiveShorteningStrategy
 
 __all__ = [
     "MINJAAttack",
-    "BridgingStepGenerator", 
+    "BridgingStepGenerator",
     "IndicationPromptCrafter",
     "ProgressiveShorteningStrategy",
 ]
@@ -1713,30 +1713,30 @@ class MINJAConfig:
 class MINJAAttack:
     """
     MINJA: Query-only memory injection attack.
-    
+
     Key insight: Any regular user can inject malicious memories
     through carefully crafted queries that cause the agent to
     generate and store attacker-controlled reasoning.
     """
-    
+
     def __init__(self, config: MINJAConfig):
         self.config = config
         self.bridging_generator = None
         self.indication_crafter = None
         self.shortening_strategy = None
-        
+
     def execute(self, memory_system: Any) -> Dict[str, Any]:
         """Execute the MINJA attack."""
         raise NotImplementedError("MINJA attack implementation pending")
-        
+
     def generate_bridging_steps(self, victim_query: str) -> List[str]:
         """Generate bridging steps linking victim query to malicious reasoning."""
         raise NotImplementedError()
-        
+
     def craft_indication_prompt(self, bridging_steps: List[str]) -> str:
         """Craft indication prompt to guide autonomous bridging."""
         raise NotImplementedError()
-        
+
     def apply_progressive_shortening(self, prompt: str) -> str:
         """Progressively shorten indication prompt."""
         raise NotImplementedError()
@@ -1860,20 +1860,20 @@ DEFENSE_CONFIG = {
         "method": "unigram",
         "config": UNIGRAM_CONFIG,
     },
-    
+
     # Quality-critical entries
     "quality_watermark": {
         "method": "pf",
         "config": PF_CONFIG,
     },
-    
+
     # Detection parameters
     "detection": {
         "z_threshold": 4.0,
         "min_tokens": 100,
         "confidence_threshold": 0.95,
     },
-    
+
     # Provenance tracking
     "provenance": {
         "track_source": True,
@@ -1920,15 +1920,15 @@ print(f'Qdrant collections: {client.get_collections()}')
 storage:
   storage_path: ./data/qdrant/storage
   snapshots_path: ./data/qdrant/snapshots
-  
+
 service:
   http_port: 6333
   grpc_port: 6334
   enable_tls: false
-  
+
 cluster:
   enabled: false
-  
+
 telemetry_disabled: true
 
 log_level: INFO
@@ -2211,7 +2211,7 @@ def get_anthropic_client():
 def get_qdrant_client():
     """Get Qdrant vector database client."""
     from qdrant_client import QdrantClient
-    
+
     api_key = os.getenv("QDRANT_API_KEY")
     if api_key:
         return QdrantClient(
@@ -2228,7 +2228,7 @@ def get_qdrant_client():
 def get_neo4j_driver():
     """Get Neo4j graph database driver."""
     from neo4j import GraphDatabase
-    
+
     return GraphDatabase.driver(
         os.getenv("NEO4J_URI", "bolt://localhost:7687"),
         auth=(
@@ -2241,7 +2241,7 @@ def get_neo4j_driver():
 def get_mem0_client(config: Optional[dict] = None):
     """Get Mem0 memory client with specified configuration."""
     from mem0 import Memory
-    
+
     if config is None:
         config = {
             "vector_store": {
@@ -2264,13 +2264,13 @@ def get_mem0_client(config: Optional[dict] = None):
                 },
             },
         }
-    
+
     return Memory(config)
 
 
 class APIRateLimiter:
     """Rate limiter for API calls."""
-    
+
     def __init__(
         self,
         requests_per_minute: int = 60,
@@ -2280,32 +2280,32 @@ class APIRateLimiter:
         self.tokens_per_minute = tokens_per_minute
         self._request_times = []
         self._token_counts = []
-    
+
     def wait_if_needed(self, estimated_tokens: int = 0):
         """Wait if rate limit would be exceeded."""
         import time
         from collections import deque
-        
+
         current_time = time.time()
         minute_ago = current_time - 60
-        
+
         # Clean old entries
         self._request_times = [t for t in self._request_times if t > minute_ago]
         self._token_counts = [
             (t, c) for t, c in self._token_counts if t > minute_ago
         ]
-        
+
         # Check request limit
         if len(self._request_times) >= self.requests_per_minute:
             sleep_time = self._request_times[0] - minute_ago
             time.sleep(sleep_time)
-        
+
         # Check token limit
         total_tokens = sum(c for _, c in self._token_counts)
         if total_tokens + estimated_tokens > self.tokens_per_minute:
             sleep_time = self._token_counts[0][0] - minute_ago
             time.sleep(sleep_time)
-        
+
         # Record this request
         self._request_times.append(current_time)
         if estimated_tokens > 0:
@@ -3057,7 +3057,7 @@ def init_wandb(
 ) -> wandb.run:
     """
     Initialize Weights & Biases run.
-    
+
     Args:
         project: W&B project name
         name: Run name (auto-generated if None)
@@ -3066,7 +3066,7 @@ def init_wandb(
         group: Group name for related runs
         job_type: Type of job (e.g., "attack", "defense", "eval")
         mode: "online", "offline", or "disabled"
-    
+
     Returns:
         W&B run object
     """
@@ -3083,11 +3083,11 @@ def init_wandb(
             _disable_stats=True,
         ),
     )
-    
+
     # Log system info
     if config:
         wandb.config.update(config, allow_val_change=True)
-    
+
     return run
 
 
@@ -3175,7 +3175,7 @@ def init_mlflow(
 ) -> str:
     """
     Initialize MLflow tracking.
-    
+
     Returns:
         Experiment ID
     """
@@ -3185,7 +3185,7 @@ def init_mlflow(
         mlflow.set_tracking_uri(
             os.getenv("MLFLOW_TRACKING_URI", "file:./mlruns")
         )
-    
+
     # Create or get experiment
     experiment = mlflow.get_experiment_by_name(experiment_name)
     if experiment is None:
@@ -3195,7 +3195,7 @@ def init_mlflow(
         )
     else:
         experiment_id = experiment.experiment_id
-    
+
     mlflow.set_experiment(experiment_name)
     return experiment_id
 
@@ -3346,7 +3346,7 @@ def mock_mem0_client():
 def mock_qdrant_client():
     """Mock Qdrant client."""
     from qdrant_client.models import ScoredPoint
-    
+
     client = MagicMock()
     client.search.return_value = [
         ScoredPoint(id="1", score=0.95, payload={"content": "Test"}),
@@ -3436,7 +3436,7 @@ def pytest_collection_modifyitems(config, items):
         for item in items:
             if "gpu" in item.keywords:
                 item.add_marker(skip_gpu)
-    
+
     # Skip API tests unless explicitly enabled
     if not os.getenv("RUN_API_TESTS"):
         skip_api = pytest.mark.skip(reason="API tests disabled")
@@ -3460,33 +3460,33 @@ from unittest.mock import MagicMock, patch
 
 class TestUnigramWatermark:
     """Tests for Unigram watermark implementation."""
-    
+
     def test_watermark_initialization(self, sample_defense_config):
         """Test watermark initialization with config."""
         # Test implementation
         pass
-    
+
     def test_green_list_generation(self):
         """Test deterministic green list generation."""
         pass
-    
+
     def test_watermark_embedding(self):
         """Test watermark embedding in text."""
         pass
-    
+
     def test_watermark_detection(self):
         """Test watermark detection accuracy."""
         pass
-    
+
     def test_z_score_calculation(self):
         """Test z-score calculation for detection."""
         pass
-    
+
     @pytest.mark.parametrize("gamma", [0.15, 0.25, 0.5])
     def test_gamma_parameter_effect(self, gamma):
         """Test effect of gamma parameter on detection."""
         pass
-    
+
     @pytest.mark.parametrize("delta", [1.0, 2.0, 3.0])
     def test_delta_parameter_effect(self, delta):
         """Test effect of delta parameter on detection."""
@@ -3495,15 +3495,15 @@ class TestUnigramWatermark:
 
 class TestPFDecoder:
     """Tests for Permute-and-Flip decoder."""
-    
+
     def test_pf_initialization(self):
         """Test PF decoder initialization."""
         pass
-    
+
     def test_distortion_free_property(self):
         """Test that PF decoder is distortion-free."""
         pass
-    
+
     def test_watermark_detection(self):
         """Test PF watermark detection."""
         pass
@@ -3519,19 +3519,19 @@ import pytest
 
 class TestAgentPoison:
     """Tests for AgentPoison attack."""
-    
+
     def test_trigger_optimization(self, sample_attack_config):
         """Test trigger optimization algorithm."""
         pass
-    
+
     def test_embedding_space_mapping(self):
         """Test mapping to unique embedding region."""
         pass
-    
+
     def test_poison_injection(self, mock_mem0_client):
         """Test poison injection into memory."""
         pass
-    
+
     def test_asr_calculation(self):
         """Test attack success rate calculation."""
         pass
@@ -3539,19 +3539,19 @@ class TestAgentPoison:
 
 class TestMINJA:
     """Tests for MINJA query-only attack."""
-    
+
     def test_bridging_step_generation(self):
         """Test bridging step generation."""
         pass
-    
+
     def test_indication_prompt_crafting(self):
         """Test indication prompt creation."""
         pass
-    
+
     def test_progressive_shortening(self):
         """Test progressive shortening strategy."""
         pass
-    
+
     def test_query_only_constraint(self):
         """Test that attack only uses query interface."""
         pass
@@ -3583,25 +3583,25 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      
+
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
           python-version: ${{ env.PYTHON_VERSION }}
-      
+
       - name: Install dependencies
         run: |
           pip install ruff black isort mypy
-      
+
       - name: Run ruff
         run: ruff check src tests
-      
+
       - name: Run black
         run: black --check src tests
-      
+
       - name: Run isort
         run: isort --check-only src tests
-      
+
       - name: Run mypy
         run: mypy src --ignore-missing-imports
 
@@ -3611,12 +3611,12 @@ jobs:
     needs: lint
     steps:
       - uses: actions/checkout@v4
-      
+
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
           python-version: ${{ env.PYTHON_VERSION }}
-      
+
       - name: Cache pip
         uses: actions/cache@v3
         with:
@@ -3624,15 +3624,15 @@ jobs:
           key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt') }}
           restore-keys: |
             ${{ runner.os }}-pip-
-      
+
       - name: Install dependencies
         run: |
           pip install -e ".[dev]"
-      
+
       - name: Run tests
         run: |
           pytest tests/unit -v --cov=src --cov-report=xml
-      
+
       - name: Upload coverage
         uses: codecov/codecov-action@v3
         with:
@@ -3654,16 +3654,16 @@ jobs:
           - 6379:6379
     steps:
       - uses: actions/checkout@v4
-      
+
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
           python-version: ${{ env.PYTHON_VERSION }}
-      
+
       - name: Install dependencies
         run: |
           pip install -e ".[dev]"
-      
+
       - name: Run integration tests
         env:
           QDRANT_HOST: localhost
@@ -3691,11 +3691,11 @@ from functools import lru_cache
 
 class SecretsManager:
     """Manage API keys and secrets securely."""
-    
+
     REQUIRED_SECRETS = [
         "OPENAI_API_KEY",
     ]
-    
+
     OPTIONAL_SECRETS = [
         "ANTHROPIC_API_KEY",
         "WANDB_API_KEY",
@@ -3703,7 +3703,7 @@ class SecretsManager:
         "QDRANT_API_KEY",
         "NEO4J_PASSWORD",
     ]
-    
+
     @classmethod
     def validate_required(cls) -> bool:
         """Validate that all required secrets are set."""
@@ -3711,20 +3711,20 @@ class SecretsManager:
         for secret in cls.REQUIRED_SECRETS:
             if not os.getenv(secret):
                 missing.append(secret)
-        
+
         if missing:
             raise EnvironmentError(
                 f"Missing required secrets: {', '.join(missing)}\n"
                 f"Please set them in your .env file or environment."
             )
         return True
-    
+
     @classmethod
     @lru_cache()
     def get(cls, key: str, default: Optional[str] = None) -> Optional[str]:
         """Get a secret value."""
         return os.getenv(key, default)
-    
+
     @classmethod
     def mask(cls, value: str, visible_chars: int = 4) -> str:
         """Mask a secret value for logging."""

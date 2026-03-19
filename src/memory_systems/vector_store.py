@@ -19,7 +19,7 @@ all comments are lowercase.
 
 from __future__ import annotations
 
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 import numpy as np
 
@@ -29,7 +29,7 @@ from utils.logging import logger
 # module-level lazy import cache
 # ---------------------------------------------------------------------------
 
-_MODEL_CACHE: Optional[Any] = None  # cached SentenceTransformer instance
+_MODEL_CACHE: Any | None = None  # cached SentenceTransformer instance
 _MODEL_NAME = "all-MiniLM-L6-v2"
 
 
@@ -93,7 +93,7 @@ class VectorMemorySystem:
 
     EMBEDDING_DIM: int = 384  # all-MiniLM-L6-v2 output dimensionality
 
-    def __init__(self, config: Optional[Dict[str, Any]] = None) -> None:
+    def __init__(self, config: dict[str, Any] | None = None) -> None:
         """
         initialize the vector memory system.
 
@@ -105,15 +105,15 @@ class VectorMemorySystem:
         self.logger = logger
 
         # aligned storage (index position → entry data)
-        self._keys: List[str] = []
-        self._contents: List[str] = []
-        self._metadata: List[Optional[Dict[str, Any]]] = []
+        self._keys: list[str] = []
+        self._contents: list[str] = []
+        self._metadata: list[dict[str, Any] | None] = []
 
         # key → list[int]: all faiss index positions for this key
-        self._key_to_positions: Dict[str, List[int]] = {}
+        self._key_to_positions: dict[str, list[int]] = {}
 
         # lazy-initialized faiss index
-        self._index: Optional[Any] = None
+        self._index: Any | None = None
 
     # -----------------------------------------------------------------------
     # internal helpers
@@ -126,7 +126,7 @@ class VectorMemorySystem:
             self._index = faiss.IndexFlatIP(self.EMBEDDING_DIM)
         return self._index
 
-    def _embed(self, texts: List[str]) -> np.ndarray:
+    def _embed(self, texts: list[str]) -> np.ndarray:
         """
         embed a list of texts and l2-normalise for cosine similarity.
 
@@ -166,7 +166,7 @@ class VectorMemorySystem:
         self,
         key: str,
         value: Any,
-        metadata: Optional[Dict[str, Any]] = None,
+        metadata: dict[str, Any] | None = None,
     ) -> None:
         """
         embed and store a key-value pair.
@@ -194,7 +194,7 @@ class VectorMemorySystem:
 
         self._get_index().add(embedding)
 
-    def add_batch(self, entries: List[Dict[str, Any]]) -> None:
+    def add_batch(self, entries: list[dict[str, Any]]) -> None:
         """
         efficiently add multiple entries in one embedding pass.
 
@@ -227,7 +227,7 @@ class VectorMemorySystem:
 
         self._get_index().add(embeddings)
 
-    def retrieve(self, key: str) -> Optional[str]:
+    def retrieve(self, key: str) -> str | None:
         """
         retrieve the most recently stored content for a given key.
 
@@ -242,7 +242,7 @@ class VectorMemorySystem:
             return None
         return self._contents[positions[-1]]
 
-    def search(self, query: str, top_k: int = 5) -> List[Dict[str, Any]]:
+    def search(self, query: str, top_k: int = 5) -> list[dict[str, Any]]:
         """
         retrieve top-k semantically similar entries.
 
@@ -264,7 +264,7 @@ class VectorMemorySystem:
         query_emb = self._embed([query])  # (1, 384)
         scores, indices = self._get_index().search(query_emb, k_search)
 
-        results: List[Dict[str, Any]] = []
+        results: list[dict[str, Any]] = []
         seen_keys: set = set()
 
         for score, idx in zip(scores[0], indices[0]):
@@ -291,9 +291,9 @@ class VectorMemorySystem:
     def poison_retrieval_test(
         self,
         query: str,
-        poison_keys: List[str],
+        poison_keys: list[str],
         top_k: int = 5,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """
         test whether adversarial entries appear in top-k for a victim query.
 
@@ -321,8 +321,8 @@ class VectorMemorySystem:
 
         retrieved_poison = retrieved_set & poison_set
 
-        poison_ranks: Dict[str, int] = {}
-        poison_scores: Dict[str, float] = {}
+        poison_ranks: dict[str, int] = {}
+        poison_scores: dict[str, float] = {}
         for r in results:
             if r["key"] in poison_set:
                 poison_ranks[r["key"]] = r["rank"]
@@ -342,7 +342,7 @@ class VectorMemorySystem:
     # utility
     # -----------------------------------------------------------------------
 
-    def get_all_keys(self) -> List[str]:
+    def get_all_keys(self) -> list[str]:
         """return all unique keys currently stored."""
         return list(self._key_to_positions.keys())
 
@@ -359,7 +359,7 @@ class VectorMemorySystem:
         self._key_to_positions = {}
         self.logger.logger.debug("vector memory system cleared")
 
-    def get_stats(self) -> Dict[str, Any]:
+    def get_stats(self) -> dict[str, Any]:
         """return summary statistics about the memory store."""
         return {
             "total_entries": len(self._keys),

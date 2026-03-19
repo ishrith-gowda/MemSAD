@@ -13,7 +13,7 @@ import hashlib
 import json
 import math
 from pathlib import Path
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 import numpy as np
 import yaml
@@ -34,7 +34,7 @@ except ImportError:
     pass
 
 
-def load_watermark_config() -> Dict[str, Any]:
+def load_watermark_config() -> dict[str, Any]:
     """
     load watermark configuration from yaml file.
 
@@ -56,7 +56,7 @@ class WatermarkEncoder:
     from memory content.
     """
 
-    def __init__(self, config: Optional[Dict[str, Any]] = None):
+    def __init__(self, config: dict[str, Any] | None = None):
         """
         initialize the watermark encoder.
 
@@ -84,7 +84,7 @@ class WatermarkEncoder:
         """
         raise NotImplementedError("subclasses must implement embed method")
 
-    def extract(self, content: str) -> Optional[str]:
+    def extract(self, content: str) -> str | None:
         """
         extract watermark from content.
 
@@ -146,7 +146,7 @@ class UnigramWatermarkEncoder(WatermarkEncoder):
     - min_tokens: minimum tokens for reliable detection (default 50)
     """
 
-    def __init__(self, config: Optional[Dict[str, Any]] = None):
+    def __init__(self, config: dict[str, Any] | None = None):
         """
         initialize unigram-watermark encoder.
 
@@ -324,7 +324,7 @@ class UnigramWatermarkEncoder(WatermarkEncoder):
 
         return z_score
 
-    def extract(self, content: str) -> Optional[str]:
+    def extract(self, content: str) -> str | None:
         """
         extract watermark detection result.
 
@@ -366,7 +366,7 @@ class UnigramWatermarkEncoder(WatermarkEncoder):
         confidence = 1.0 / (1.0 + math.exp(-(z_score - self.z_threshold / 2)))
         return min(confidence, 1.0)
 
-    def get_detection_stats(self, content: str) -> Dict[str, Any]:
+    def get_detection_stats(self, content: str) -> dict[str, Any]:
         """
         get detailed detection statistics.
 
@@ -451,7 +451,7 @@ class LSBWatermarkEncoder(WatermarkEncoder):
 
         return "".join(watermarked_chars)
 
-    def extract(self, content: str) -> Optional[str]:
+    def extract(self, content: str) -> str | None:
         """
         extract watermark from LSB watermarked content.
 
@@ -496,7 +496,7 @@ class SemanticWatermarkEncoder(WatermarkEncoder):
     are detectable but don't affect meaning.
     """
 
-    def __init__(self, config: Optional[Dict[str, Any]] = None):
+    def __init__(self, config: dict[str, Any] | None = None):
         """
         initialize semantic watermark encoder.
 
@@ -545,7 +545,7 @@ class SemanticWatermarkEncoder(WatermarkEncoder):
 
         return watermarked
 
-    def extract(self, content: str) -> Optional[str]:
+    def extract(self, content: str) -> str | None:
         """
         extract semantic watermark.
 
@@ -583,7 +583,7 @@ class CryptographicWatermarkEncoder(WatermarkEncoder):
     provenance guarantees.
     """
 
-    def __init__(self, config: Optional[Dict[str, Any]] = None):
+    def __init__(self, config: dict[str, Any] | None = None):
         """
         initialize cryptographic watermark encoder.
 
@@ -634,7 +634,7 @@ class CryptographicWatermarkEncoder(WatermarkEncoder):
         # append both signature and watermark id so extract() can verify
         return f"{content}\n<!--WATERMARK:{sig_b64}:{wm_b64}-->"
 
-    def extract(self, content: str) -> Optional[str]:
+    def extract(self, content: str) -> str | None:
         """
         extract and verify cryptographic watermark.
 
@@ -698,7 +698,7 @@ class CompositeWatermarkEncoder(WatermarkEncoder):
     and detection accuracy.
     """
 
-    def __init__(self, config: Optional[Dict[str, Any]] = None):
+    def __init__(self, config: dict[str, Any] | None = None):
         """
         initialize composite watermark encoder.
 
@@ -740,7 +740,7 @@ class CompositeWatermarkEncoder(WatermarkEncoder):
 
         return watermarked
 
-    def extract(self, content: str) -> Optional[str]:
+    def extract(self, content: str) -> str | None:
         """
         extract watermark using consensus of multiple techniques.
 
@@ -799,7 +799,7 @@ class CompositeWatermarkEncoder(WatermarkEncoder):
 
 
 def create_watermark_encoder(
-    algorithm: str, config: Optional[Dict[str, Any]] = None
+    algorithm: str, config: dict[str, Any] | None = None
 ) -> WatermarkEncoder:
     """
     factory function to create watermark encoders.
@@ -864,7 +864,7 @@ class ProvenanceTracker:
     for attack detection and content tracing.
     """
 
-    def __init__(self, config: Optional[Dict[str, Any]] = None):
+    def __init__(self, config: dict[str, Any] | None = None):
         """
         initialize provenance tracker.
 
@@ -872,14 +872,14 @@ class ProvenanceTracker:
             config: configuration for tracking system
         """
         self.config = config or {}
-        self.registry: Dict[str, Dict[str, Any]] = {}
+        self.registry: dict[str, dict[str, Any]] = {}
         self.encoder = create_watermark_encoder(
             self.config.get("algorithm", "composite"), config
         )
         self.logger = logger
 
     def register_content(
-        self, content_id: str, content: str, metadata: Optional[Dict[str, Any]] = None
+        self, content_id: str, content: str, metadata: dict[str, Any] | None = None
     ) -> str:
         """
         register content with provenance tracking.
@@ -926,7 +926,7 @@ class ProvenanceTracker:
         """
         return self.encoder.embed(content, watermark_id)
 
-    def verify_provenance(self, content: str) -> Optional[Dict[str, Any]]:
+    def verify_provenance(self, content: str) -> dict[str, Any] | None:
         """
         verify provenance of content.
 
@@ -980,7 +980,7 @@ class ProvenanceTracker:
 
         return None
 
-    def detect_anomalies(self, content: str) -> List[Dict[str, Any]]:
+    def detect_anomalies(self, content: str) -> list[dict[str, Any]]:
         """
         detect potential attacks or anomalies in content.
 
@@ -1005,7 +1005,7 @@ class ProvenanceTracker:
                     {
                         "type": "insufficient_content",
                         "severity": "low",
-                        "description": f"content has {stats['token_count']} tokens, need {stats['min_tokens']} for reliable detection",  # noqa: E501
+                        "description": f"content has {stats['token_count']} tokens, need {stats['min_tokens']} for reliable detection",
                     }
                 )
                 return anomalies
@@ -1016,7 +1016,7 @@ class ProvenanceTracker:
                     {
                         "type": "missing_watermark",
                         "severity": "high",
-                        "description": f"no watermark detected (z_score={stats['z_score']:.2f}, threshold={stats['z_threshold']})",  # noqa: E501
+                        "description": f"no watermark detected (z_score={stats['z_score']:.2f}, threshold={stats['z_threshold']})",
                     }
                 )
 
@@ -1026,7 +1026,7 @@ class ProvenanceTracker:
                     {
                         "type": "weak_watermark",
                         "severity": "medium",
-                        "description": f"watermark detected but marginal (z_score={stats['z_score']:.2f})",  # noqa: E501
+                        "description": f"watermark detected but marginal (z_score={stats['z_score']:.2f})",
                     }
                 )
 
@@ -1049,7 +1049,7 @@ class ProvenanceTracker:
                 {
                     "type": "watermark_tampering",
                     "severity": "medium",
-                    "description": f"watermark confidence too low: {provenance['confidence']:.2f}",  # noqa: E501
+                    "description": f"watermark confidence too low: {provenance['confidence']:.2f}",
                 }
             )
 

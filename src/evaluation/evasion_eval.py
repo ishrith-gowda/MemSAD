@@ -43,7 +43,7 @@ import random
 import statistics
 import time
 from dataclasses import dataclass, field
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any
 
 from utils.logging import logger
 
@@ -65,9 +65,9 @@ class EvasionResult:
     n_samples: int
 
     # z-score statistics before evasion
-    z_scores_before: List[float] = field(default_factory=list)
+    z_scores_before: list[float] = field(default_factory=list)
     # z-score statistics after evasion
-    z_scores_after: List[float] = field(default_factory=list)
+    z_scores_after: list[float] = field(default_factory=list)
 
     # detection metrics before evasion
     tpr_before: float = 0.0
@@ -83,10 +83,10 @@ class EvasionResult:
     evasion_success_rate: float = 0.0
 
     # per-intensity results (for ablation plots)
-    intensity_results: List[Dict[str, Any]] = field(default_factory=list)
+    intensity_results: list[dict[str, Any]] = field(default_factory=list)
     execution_time_s: float = 0.0
 
-    def summary(self) -> Dict[str, Any]:
+    def summary(self) -> dict[str, Any]:
         """compact summary for logging and tables."""
         return {
             "attack_type": self.attack_type,
@@ -111,7 +111,7 @@ class EvasionResult:
 # domain-relevant synonym mappings: preserves semantics while swapping tokens.
 # used for both paraphrasing evasion (random selection) and adaptive
 # substitution (pick the synonym that lands in the red list).
-_SYNONYMS: Dict[str, List[str]] = {
+_SYNONYMS: dict[str, list[str]] = {
     # scheduling vocabulary
     "schedule": ["plan", "agenda", "timetable", "roster", "calendar"],
     "meeting": ["session", "gathering", "conference", "call", "sync"],
@@ -165,7 +165,7 @@ def _paraphrase_text(
     text: str,
     substitution_rate: float,
     rng: random.Random,
-) -> Tuple[str, float]:
+) -> tuple[str, float]:
     """
     paraphrase text by random synonym substitution.
 
@@ -207,9 +207,9 @@ def _adaptive_substitution(
     green_set: set,
     z_threshold: float,
     gamma: float,
-    max_substitutions: Optional[int] = None,
-    rng: Optional[random.Random] = None,
-) -> Tuple[str, int]:
+    max_substitutions: int | None = None,
+    rng: random.Random | None = None,
+) -> tuple[str, int]:
     """
     white-box adaptive substitution: replace green-list tokens with red-list
     synonyms to drive z-score below detection threshold.
@@ -252,7 +252,7 @@ def _adaptive_substitution(
     def _token_is_red(t: str) -> bool:
         return not _token_is_green(t)
 
-    def _current_z(modified_tokens: List[str]) -> float:
+    def _current_z(modified_tokens: list[str]) -> float:
         """compute z-score for current token sequence."""
         import math
 
@@ -348,16 +348,16 @@ class WatermarkEvasionEvaluator:
         self._rng = random.Random(seed)
         self.logger = logger
 
-    def _is_detected(self, text: str) -> Tuple[bool, float]:
+    def _is_detected(self, text: str) -> tuple[bool, float]:
         """return (detected, z_score) for a text."""
         stats = self.encoder.get_detection_stats(text)
         return stats["detected"], stats["z_score"]
 
     def evaluate_paraphrasing(
         self,
-        watermarked_samples: List[str],
-        clean_samples: List[str],
-        intensity_levels: Optional[List[float]] = None,
+        watermarked_samples: list[str],
+        clean_samples: list[str],
+        intensity_levels: list[float] | None = None,
     ) -> EvasionResult:
         """
         evaluate paraphrasing evasion across multiple substitution rate levels.
@@ -466,9 +466,9 @@ class WatermarkEvasionEvaluator:
 
     def evaluate_copy_paste_dilution(
         self,
-        watermarked_samples: List[str],
-        dilution_samples: List[str],
-        dilution_ratios: Optional[List[float]] = None,
+        watermarked_samples: list[str],
+        dilution_samples: list[str],
+        dilution_ratios: list[float] | None = None,
     ) -> EvasionResult:
         """
         evaluate copy-paste dilution evasion across dilution ratios.
@@ -585,9 +585,9 @@ class WatermarkEvasionEvaluator:
 
     def evaluate_adaptive_substitution(
         self,
-        watermarked_samples: List[str],
-        clean_samples: List[str],
-        substitution_budgets: Optional[List[int]] = None,
+        watermarked_samples: list[str],
+        clean_samples: list[str],
+        substitution_budgets: list[int] | None = None,
     ) -> EvasionResult:
         """
         evaluate white-box adaptive token substitution evasion.
@@ -695,10 +695,10 @@ class WatermarkEvasionEvaluator:
 
     def evaluate_all(
         self,
-        watermarked_samples: List[str],
-        clean_samples: List[str],
-        dilution_samples: Optional[List[str]] = None,
-    ) -> Dict[str, EvasionResult]:
+        watermarked_samples: list[str],
+        clean_samples: list[str],
+        dilution_samples: list[str] | None = None,
+    ) -> dict[str, EvasionResult]:
         """
         run all three evasion evaluations and return a results dict.
 
@@ -716,7 +716,7 @@ class WatermarkEvasionEvaluator:
 
         self.logger.logger.info("starting comprehensive evasion evaluation")
 
-        results: Dict[str, EvasionResult] = {}
+        results: dict[str, EvasionResult] = {}
 
         results["paraphrase"] = self.evaluate_paraphrasing(
             watermarked_samples, clean_samples
@@ -739,8 +739,8 @@ class WatermarkEvasionEvaluator:
         return results
 
     def generate_evasion_report(
-        self, results: Dict[str, EvasionResult]
-    ) -> Dict[str, Any]:
+        self, results: dict[str, EvasionResult]
+    ) -> dict[str, Any]:
         """
         generate a structured report suitable for notebook display and json export.
 
@@ -750,7 +750,7 @@ class WatermarkEvasionEvaluator:
         returns:
             nested dict with summary statistics and per-intensity breakdowns
         """
-        report: Dict[str, Any] = {
+        report: dict[str, Any] = {
             "summary": {},
             "intensity_curves": {},
             "z_score_distributions": {},

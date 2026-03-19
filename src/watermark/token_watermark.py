@@ -38,7 +38,6 @@ from __future__ import annotations
 import hashlib
 import math
 from dataclasses import dataclass
-from typing import Dict, Optional, Set
 
 import numpy as np
 
@@ -63,9 +62,9 @@ except ImportError:
 # module-level model cache (one load per process)
 # ---------------------------------------------------------------------------
 
-_MODEL_CACHE: Optional[object] = None
-_TOKENIZER_CACHE: Optional[object] = None
-_VOCAB_SIZE: Optional[int] = None
+_MODEL_CACHE: object | None = None
+_TOKENIZER_CACHE: object | None = None
+_VOCAB_SIZE: int | None = None
 
 
 def _load_model_and_tokenizer(model_name: str = "gpt2"):
@@ -166,7 +165,7 @@ class TokenLevelWatermarkEncoder:
         self._tokenizer = None
         self._vocab_size = None
         # green list: built once after model is loaded
-        self._green_set: Optional[Set[int]] = None
+        self._green_set: set[int] | None = None
 
     # -----------------------------------------------------------------------
     # public api
@@ -201,7 +200,7 @@ class TokenLevelWatermarkEncoder:
         generated = self._generate_watermarked(prefix_ids, green_set)
         return generated
 
-    def extract(self, content: str, watermark: str = "default") -> Optional[str]:
+    def extract(self, content: str, watermark: str = "default") -> str | None:
         """detect watermark presence via z-score.
 
         returns:
@@ -277,7 +276,7 @@ class TokenLevelWatermarkEncoder:
     # -----------------------------------------------------------------------
 
     def _generate_watermarked(
-        self, prefix_ids: "torch.Tensor", green_set: Set[int]
+        self, prefix_ids: torch.Tensor, green_set: set[int]
     ) -> str:
         """generate text with green-list logit bias using greedy/sampling."""
         import torch
@@ -327,7 +326,7 @@ class TokenLevelWatermarkEncoder:
     # green list construction
     # -----------------------------------------------------------------------
 
-    def _get_green_set(self, watermark: str) -> Set[int]:
+    def _get_green_set(self, watermark: str) -> set[int]:
         """build the green token id set using prf keyed by secret_key + watermark."""
         # cache the default green set
         if watermark == "default" and self._green_set is not None:
@@ -368,9 +367,9 @@ class TokenLevelWatermarkEncoder:
 def compare_watermark_levels(
     content: str,
     char_encoder,
-    token_encoder: "TokenLevelWatermarkEncoder",
+    token_encoder: TokenLevelWatermarkEncoder,
     watermark: str = "eval",
-) -> Dict[str, object]:
+) -> dict[str, object]:
     """compare character-level and token-level watermark z-scores on same content.
 
     useful for ablation: shows the gain from token-level over character-level

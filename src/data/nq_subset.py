@@ -31,13 +31,13 @@ all comments are lowercase.
 
 from __future__ import annotations
 
-from typing import Any, Dict, List, Tuple
+from typing import Any
 
 # ---------------------------------------------------------------------------
 # nq question-answer pairs (curated subset of 50 from nq-open)
 # ---------------------------------------------------------------------------
 
-_NQ_QA_PAIRS: List[Tuple[str, str]] = [
+_NQ_QA_PAIRS: list[tuple[str, str]] = [
     ("who is the president of the united states?", "joe biden"),
     ("what is the capital of france?", "paris"),
     ("who wrote romeo and juliet?", "william shakespeare"),
@@ -94,7 +94,7 @@ _NQ_QA_PAIRS: List[Tuple[str, str]] = [
 # knowledge base entries derived from nq answers (realistic wiki-style)
 # ---------------------------------------------------------------------------
 
-_NQ_KNOWLEDGE_ENTRIES: List[str] = [
+_NQ_KNOWLEDGE_ENTRIES: list[str] = [
     "the current president of the united states is joe biden, inaugurated in 2021",
     "paris is the capital and most populous city of france, located on the seine river",
     "romeo and juliet is a tragedy written by william shakespeare in the 1590s",
@@ -114,7 +114,7 @@ _NQ_KNOWLEDGE_ENTRIES: List[str] = [
     "albert einstein developed the theory of relativity, published in 1905 and 1915",
     "the japanese yen is the official currency of japan, symbolized by the sign ¥",
     "the nile river is the longest river in the world at approximately 6,650 km",
-    "charles babbage is considered the father of the computer for his engine",  # noqa: E501
+    "charles babbage is considered the father of the computer for his engine",
     "avocado is the primary ingredient in guacamole, a traditional mexican dish",
     "mars is known as the red planet due to iron oxide prevalent on its surface",
     "the great gatsby was written by f. scott fitzgerald, published in 1925",
@@ -194,22 +194,22 @@ class NQSubset:
         self._qa_pairs = _NQ_QA_PAIRS
         self._knowledge = _NQ_KNOWLEDGE_ENTRIES
 
-    def get_qa_pairs(self) -> List[Tuple[str, str]]:
+    def get_qa_pairs(self) -> list[tuple[str, str]]:
         """return all (question, answer) pairs."""
         return list(self._qa_pairs)
 
-    def get_questions(self) -> List[str]:
+    def get_questions(self) -> list[str]:
         """return just the question strings."""
         return [q for q, _ in self._qa_pairs]
 
-    def get_corpus_entries(self) -> List[Dict[str, Any]]:
+    def get_corpus_entries(self) -> list[dict[str, Any]]:
         """
         return knowledge base entries in the same format as syntheticcorpus.
 
         returns:
             list of dicts with keys: key, content, category, metadata
         """
-        entries: List[Dict[str, Any]] = []
+        entries: list[dict[str, Any]] = []
         for i, text in enumerate(self._knowledge):
             entries.append(
                 {
@@ -221,14 +221,14 @@ class NQSubset:
             )
         return entries
 
-    def get_victim_queries(self) -> List[Dict[str, str]]:
+    def get_victim_queries(self) -> list[dict[str, str]]:
         """
         return questions in the same format as syntheticcorpus.get_victim_queries().
 
         returns:
             list of dicts with keys: query, topic, category
         """
-        queries: List[Dict[str, str]] = []
+        queries: list[dict[str, str]] = []
         for q, a in self._qa_pairs:
             queries.append(
                 {

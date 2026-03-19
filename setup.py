@@ -12,11 +12,9 @@ all comments are lowercase.
 
 import json
 import os
-import shutil
 import subprocess
 import sys
 from pathlib import Path
-from typing import Any, Dict, List, Optional
 
 
 class ProjectSetup:
@@ -266,7 +264,7 @@ class ProjectSetup:
             try:
                 from src.utils.config import configmanager
 
-                config = configmanager(str(self.project_root / "configs"))
+                configmanager(str(self.project_root / "configs"))
                 self.log("configuration system working")
             except Exception as e:
                 self.error(f"configuration system failed: {e}")

@@ -6,8 +6,8 @@ configuration files for experiments, memory systems, attacks, and defenses.
 all comments are lowercase.
 """
 
+from collections.abc import Callable
 from pathlib import Path
-from typing import Callable, List, Optional
 
 import yaml
 from omegaconf import DictConfig, OmegaConf
@@ -53,7 +53,7 @@ class configmanager:
             raise FileNotFoundError(f"configuration file not found: {full_path}")
 
         try:
-            with open(full_path, "r") as f:
+            with open(full_path) as f:
                 config_dict = yaml.safe_load(f)
 
             config = OmegaConf.create(config_dict)
@@ -89,7 +89,7 @@ class configmanager:
         """
         self._validators[config_path] = validator
 
-    def get_config(self, config_path: str) -> Optional[DictConfig]:
+    def get_config(self, config_path: str) -> DictConfig | None:
         """
         get previously loaded configuration.
 
@@ -101,7 +101,7 @@ class configmanager:
         """
         return self._loaded_configs.get(config_path)
 
-    def list_configs(self, pattern: str = "*.yaml") -> List[str]:
+    def list_configs(self, pattern: str = "*.yaml") -> list[str]:
         """
         list available configuration files.
 

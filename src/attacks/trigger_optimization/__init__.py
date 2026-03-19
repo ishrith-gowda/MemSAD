@@ -39,11 +39,11 @@ except ImportError:
     pass
 
 __all__ = [
-    "TriggerOptimizer",
-    "OptimizedTrigger",
-    "optimize_agentpoison_triggers",
-    "DPRTriggerOptimizer",
-    "DPROptimizedTrigger",
-    "optimize_dpr_triggers",
     "_DPR_AVAILABLE",
+    "DPROptimizedTrigger",
+    "DPRTriggerOptimizer",
+    "OptimizedTrigger",
+    "TriggerOptimizer",
+    "optimize_agentpoison_triggers",
+    "optimize_dpr_triggers",
 ]

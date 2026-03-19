@@ -42,7 +42,7 @@ import os
 import random
 import time
 from dataclasses import dataclass, field
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any
 
 from utils.logging import logger
 
@@ -51,7 +51,7 @@ from utils.logging import logger
 # combining scheduling, authority, memory, action, and infrastructure domains
 # ---------------------------------------------------------------------------
 
-_ADAPTIVE_SYNONYMS: Dict[str, List[str]] = {
+_ADAPTIVE_SYNONYMS: dict[str, list[str]] = {
     # scheduling / calendar
     "schedule": ["plan", "agenda", "timetable", "roster", "lineup"],
     "meeting": ["session", "gathering", "conference", "call", "discussion"],
@@ -144,11 +144,11 @@ class AdaptivePassageResult:
     n_substitutions: int
     evasion_successful: bool
     retrieval_preserved: bool
-    substitution_log: List[Tuple[str, str]] = field(default_factory=list)
+    substitution_log: list[tuple[str, str]] = field(default_factory=list)
     original_perplexity: float = 0.0
     evasive_perplexity: float = 0.0
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         return {
             "original_similarity": self.original_similarity,
             "evasive_similarity": self.evasive_similarity,
@@ -210,10 +210,10 @@ class AdaptiveSADResult:
     retrieval_degradation: float
     mean_substitutions_per_passage: float
 
-    sigma_sweep: List[Dict[str, float]] = field(default_factory=list)
+    sigma_sweep: list[dict[str, float]] = field(default_factory=list)
     elapsed_s: float = 0.0
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         return {
             "attack_type": self.attack_type,
             "n_trials": self.n_trials,
@@ -326,7 +326,7 @@ class AdaptivePassageCrafter:
             self._encoder = SentenceTransformer(self.model_name)
         return self._encoder
 
-    def _embed(self, texts: List[str]):
+    def _embed(self, texts: list[str]):
         """embed texts to l2-normalized vectors."""
         import numpy as np
 
@@ -344,7 +344,7 @@ class AdaptivePassageCrafter:
         sims = query_embs @ passage_emb  # (n_q,)
         return float(np.max(sims))
 
-    def _get_candidates(self, word: str) -> List[str]:
+    def _get_candidates(self, word: str) -> list[str]:
         """get synonym candidates for a word (lowercase lookup)."""
         w_lower = word.lower().strip(".,;:!?\"'()[]")
         return self._synonyms.get(w_lower, [])
@@ -352,7 +352,7 @@ class AdaptivePassageCrafter:
     def craft_evasive_passage(
         self,
         initial_passage: str,
-        victim_queries: List[str],
+        victim_queries: list[str],
         calibration_mean: float,
         calibration_std: float,
         threshold_sigma: float = 2.0,
@@ -393,7 +393,7 @@ class AdaptivePassageCrafter:
         original_sim = self._max_similarity(p_emb, q_embs)
         current_sim = original_sim
 
-        substitution_log: List[Tuple[str, str]] = []
+        substitution_log: list[tuple[str, str]] = []
         n_subs = 0
 
         # iterative greedy substitution
@@ -525,7 +525,7 @@ class AdaptiveSADEvaluator:
         self.seed = seed
         self._crafter = AdaptivePassageCrafter(seed=seed)
 
-    def _build_components(self, seed: int) -> Tuple[Any, Any, List[str], List[str]]:
+    def _build_components(self, seed: int) -> tuple[Any, Any, list[str], list[str]]:
         """
         build corpus, retrieval sim, and return components for evaluation.
 
@@ -560,7 +560,7 @@ class AdaptiveSADEvaluator:
         attack_type: str,
         seed: int,
         threshold_sigma: float = 2.0,
-    ) -> Dict[str, float]:
+    ) -> dict[str, float]:
         """
         run one trial: standard attack → sad calibration → evaluate tpr/fpr + asr-r.
 
@@ -579,7 +579,7 @@ class AdaptiveSADEvaluator:
         benign_entries = corpus.generate_benign_entries(self.corpus_size)
         benign_texts = [e["content"] for e in benign_entries]
 
-        poison_entries: List[str] = []
+        poison_entries: list[str] = []
         if attack_type == "agent_poison":
             n = self.n_poison
             passage = generate_centroid_agentpoison_passage(victim_queries)
@@ -631,7 +631,7 @@ class AdaptiveSADEvaluator:
         attack_type: str,
         seed: int,
         threshold_sigma: float = 2.0,
-    ) -> Dict[str, float]:
+    ) -> dict[str, float]:
         """
         run one trial: adaptive evasive attack → sad calibration → evaluate.
 
@@ -663,7 +663,7 @@ class AdaptiveSADEvaluator:
             detector.update_query_set(q)
 
         # generate standard passages
-        standard_passages: List[str] = []
+        standard_passages: list[str] = []
         if attack_type == "agent_poison":
             n = self.n_poison
             p = generate_centroid_agentpoison_passage(victim_queries)
@@ -680,11 +680,11 @@ class AdaptiveSADEvaluator:
                 standard_passages.append(generate_injecmem_passage(q, variant_index=i))
 
         # apply adaptive evasion: substitute words to reduce max-similarity
-        evasive_passages: List[str] = []
+        evasive_passages: list[str] = []
         n_evasion_successes = 0
         n_retrieval_preserved = 0
         total_subs = 0
-        adaptive_results: List[AdaptivePassageResult] = []
+        adaptive_results: list[AdaptivePassageResult] = []
         for passage in standard_passages:
             result = self._crafter.craft_evasive_passage(
                 initial_passage=passage,
@@ -740,7 +740,7 @@ class AdaptiveSADEvaluator:
     def evaluate(
         self,
         attack_type: str = "agent_poison",
-        sigma_values: Optional[List[float]] = None,
+        sigma_values: list[float] | None = None,
         n_trials: int = 3,
     ) -> AdaptiveSADResult:
         """
@@ -847,9 +847,9 @@ class AdaptiveSADEvaluator:
 
     def evaluate_all_attacks(
         self,
-        sigma_values: Optional[List[float]] = None,
+        sigma_values: list[float] | None = None,
         n_trials: int = 3,
-    ) -> Dict[str, AdaptiveSADResult]:
+    ) -> dict[str, AdaptiveSADResult]:
         """
         run adaptive sad evaluation for all four attacks.
 
@@ -857,7 +857,7 @@ class AdaptiveSADEvaluator:
             dict mapping attack_type → AdaptiveSADResult
         """
         attacks = ["agent_poison", "minja", "injecmem", "poisonedrag"]
-        results: Dict[str, AdaptiveSADResult] = {}
+        results: dict[str, AdaptiveSADResult] = {}
         for at in attacks:
             results[at] = self.evaluate(
                 at, sigma_values=sigma_values, n_trials=n_trials
@@ -866,7 +866,7 @@ class AdaptiveSADEvaluator:
 
     def to_latex_table(
         self,
-        results: Dict[str, AdaptiveSADResult],
+        results: dict[str, AdaptiveSADResult],
         caption: str = "Adaptive adversary evaluation against SAD defense.",
         label: str = "tab:adaptive_sad",
     ) -> str:

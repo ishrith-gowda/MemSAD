@@ -10,7 +10,7 @@ all comments are lowercase.
 """
 
 import time
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 from attacks.implementations import AttackSuite
 from defenses.base import Defense
@@ -39,7 +39,7 @@ class WatermarkDefense(Defense):
         return "watermark"
 
     @property
-    def protected_attacks(self) -> List[str]:
+    def protected_attacks(self) -> list[str]:
         """list of attack types this defense can protect against."""
         return ["agent_poison", "minja", "injecmem", "poisonedrag"]
 
@@ -48,7 +48,7 @@ class WatermarkDefense(Defense):
         """human-readable description of what the defense does."""
         return "unigram-watermark based provenance tracking with z-score detection"
 
-    def __init__(self, config: Optional[Dict[str, Any]] = None):
+    def __init__(self, config: dict[str, Any] | None = None):
         """
         initialize watermark defense.
 
@@ -115,8 +115,8 @@ class WatermarkDefense(Defense):
             return False
 
     def detect_attack(
-        self, content: Any, context: Optional[Dict[str, Any]] = None
-    ) -> Dict[str, Any]:
+        self, content: Any, context: dict[str, Any] | None = None
+    ) -> dict[str, Any]:
         """
         detect attacks using watermark analysis.
 
@@ -299,7 +299,7 @@ class ContentValidationDefense(Defense):
         return "validation"
 
     @property
-    def protected_attacks(self) -> List[str]:
+    def protected_attacks(self) -> list[str]:
         """list of attack types this defense can protect against."""
         return ["agent_poison", "minja", "injecmem", "poisonedrag"]
 
@@ -347,7 +347,7 @@ class ContentValidationDefense(Defense):
         }
     )
 
-    def __init__(self, config: Optional[Dict[str, Any]] = None):
+    def __init__(self, config: dict[str, Any] | None = None):
         """
         initialize content validation defense.
 
@@ -389,7 +389,7 @@ class ContentValidationDefense(Defense):
             self.logger.log_error("validation_activate", e)
             return False
 
-    def _calibrate(self, benign_entries: List[str]) -> None:
+    def _calibrate(self, benign_entries: list[str]) -> None:
         """calibrate anomaly threshold on benign corpus."""
         scores = [self._compute_anomaly_score(e) for e in benign_entries]
         if not scores:
@@ -416,8 +416,8 @@ class ContentValidationDefense(Defense):
             return False
 
     def detect_attack(
-        self, content: Any, context: Optional[Dict[str, Any]] = None
-    ) -> Dict[str, Any]:
+        self, content: Any, context: dict[str, Any] | None = None
+    ) -> dict[str, Any]:
         """
         detect attacks using statistical content validation.
 
@@ -502,7 +502,7 @@ class ContentValidationDefense(Defense):
         text = text.lower()
         if len(text) < 3:
             return 0.0
-        bigrams: Dict[str, int] = {}
+        bigrams: dict[str, int] = {}
         total = 0
         for i in range(len(text) - 1):
             bg = text[i : i + 2]
@@ -579,7 +579,7 @@ class ProactiveDefense(Defense):
         return "proactive"
 
     @property
-    def protected_attacks(self) -> List[str]:
+    def protected_attacks(self) -> list[str]:
         """list of attack types this defense can protect against."""
         return ["agent_poison", "minja", "injecmem", "poisonedrag"]
 
@@ -588,7 +588,7 @@ class ProactiveDefense(Defense):
         """human-readable description of what the defense does."""
         return "proactive defense using attack simulation and prevention"
 
-    def __init__(self, config: Optional[Dict[str, Any]] = None):
+    def __init__(self, config: dict[str, Any] | None = None):
         """
         initialize proactive defense.
 
@@ -643,8 +643,8 @@ class ProactiveDefense(Defense):
             return False
 
     def detect_attack(
-        self, content: Any, context: Optional[Dict[str, Any]] = None
-    ) -> Dict[str, Any]:
+        self, content: Any, context: dict[str, Any] | None = None
+    ) -> dict[str, Any]:
         """
         detect attacks using proactive retrieval-breadth analysis.
 
@@ -812,7 +812,7 @@ class CompositeDefense(Defense):
         return "composite"
 
     @property
-    def protected_attacks(self) -> List[str]:
+    def protected_attacks(self) -> list[str]:
         """list of attack types this defense can protect against."""
         return ["agent_poison", "minja", "injecmem", "poisonedrag"]
 
@@ -821,7 +821,7 @@ class CompositeDefense(Defense):
         """human-readable description of what the defense does."""
         return "composite defense combining multiple defense mechanisms"
 
-    def __init__(self, config: Optional[Dict[str, Any]] = None):
+    def __init__(self, config: dict[str, Any] | None = None):
         """
         initialize composite defense.
 
@@ -898,8 +898,8 @@ class CompositeDefense(Defense):
             return False
 
     def detect_attack(
-        self, content: Any, context: Optional[Dict[str, Any]] = None
-    ) -> Dict[str, Any]:
+        self, content: Any, context: dict[str, Any] | None = None
+    ) -> dict[str, Any]:
         """
         detect attacks using combined defense analysis.
 
@@ -989,14 +989,14 @@ class _SADDefenseAdapter(Defense):
         return "semantic_anomaly"
 
     @property
-    def protected_attacks(self) -> List[str]:
+    def protected_attacks(self) -> list[str]:
         return ["agent_poison", "minja", "injecmem", "poisonedrag"]
 
     @property
     def description(self) -> str:
         return "semantic anomaly detection via embedding distance z-scoring"
 
-    def detect_attack(self, content: str) -> Dict[str, Any]:
+    def detect_attack(self, content: str) -> dict[str, Any]:
         result = self._detector.detect(content)
         return {
             "attack_detected": result.is_anomalous,
@@ -1025,14 +1025,14 @@ class _RobustRAGDefenseAdapter(Defense):
         return "robust_rag"
 
     @property
-    def protected_attacks(self) -> List[str]:
+    def protected_attacks(self) -> list[str]:
         return ["agent_poison", "minja", "injecmem", "poisonedrag"]
 
     @property
     def description(self) -> str:
         return "isolate-then-aggregate defense via keyword-overlap majority voting"
 
-    def detect_attack(self, content: str) -> Dict[str, Any]:
+    def detect_attack(self, content: str) -> dict[str, Any]:
         # robustrag operates on sets of passages, not individual entries;
         # for single-entry detection, flag if content has low keyword
         # overlap with a benign template (heuristic fallback)
@@ -1051,9 +1051,7 @@ class _RobustRAGDefenseAdapter(Defense):
         return True
 
 
-def create_defense(
-    defense_type: str, config: Optional[Dict[str, Any]] = None
-) -> Defense:
+def create_defense(defense_type: str, config: dict[str, Any] | None = None) -> Defense:
     """
     factory function to create defense instances.
 
@@ -1106,7 +1104,7 @@ class DefenseSuite:
     response to detected attacks.
     """
 
-    def __init__(self, config: Optional[Dict[str, Any]] = None):
+    def __init__(self, config: dict[str, Any] | None = None):
         """
         initialize defense suite.
 
@@ -1123,7 +1121,7 @@ class DefenseSuite:
             defense_config = self.config.get(defense_type, {})
             self.defenses[defense_type] = create_defense(defense_type, defense_config)
 
-    def activate_all(self, **kwargs) -> Dict[str, bool]:
+    def activate_all(self, **kwargs) -> dict[str, bool]:
         """
         activate all defenses.
 
@@ -1139,8 +1137,8 @@ class DefenseSuite:
         return results
 
     def detect_attack(
-        self, content: Any, context: Optional[Dict[str, Any]] = None
-    ) -> Dict[str, Any]:
+        self, content: Any, context: dict[str, Any] | None = None
+    ) -> dict[str, Any]:
         """
         detect attacks using all available defenses.
 

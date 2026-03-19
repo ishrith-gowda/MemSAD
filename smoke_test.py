@@ -7,6 +7,7 @@ this script tests basic functionality without complex pytest setup.
 
 import os
 import sys
+import traceback
 
 # add src to path
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), "src"))
@@ -55,8 +56,6 @@ def test_attacks():
 
     except Exception as e:
         print(f"[fail] attack test failed: {e}")
-        import traceback
-
         traceback.print_exc()
         return False
 
@@ -92,8 +91,6 @@ def test_defenses():
 
     except Exception as e:
         print(f"[fail] defense test failed: {e}")
-        import traceback
-
         traceback.print_exc()
         return False
 
@@ -103,9 +100,11 @@ def test_watermarking():
     print("\n[test] testing watermarking...")
 
     try:
-        from watermark.watermarking import (ProvenanceTracker,
-                                            UnigramWatermarkEncoder,
-                                            create_watermark_encoder)
+        from watermark.watermarking import (
+            ProvenanceTracker,
+            UnigramWatermarkEncoder,
+            create_watermark_encoder,
+        )
 
         # test lsb encoder
         encoder = create_watermark_encoder("lsb")
@@ -153,8 +152,6 @@ def test_watermarking():
 
     except Exception as e:
         print(f"[fail] watermarking test failed: {e}")
-        import traceback
-
         traceback.print_exc()
         return False
 
@@ -201,8 +198,6 @@ def test_evaluation():
 
     except Exception as e:
         print(f"[fail] evaluation test failed: {e}")
-        import traceback
-
         traceback.print_exc()
         return False
 
@@ -237,8 +232,6 @@ def test_memory_systems():
 
     except Exception as e:
         print(f"[fail] memory system test failed: {e}")
-        import traceback
-
         traceback.print_exc()
         return False
 

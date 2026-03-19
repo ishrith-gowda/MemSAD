@@ -36,7 +36,7 @@ import math
 import os
 import time
 from dataclasses import dataclass
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any
 
 from utils.logging import logger
 
@@ -81,7 +81,7 @@ class AblationPoint:
     n_trials: int = 1
     elapsed_s: float = 0.0
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         return {
             "param_name": self.param_name,
             "param_value": self.param_value,
@@ -104,11 +104,11 @@ class AblationPoint:
 
 
 def _bootstrap_ci(
-    samples: List[float],
+    samples: list[float],
     n_boot: int = 500,
     alpha: float = 0.05,
     seed: int = 0,
-) -> Tuple[float, float, float]:
+) -> tuple[float, float, float]:
     """
     compute percentile bootstrap 95% ci.
 
@@ -193,7 +193,7 @@ class AblationStudy:
         top_k: int,
         n_poison: int,
         seed: int,
-    ) -> Dict[str, float]:
+    ) -> dict[str, float]:
         """
         run a single retrieval simulation trial with the given parameters.
         returns dict with asr_r, asr_t, benign_accuracy.
@@ -217,13 +217,13 @@ class AblationStudy:
     def _ablation_points(
         self,
         param_name: str,
-        param_values: List[float],
+        param_values: list[float],
         fixed_corpus: int = 200,
         fixed_topk: int = 5,
         fixed_poison: int = 5,
         n_trials: int = 3,
-        attack_type: Optional[str] = None,
-    ) -> List[AblationPoint]:
+        attack_type: str | None = None,
+    ) -> list[AblationPoint]:
         """
         generic ablation runner: sweeps param_name over param_values.
 
@@ -234,7 +234,7 @@ class AblationStudy:
         if _test:
             n_trials = min(n_trials, 2)
 
-        points: List[AblationPoint] = []
+        points: list[AblationPoint] = []
         for val in param_values:
             t0 = time.time()
             asr_r_samples, asr_t_samples, bacc_samples = [], [], []
@@ -299,10 +299,10 @@ class AblationStudy:
 
     def corpus_size_ablation(
         self,
-        attack_type: Optional[str] = None,
-        sizes: Optional[List[int]] = None,
+        attack_type: str | None = None,
+        sizes: list[int] | None = None,
         n_trials: int = 3,
-    ) -> List[AblationPoint]:
+    ) -> list[AblationPoint]:
         """
         ablate corpus size: how does attack effectiveness change as the benign
         memory grows?
@@ -322,10 +322,10 @@ class AblationStudy:
 
     def topk_ablation(
         self,
-        attack_type: Optional[str] = None,
-        k_values: Optional[List[int]] = None,
+        attack_type: str | None = None,
+        k_values: list[int] | None = None,
         n_trials: int = 3,
-    ) -> List[AblationPoint]:
+    ) -> list[AblationPoint]:
         """
         ablate retrieval top-k: how does the retrieval window size affect
         attack success rate?
@@ -345,10 +345,10 @@ class AblationStudy:
 
     def poison_count_ablation(
         self,
-        attack_type: Optional[str] = None,
-        counts: Optional[List[int]] = None,
+        attack_type: str | None = None,
+        counts: list[int] | None = None,
         n_trials: int = 3,
-    ) -> List[AblationPoint]:
+    ) -> list[AblationPoint]:
         """
         ablate poison count: how many adversarial entries are needed for high
         attack success rate?
@@ -369,10 +369,10 @@ class AblationStudy:
 
     def sad_threshold_ablation(
         self,
-        attack_type: Optional[str] = None,
-        sigma_values: Optional[List[float]] = None,
+        attack_type: str | None = None,
+        sigma_values: list[float] | None = None,
         n_trials: int = 3,
-    ) -> List[AblationPoint]:
+    ) -> list[AblationPoint]:
         """
         ablate sad detection threshold (sigma multiplier k).
 
@@ -388,7 +388,7 @@ class AblationStudy:
         if _test:
             n_trials = min(n_trials, 2)
 
-        points: List[AblationPoint] = []
+        points: list[AblationPoint] = []
         for sigma in sigma_vals:
             t0 = time.time()
             tpr_samples, fpr_samples, asr_r_samples = [], [], []
@@ -410,7 +410,7 @@ class AblationStudy:
                     victim_queries = corpus.get_victim_queries()
 
                     # generate poison entries
-                    poison_entries: List[str] = []
+                    poison_entries: list[str] = []
                     if at == "agent_poison":
                         p = generate_centroid_agentpoison_passage(victim_queries)
                         poison_entries = [p] * 5
@@ -497,9 +497,9 @@ class AblationStudy:
 
     def watermark_threshold_ablation(
         self,
-        z_values: Optional[List[float]] = None,
+        z_values: list[float] | None = None,
         n_trials: int = 3,
-    ) -> List[AblationPoint]:
+    ) -> list[AblationPoint]:
         """
         ablate watermark z-score detection threshold.
 
@@ -516,7 +516,7 @@ class AblationStudy:
         if _test:
             n_trials = min(n_trials, 2)
 
-        points: List[AblationPoint] = []
+        points: list[AblationPoint] = []
         for z_thresh in z_vals:
             t0 = time.time()
             tpr_samples, fpr_samples = [], []
@@ -541,7 +541,7 @@ class AblationStudy:
 
                     # generate watermarked samples
                     n_samples = 20 if not _test else 5
-                    wm_z_scores: List[float] = []
+                    wm_z_scores: list[float] = []
                     for i in range(n_samples):
                         wm_id = f"wm_{rng_seed}_{i}"
                         watermarked = encoder.embed(_ref, wm_id)
@@ -549,7 +549,7 @@ class AblationStudy:
                         wm_z_scores.append(stats["z_score"])
 
                     # generate clean (unwatermarked) samples
-                    clean_z_scores: List[float] = []
+                    clean_z_scores: list[float] = []
                     for i in range(n_samples):
                         stats = encoder.get_detection_stats(_ref)
                         clean_z_scores.append(stats["z_score"])
@@ -599,10 +599,10 @@ class AblationStudy:
 
     def robustrag_overlap_ablation(
         self,
-        attack_type: Optional[str] = None,
-        overlap_values: Optional[List[float]] = None,
+        attack_type: str | None = None,
+        overlap_values: list[float] | None = None,
         n_trials: int = 3,
-    ) -> List[AblationPoint]:
+    ) -> list[AblationPoint]:
         """
         ablate robustrag keyword-overlap threshold.
 
@@ -623,11 +623,11 @@ class AblationStudy:
         if _test:
             n_trials = min(n_trials, 2)
 
-        points: List[AblationPoint] = []
+        points: list[AblationPoint] = []
         for ov_thresh in ov_vals:
             t0 = time.time()
-            tpr_samples: List[float] = []
-            fpr_samples: List[float] = []
+            tpr_samples: list[float] = []
+            fpr_samples: list[float] = []
 
             for trial in range(n_trials):
                 seed = self.seed_base + trial * 17
@@ -711,10 +711,10 @@ class AblationStudy:
 
     def sad_weight_ablation(
         self,
-        attack_type: Optional[str] = None,
-        weight_values: Optional[List[float]] = None,
+        attack_type: str | None = None,
+        weight_values: list[float] | None = None,
         n_trials: int = 3,
-    ) -> List[AblationPoint]:
+    ) -> list[AblationPoint]:
         """
         ablate the combined scoring weight alpha in score = alpha*max + (1-alpha)*mean.
 
@@ -730,7 +730,7 @@ class AblationStudy:
             weights = [0.0, 0.5, 1.0]
             n_trials = min(n_trials, 2)
 
-        points: List[AblationPoint] = []
+        points: list[AblationPoint] = []
         for alpha in weights:
             t0 = time.time()
             tpr_samples, fpr_samples = [], []
@@ -756,7 +756,7 @@ class AblationStudy:
                     ]
 
                     # generate poison entries
-                    poison_entries: List[str] = []
+                    poison_entries: list[str] = []
                     if at == "agent_poison":
                         p = generate_centroid_agentpoison_passage(victim_queries)
                         poison_entries = [p] * 5
@@ -828,10 +828,10 @@ class AblationStudy:
 
     def asr_a_sensitivity_analysis(
         self,
-        attack_types: Optional[List[str]] = None,
-        asr_a_offsets: Optional[List[float]] = None,
+        attack_types: list[str] | None = None,
+        asr_a_offsets: list[float] | None = None,
         n_trials: int = 3,
-    ) -> List[AblationPoint]:
+    ) -> list[AblationPoint]:
         """
         sensitivity analysis on modelled asr-a values.
 
@@ -850,7 +850,7 @@ class AblationStudy:
 
         from evaluation.retrieval_sim import _MODELLED_ASR_A, RetrievalSimulator
 
-        points: List[AblationPoint] = []
+        points: list[AblationPoint] = []
         for at in ats:
             base_mean, base_std = _MODELLED_ASR_A.get(at, (0.60, 0.08))
             for offset in offsets:
@@ -911,8 +911,8 @@ class AblationStudy:
     def run_all(
         self,
         n_trials: int = 3,
-        attack_types: Optional[List[str]] = None,
-    ) -> Dict[str, Any]:
+        attack_types: list[str] | None = None,
+    ) -> dict[str, Any]:
         """
         run all ablation studies and return a structured result dict.
 
@@ -927,7 +927,7 @@ class AblationStudy:
             dict mapping study_name → List[AblationPoint]
         """
         ats = attack_types or ["agent_poison", "minja", "injecmem", "poisonedrag"]
-        results: Dict[str, Any] = {}
+        results: dict[str, Any] = {}
 
         # corpus size ablation (main attack)
         logger.logger.info("running corpus size ablation (%s)", self.attack_type)
@@ -983,7 +983,7 @@ class AblationStudy:
 
     def to_latex_table(
         self,
-        points: List[AblationPoint],
+        points: list[AblationPoint],
         param_label: str,
         metric_label: str = "ASR-R",
         caption: str = "",
@@ -1046,7 +1046,7 @@ class AblationStudy:
 
     def to_combined_latex_table(
         self,
-        results: Dict[str, List[AblationPoint]],
+        results: dict[str, list[AblationPoint]],
         caption: str = "Hyperparameter ablation results.",
         label: str = "tab:ablation_combined",
     ) -> str:

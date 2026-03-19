@@ -16,7 +16,7 @@ import statistics
 import time
 from collections import defaultdict
 from dataclasses import asdict, dataclass
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 from attacks.implementations import AttackSuite, create_attack
 from defenses.implementations import create_defense
@@ -78,7 +78,7 @@ class AttackMetrics:
         # calculate error rate
         self.error_rate = 1.0 - (self.successful_task_hijacks / self.total_queries)
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """convert metrics to dictionary."""
         return asdict(self)
 
@@ -133,7 +133,7 @@ class DefenseMetrics:
             else 0
         )
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """convert metrics to dictionary."""
         return asdict(self)
 
@@ -148,14 +148,14 @@ class BenchmarkResult:
 
     experiment_id: str
     timestamp: float
-    attack_metrics: Dict[str, AttackMetrics]
-    defense_metrics: Dict[str, DefenseMetrics]
-    system_config: Dict[str, Any]
+    attack_metrics: dict[str, AttackMetrics]
+    defense_metrics: dict[str, DefenseMetrics]
+    system_config: dict[str, Any]
     test_duration: float
     total_memory_operations: int = 0
     memory_integrity_score: float = 0.0
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """convert result to dictionary."""
         return {
             "experiment_id": self.experiment_id,
@@ -179,7 +179,7 @@ class AttackEvaluator:
     success rates using various metrics.
     """
 
-    def __init__(self, config: Optional[Dict[str, Any]] = None):
+    def __init__(self, config: dict[str, Any] | None = None):
         """
         initialize attack evaluator.
 
@@ -196,7 +196,7 @@ class AttackEvaluator:
         )
 
         # lazy-loaded retrieval simulator instance (cached for reuse)
-        self._retrieval_sim: Optional[Any] = None
+        self._retrieval_sim: Any | None = None
 
         # Initialize memory systems for testing (optional external systems)
         memory_configs = self.config.get(
@@ -217,7 +217,7 @@ class AttackEvaluator:
             except Exception as e:
                 self.logger.logger.warning(f"failed to initialize {system_type}: {e}")
 
-    def _get_retrieval_sim(self) -> Optional[Any]:
+    def _get_retrieval_sim(self) -> Any | None:
         """
         lazy-load and cache the retrieval simulator.
 
@@ -260,7 +260,7 @@ class AttackEvaluator:
         return self._retrieval_sim if self._retrieval_sim is not False else None
 
     def evaluate_attack(
-        self, attack_type: str, test_content: List[Any], num_trials: int = 10
+        self, attack_type: str, test_content: list[Any], num_trials: int = 10
     ) -> AttackMetrics:
         """
         evaluate a specific attack type using vector retrieval simulation.
@@ -298,7 +298,7 @@ class AttackEvaluator:
         return self._evaluate_attack_legacy(attack_type, test_content, num_trials)
 
     def _evaluate_attack_legacy(
-        self, attack_type: str, test_content: List[Any], num_trials: int = 10
+        self, attack_type: str, test_content: list[Any], num_trials: int = 10
     ) -> AttackMetrics:
         """
         legacy attack evaluation using string-based simulation.
@@ -361,8 +361,8 @@ class AttackEvaluator:
             return AttackMetrics(attack_type=attack_type)
 
     def evaluate_all_attacks(
-        self, test_content: List[Any], num_trials: int = 10
-    ) -> Dict[str, AttackMetrics]:
+        self, test_content: list[Any], num_trials: int = 10
+    ) -> dict[str, AttackMetrics]:
         """
         evaluate all attack types.
 
@@ -392,7 +392,7 @@ class DefenseEvaluator:
     detection accuracy and performance.
     """
 
-    def __init__(self, config: Optional[Dict[str, Any]] = None):
+    def __init__(self, config: dict[str, Any] | None = None):
         """
         initialize defense evaluator.
 
@@ -406,8 +406,8 @@ class DefenseEvaluator:
         self,
         defense_type: str,
         attack_suite: AttackSuite,
-        clean_content: List[Any],
-        poisoned_content: List[Any],
+        clean_content: list[Any],
+        poisoned_content: list[Any],
     ) -> DefenseMetrics:
         """
         evaluate a specific defense type.
@@ -490,9 +490,9 @@ class DefenseEvaluator:
     def evaluate_all_defenses(
         self,
         attack_suite: AttackSuite,
-        clean_content: List[Any],
-        poisoned_content: List[Any],
-    ) -> Dict[str, DefenseMetrics]:
+        clean_content: list[Any],
+        poisoned_content: list[Any],
+    ) -> dict[str, DefenseMetrics]:
         """
         evaluate all defense types.
 
@@ -523,7 +523,7 @@ class BenchmarkRunner:
     defenses, and memory systems with systematic measurement.
     """
 
-    def __init__(self, config: Optional[Dict[str, Any]] = None):
+    def __init__(self, config: dict[str, Any] | None = None):
         """
         initialize benchmark runner.
 
@@ -539,10 +539,10 @@ class BenchmarkRunner:
         self.logger = logger
 
         # Results storage
-        self.results: List[BenchmarkResult] = []
+        self.results: list[BenchmarkResult] = []
 
     def run_benchmark(
-        self, experiment_id: str, test_content: List[Any], num_trials: int = 10
+        self, experiment_id: str, test_content: list[Any], num_trials: int = 10
     ) -> BenchmarkResult:
         """
         run a complete benchmark experiment.
@@ -630,8 +630,8 @@ class BenchmarkRunner:
             )
 
     def run_multiple_benchmarks(
-        self, experiment_configs: List[Dict[str, Any]]
-    ) -> List[BenchmarkResult]:
+        self, experiment_configs: list[dict[str, Any]]
+    ) -> list[BenchmarkResult]:
         """
         run multiple benchmark experiments.
 
@@ -679,7 +679,7 @@ class BenchmarkRunner:
             input_path: path to load results from
         """
         try:
-            with open(input_path, "r") as f:
+            with open(input_path) as f:
                 results_data = json.load(f)
 
             self.results = []
@@ -719,7 +719,7 @@ class EvaluationReportGenerator:
     of benchmark results for research documentation.
     """
 
-    def __init__(self, config: Optional[Dict[str, Any]] = None):
+    def __init__(self, config: dict[str, Any] | None = None):
         """
         initialize report generator.
 
@@ -730,7 +730,7 @@ class EvaluationReportGenerator:
         self.logger = logger
 
     def generate_report(
-        self, benchmark_results: List[BenchmarkResult], output_path: str
+        self, benchmark_results: list[BenchmarkResult], output_path: str
     ):
         """
         generate comprehensive evaluation report.
@@ -759,7 +759,7 @@ class EvaluationReportGenerator:
         except Exception as e:
             self.logger.log_error("generate_report", e, {"output_path": output_path})
 
-    def _generate_summary(self, results: List[BenchmarkResult]) -> Dict[str, Any]:
+    def _generate_summary(self, results: list[BenchmarkResult]) -> dict[str, Any]:
         """generate summary statistics."""
         if not results:
             return {}
@@ -796,7 +796,7 @@ class EvaluationReportGenerator:
             "average_defense_false_positive_rate": avg_defense_fpr,
         }
 
-    def _analyze_attacks(self, results: List[BenchmarkResult]) -> Dict[str, Any]:
+    def _analyze_attacks(self, results: list[BenchmarkResult]) -> dict[str, Any]:
         """analyze attack performance across experiments."""
         attack_performance = defaultdict(list)
 
@@ -823,7 +823,7 @@ class EvaluationReportGenerator:
 
         return analysis
 
-    def _analyze_defenses(self, results: List[BenchmarkResult]) -> Dict[str, Any]:
+    def _analyze_defenses(self, results: list[BenchmarkResult]) -> dict[str, Any]:
         """analyze defense performance across experiments."""
         defense_performance = defaultdict(list)
 
@@ -855,7 +855,7 @@ class EvaluationReportGenerator:
 
         return analysis
 
-    def _generate_recommendations(self, results: List[BenchmarkResult]) -> List[str]:
+    def _generate_recommendations(self, results: list[BenchmarkResult]) -> list[str]:
         """generate research and implementation recommendations."""
         recommendations = []
 
@@ -866,7 +866,7 @@ class EvaluationReportGenerator:
             if avg_integrity < 0.5:
                 recommendations.append(
                     "Memory integrity is below acceptable threshold. "
-                    "Consider strengthening defense mechanisms or reducing attack surface."  # noqa: E501
+                    "Consider strengthening defense mechanisms or reducing attack surface."
                 )
 
             # Check for specific weak points

@@ -25,7 +25,7 @@ import math
 import random
 import time
 from dataclasses import dataclass, field
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 # scipy is optional — used for t.sf and wilcoxon; fall back to approximation
 try:
@@ -73,7 +73,7 @@ class BootstrapResult:
             f"(95% CI [{self.lower:.3f}, {self.upper:.3f}])"
         )
 
-    def to_dict(self) -> Dict[str, float]:
+    def to_dict(self) -> dict[str, float]:
         return {
             "mean": self.mean,
             "lower": self.lower,
@@ -103,7 +103,7 @@ class BootstrapCI:
 
     def compute(
         self,
-        samples: List[float],
+        samples: list[float],
         alpha: float = 0.05,
     ) -> BootstrapResult:
         """
@@ -121,7 +121,7 @@ class BootstrapCI:
             raise ValueError("samples list cannot be empty")
 
         # draw bootstrap replicates
-        boot_means: List[float] = []
+        boot_means: list[float] = []
         for _ in range(self.n_bootstrap):
             resample = [self._rng.choice(samples) for _ in range(n)]
             boot_means.append(sum(resample) / n)
@@ -171,12 +171,12 @@ class HypothesisTestResult:
     test_name: str
     statistic: float
     p_value: float
-    cohens_d: Optional[float]
+    cohens_d: float | None
     significant: bool
     effect_size_label: str
 
     @staticmethod
-    def _effect_label(d: Optional[float]) -> str:
+    def _effect_label(d: float | None) -> str:
         """cohen's d magnitude to verbal label (cohen 1992)."""
         if d is None:
             return "n/a"
@@ -189,7 +189,7 @@ class HypothesisTestResult:
             return "medium"
         return "large"
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         return {
             "test_name": self.test_name,
             "statistic": self.statistic,
@@ -225,8 +225,8 @@ class StatisticalHypothesisTester:
 
     def paired_ttest(
         self,
-        a: List[float],
-        b: List[float],
+        a: list[float],
+        b: list[float],
         alpha: float = 0.05,
     ) -> HypothesisTestResult:
         """
@@ -276,8 +276,8 @@ class StatisticalHypothesisTester:
 
     def wilcoxon(
         self,
-        a: List[float],
-        b: List[float],
+        a: list[float],
+        b: list[float],
         alpha: float = 0.05,
     ) -> HypothesisTestResult:
         """
@@ -303,9 +303,9 @@ class StatisticalHypothesisTester:
 
     def bonferroni_correct(
         self,
-        p_values: List[float],
+        p_values: list[float],
         alpha: float = 0.05,
-    ) -> List[bool]:
+    ) -> list[bool]:
         """
         bonferroni correction for multiple comparisons.
 
@@ -338,7 +338,7 @@ class TrialResult:
     injection_success_rate: float
     elapsed_s: float
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         return {
             "seed": self.seed,
             "attack_type": self.attack_type,
@@ -365,15 +365,15 @@ class MultiTrialSummary:
     corpus_size: int
     n_poison: int
     top_k: int
-    trial_results: List[TrialResult]
-    asr_r: Optional[BootstrapResult] = field(default=None)
-    asr_a: Optional[BootstrapResult] = field(default=None)
-    asr_t: Optional[BootstrapResult] = field(default=None)
-    benign_accuracy: Optional[BootstrapResult] = field(default=None)
-    isr: Optional[BootstrapResult] = field(default=None)
+    trial_results: list[TrialResult]
+    asr_r: BootstrapResult | None = field(default=None)
+    asr_a: BootstrapResult | None = field(default=None)
+    asr_t: BootstrapResult | None = field(default=None)
+    benign_accuracy: BootstrapResult | None = field(default=None)
+    isr: BootstrapResult | None = field(default=None)
 
-    def to_dict(self) -> Dict[str, Any]:
-        def _br(br: Optional[BootstrapResult]) -> Optional[Dict]:
+    def to_dict(self) -> dict[str, Any]:
+        def _br(br: BootstrapResult | None) -> dict | None:
             return br.to_dict() if br is not None else None
 
         return {
@@ -431,7 +431,7 @@ class MultiTrialEvaluator:
         self,
         attack_type: str,
         n_trials: int = 5,
-        seeds: Optional[List[int]] = None,
+        seeds: list[int] | None = None,
     ) -> MultiTrialSummary:
         """
         evaluate one attack type over n_trials independent seeds.
@@ -449,7 +449,7 @@ class MultiTrialEvaluator:
         if seeds is None:
             seeds = list(range(n_trials))
 
-        trial_results: List[TrialResult] = []
+        trial_results: list[TrialResult] = []
         for seed in seeds:
             random.seed(seed)
             sim = RetrievalSimulator(
@@ -491,9 +491,9 @@ class MultiTrialEvaluator:
         summary.isr = ci.compute([r.injection_success_rate for r in trial_results])
         return summary
 
-    def evaluate_all_attacks(self, n_trials: int = 5) -> Dict[str, MultiTrialSummary]:
+    def evaluate_all_attacks(self, n_trials: int = 5) -> dict[str, MultiTrialSummary]:
         """evaluate all four attacks over n_trials seeds."""
-        results: Dict[str, MultiTrialSummary] = {}
+        results: dict[str, MultiTrialSummary] = {}
         for attack in ["agent_poison", "minja", "injecmem", "poisonedrag"]:
             results[attack] = self.evaluate_attack(attack, n_trials=n_trials)
         return results
@@ -548,7 +548,7 @@ class LatexTableGenerator:
     # formatting helpers
     # ------------------------------------------------------------------
 
-    def _fmt(self, val: float, ci: Optional[BootstrapResult] = None) -> str:
+    def _fmt(self, val: float, ci: BootstrapResult | None = None) -> str:
         """format a float with optional ±half-ci."""
         if ci is not None:
             half = ci.ci_width / 2.0
@@ -572,8 +572,8 @@ class LatexTableGenerator:
 
     def _apply_bold_best(
         self,
-        rows: List[List[str]],
-        col_indices: List[int],
+        rows: list[list[str]],
+        col_indices: list[int],
         higher_is_better: bool = True,
     ) -> None:
         """in-place: bold the best value in each specified column."""
@@ -592,7 +592,7 @@ class LatexTableGenerator:
 
     def generate_attack_table(
         self,
-        summaries: Dict[str, MultiTrialSummary],
+        summaries: dict[str, MultiTrialSummary],
         caption: str = (
             "Attack evaluation on synthetic agent memory corpus "
             "(200 entries, 5 poison, top-$k$=5). "
@@ -612,7 +612,7 @@ class LatexTableGenerator:
             "injecmem": "InjecMEM~\\cite{injecmem2026}",
         }
 
-        rows: List[List[str]] = []
+        rows: list[list[str]] = []
         for attack_type in ["agent_poison", "minja", "injecmem", "poisonedrag"]:
             if attack_type not in summaries:
                 continue
@@ -663,7 +663,7 @@ class LatexTableGenerator:
 
     def generate_defense_table(
         self,
-        defense_results: Dict[str, Dict[str, Any]],
+        defense_results: dict[str, dict[str, Any]],
         caption: str = (
             "Defense evaluation: detection rates on synthetic poisoned corpus. "
             "TPR = true positive rate, FPR = false positive rate."
@@ -683,7 +683,7 @@ class LatexTableGenerator:
             "semantic_anomaly": "SAD (ours)",
         }
 
-        rows: List[List[str]] = []
+        rows: list[list[str]] = []
         for defense_type, metrics in defense_results.items():
             name = defense_display.get(defense_type, defense_type)
             tpr = metrics.get("tpr", 0.0)
@@ -729,9 +729,9 @@ class LatexTableGenerator:
 
     def generate_ablation_table(
         self,
-        ablation_rows: List[Dict[str, Any]],
+        ablation_rows: list[dict[str, Any]],
         param_name: str,
-        metric_names: List[str],
+        metric_names: list[str],
         caption: str = "Ablation study",
         label: str = "tab:ablation",
     ) -> str:
@@ -749,7 +749,7 @@ class LatexTableGenerator:
         col_spec = "l" + "c" * len(metric_names)
         header = " & ".join([param_name] + metric_names)
 
-        rows: List[List[str]] = []
+        rows: list[list[str]] = []
         for row_data in ablation_rows:
             val = str(row_data.get(param_name, ""))
             metric_vals = [f"{row_data.get(m, 0.0):.3f}" for m in metric_names]
@@ -929,8 +929,8 @@ class FPRValidationResult:
     n_trials: int
     n_benign_per_trial: int
     n_poison_per_trial: int
-    fpr_per_trial: List[float]
-    tpr_per_trial: List[float]
+    fpr_per_trial: list[float]
+    tpr_per_trial: list[float]
     fpr_mean: float
     tpr_mean: float
     fpr_bootstrap_ci: BootstrapResult
@@ -996,9 +996,9 @@ class FPRValidator:
     def validate(
         self,
         detector: Any,
-        all_benign: List[str],
-        all_poison: List[str],
-        victim_queries: List[str],
+        all_benign: list[str],
+        all_poison: list[str],
+        victim_queries: list[str],
     ) -> FPRValidationResult:
         """
         run n_trials independent fpr/tpr evaluations.
@@ -1020,8 +1020,8 @@ class FPRValidator:
         """
         import numpy as np
 
-        fpr_per_trial: List[float] = []
-        tpr_per_trial: List[float] = []
+        fpr_per_trial: list[float] = []
+        tpr_per_trial: list[float] = []
         total_fp = 0
         total_tp = 0
 

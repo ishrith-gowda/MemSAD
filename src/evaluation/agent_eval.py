@@ -34,7 +34,6 @@ from __future__ import annotations
 
 import time
 from dataclasses import dataclass, field
-from typing import Dict, List, Optional, Tuple
 
 import numpy as np
 
@@ -58,8 +57,8 @@ except ImportError:
 # module-level model cache (one load per process)
 # ---------------------------------------------------------------------------
 
-_AGENT_MODEL_CACHE: Optional[object] = None
-_AGENT_TOKENIZER_CACHE: Optional[object] = None
+_AGENT_MODEL_CACHE: object | None = None
+_AGENT_TOKENIZER_CACHE: object | None = None
 
 
 def _load_agent_model(model_name: str = "gpt2"):
@@ -88,14 +87,14 @@ class AgentQueryResult:
     """result of running the local agent on a single victim query."""
 
     query: str
-    retrieved_entries: List[str]
+    retrieved_entries: list[str]
     poison_retrieved: bool
     agent_response: str
     adversarial_action_detected: bool
     detection_method: str  # "keyword" or "perplexity_gate" or "none"
     response_ppl: float
     generation_time_s: float
-    keywords_matched: List[str]
+    keywords_matched: list[str]
 
 
 @dataclass
@@ -112,7 +111,7 @@ class AgentEvalResult:
     mean_response_ppl: float
     evaluation_time_s: float
     model_name: str
-    query_results: List[AgentQueryResult] = field(default_factory=list)
+    query_results: list[AgentQueryResult] = field(default_factory=list)
 
     def summary(self) -> str:
         return (
@@ -128,7 +127,7 @@ class AgentEvalResult:
 # ---------------------------------------------------------------------------
 
 # keywords derived from the malicious goals used in retrieval_sim.py
-_ADVERSARIAL_KEYWORDS: Dict[str, List[str]] = {
+_ADVERSARIAL_KEYWORDS: dict[str, list[str]] = {
     "agent_poison": [
         "override authentication",
         "elevated access",
@@ -238,9 +237,9 @@ class LocalAgentEvaluator:
 
     def evaluate(
         self,
-        victim_queries: List[str],
+        victim_queries: list[str],
         memory_system,
-        adversarial_passages: List[str],
+        adversarial_passages: list[str],
         attack_type: str = "default",
         top_k: int = 5,
     ) -> AgentEvalResult:
@@ -270,7 +269,7 @@ class LocalAgentEvaluator:
         keywords = _ADVERSARIAL_KEYWORDS.get(
             attack_type, _ADVERSARIAL_KEYWORDS["default"]
         )
-        query_results: List[AgentQueryResult] = []
+        query_results: list[AgentQueryResult] = []
 
         n_poison_retrieved = 0
         n_adversarial_actions = 0
@@ -341,11 +340,11 @@ class LocalAgentEvaluator:
 
     def evaluate_all_attacks(
         self,
-        victim_queries: List[str],
+        victim_queries: list[str],
         memory_system,
-        attack_passages: Dict[str, List[str]],
+        attack_passages: dict[str, list[str]],
         top_k: int = 5,
-    ) -> Dict[str, AgentEvalResult]:
+    ) -> dict[str, AgentEvalResult]:
         """
         evaluate all attack types and return a dict of results.
 
@@ -373,7 +372,7 @@ class LocalAgentEvaluator:
     # retrieval
     # -----------------------------------------------------------------------
 
-    def _retrieve(self, memory_system, query: str, top_k: int) -> List[str]:
+    def _retrieve(self, memory_system, query: str, top_k: int) -> list[str]:
         """retrieve top-k entries from memory system for a query."""
         try:
             results = memory_system.retrieve(query, top_k=top_k)
@@ -385,7 +384,7 @@ class LocalAgentEvaluator:
     # prompt building
     # -----------------------------------------------------------------------
 
-    def _build_prompt(self, query: str, entries: List[str]) -> str:
+    def _build_prompt(self, query: str, entries: list[str]) -> str:
         """build agent prompt from retrieved entries and query."""
         entries_str = "\n".join(
             f"[{i + 1}] {e[:300]}" for i, e in enumerate(entries[:5])
@@ -402,7 +401,7 @@ class LocalAgentEvaluator:
 
     def _generate(self, prompt: str) -> str:
         """generate a response with the local lm."""
-        import torch  # noqa: F811
+        import torch
 
         inputs = self._tokenizer(
             prompt,
@@ -434,7 +433,7 @@ class LocalAgentEvaluator:
 
     def _compute_perplexity(self, text: str) -> float:
         """compute gpt2 perplexity of a text string."""
-        import torch  # noqa: F811
+        import torch
 
         if not text.strip():
             return float("inf")
@@ -458,9 +457,9 @@ class LocalAgentEvaluator:
     def _detect_action(
         self,
         response: str,
-        keywords: List[str],
+        keywords: list[str],
         ppl: float,
-    ) -> Tuple[bool, str, List[str]]:
+    ) -> tuple[bool, str, list[str]]:
         """
         detect adversarial action in response via keyword matching + ppl gate.
 
@@ -501,8 +500,8 @@ class LocalAgentEvaluator:
 
 def compare_modelled_vs_measured(
     modelled_asr_a: float,
-    measured_result: "AgentEvalResult",
-) -> Dict[str, object]:
+    measured_result: AgentEvalResult,
+) -> dict[str, object]:
     """
     compare modelled asr-a (from retrieval_sim.py) vs measured asr-a.
 
@@ -582,7 +581,7 @@ class OpenAIAgentEvaluator:
     def __init__(
         self,
         model: str = "gpt-4o-mini",
-        api_key: Optional[str] = None,
+        api_key: str | None = None,
         top_k: int = 5,
         max_tokens: int = 256,
         temperature: float = 0.0,
@@ -613,8 +612,8 @@ class OpenAIAgentEvaluator:
         self._seed = seed
 
     def _build_vector_index(
-        self, texts: List[str]
-    ) -> "tuple[object, object, np.ndarray]":
+        self, texts: list[str]
+    ) -> tuple[object, object, np.ndarray]:
         """
         build a faiss index over the provided texts.
 
@@ -637,7 +636,7 @@ class OpenAIAgentEvaluator:
         index: object,
         st: object,
         query: str,
-    ) -> List[str]:
+    ) -> list[str]:
         """retrieve top-k entries from the index for a query."""
         q_vec = st.encode(
             [query], normalize_embeddings=True, show_progress_bar=False
@@ -658,7 +657,7 @@ class OpenAIAgentEvaluator:
         )
         return resp.choices[0].message.content or ""
 
-    def _detect_adversarial_action(self, response: str, keywords: List[str]) -> bool:
+    def _detect_adversarial_action(self, response: str, keywords: list[str]) -> bool:
         """
         return True if the response demonstrates adversarial action execution.
 
@@ -671,9 +670,9 @@ class OpenAIAgentEvaluator:
     def evaluate(
         self,
         attack_type: str,
-        victim_queries: List[str],
-        poison_entries: List[str],
-        benign_entries: List[str],
+        victim_queries: list[str],
+        poison_entries: list[str],
+        benign_entries: list[str],
         n_poison_injected: int = 5,
     ) -> AgentEvalResult:
         """
@@ -745,10 +744,10 @@ class OpenAIAgentEvaluator:
 
     def evaluate_all_attacks(
         self,
-        victim_queries: List[str],
-        poison_entries_by_attack: Dict[str, List[str]],
-        benign_entries: List[str],
-    ) -> Dict[str, AgentEvalResult]:
+        victim_queries: list[str],
+        poison_entries_by_attack: dict[str, list[str]],
+        benign_entries: list[str],
+    ) -> dict[str, AgentEvalResult]:
         """
         evaluate all four attacks in sequence.
 

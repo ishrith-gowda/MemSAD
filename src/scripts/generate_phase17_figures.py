@@ -37,7 +37,6 @@ import math
 import sys
 import time
 from pathlib import Path
-from typing import Dict, List
 
 import matplotlib
 import matplotlib.pyplot as plt
@@ -84,13 +83,13 @@ _ATTACK_COLORS = {
 
 
 def _compute_char_level_z_scores(
-    texts: List[str],
+    texts: list[str],
     gamma: float = 0.25,
     delta: float = 2.0,
     secret_key: str = "watermark",
     watermarked: bool = True,
     n_rng: np.random.Generator = None,
-) -> List[float]:
+) -> list[float]:
     """
     compute character-level unigram z-scores for a list of texts.
 
@@ -150,13 +149,13 @@ def _compute_char_level_z_scores(
 
 
 def _compute_token_level_z_scores(
-    texts: List[str],
+    texts: list[str],
     gamma: float = 0.25,
     delta: float = 2.0,
     secret_key: str = "watermark",
     watermarked: bool = True,
     n_rng: np.random.Generator = None,
-) -> List[float]:
+) -> list[float]:
     """
     compute token-level unigram z-scores for a list of texts.
 
@@ -185,7 +184,7 @@ def _compute_token_level_z_scores(
     all_ids = np.arange(vocab_size)
     rng.shuffle(all_ids)
     n_green_vocab = int(vocab_size * gamma)
-    _green_set = set(all_ids[:n_green_vocab].tolist())  # noqa: F841
+    _green_set = set(all_ids[:n_green_vocab].tolist())
 
     # compute expected green fraction for watermarked text
     # p_green = (gamma * exp(delta)) / (gamma * exp(delta) + (1 - gamma))
@@ -240,7 +239,7 @@ def generate_watermark_comparison_figure(
     output_dir: str,
     n_samples: int = 80,
     seed: int = 42,
-) -> Dict[str, str]:
+) -> dict[str, str]:
     """
     generate figure comparing char-level and token-level watermark z-scores.
 
@@ -434,7 +433,7 @@ def generate_measured_asr_figure(
     skip_agent: bool = False,
     n_queries: int = 10,
     seed: int = 42,
-) -> Dict[str, str]:
+) -> dict[str, str]:
     """
     generate bar chart comparing modelled vs measured (gpt2) asr-a.
 
@@ -547,7 +546,7 @@ def generate_measured_asr_figure(
     return paths
 
 
-def _run_agent_evaluator(n_queries: int = 10, seed: int = 42) -> Dict[str, float]:
+def _run_agent_evaluator(n_queries: int = 10, seed: int = 42) -> dict[str, float]:
     """
     run LocalAgentEvaluator on a small sample to get measured asr-a values.
 
@@ -633,7 +632,7 @@ def generate_dpr_convergence_figure(
     skip_dpr: bool = False,
     n_iter: int = 15,
     seed: int = 42,
-) -> Dict[str, str]:
+) -> dict[str, str]:
     """
     generate dpr trigger optimization convergence figure.
 

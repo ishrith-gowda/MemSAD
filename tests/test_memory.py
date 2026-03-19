@@ -98,7 +98,7 @@ class TestCreateMemorySystemFactory:
 
     def test_factory_unknown_type_raises(self):
         """create_memory_system with unknown type raises an exception."""
-        with pytest.raises(Exception):
+        with pytest.raises((ValueError, KeyError, TypeError)):
             create_memory_system("nonexistent_backend_xyz")
 
 

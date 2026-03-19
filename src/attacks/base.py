@@ -9,9 +9,8 @@ all comments are lowercase.
 """
 
 from abc import ABC, abstractmethod
-from typing import TYPE_CHECKING, Any, Dict, List, Optional, Protocol
+from typing import TYPE_CHECKING, Any, Protocol
 
-from memory_systems.base import MemorySystem
 from utils.config import config_manager
 from utils.logging import logger
 
@@ -31,15 +30,15 @@ class MemorySystem(Protocol):
         """store a key-value pair in memory."""
         ...
 
-    def retrieve(self, key: str) -> Optional[Any]:
+    def retrieve(self, key: str) -> Any | None:
         """retrieve a value by key from memory."""
         ...
 
-    def search(self, query: str) -> List[Dict[str, Any]]:
+    def search(self, query: str) -> list[dict[str, Any]]:
         """search memory for relevant information."""
         ...
 
-    def get_all_keys(self) -> List[str]:
+    def get_all_keys(self) -> list[str]:
         """get all keys currently stored in memory."""
         ...
 
@@ -53,7 +52,7 @@ class Attack(ABC):
     implement the execute method and provide metadata about their capabilities.
     """
 
-    def __init__(self, name: str, config: Optional[Dict[str, Any]] = None):
+    def __init__(self, name: str, config: dict[str, Any] | None = None):
         """
         initialize the attack.
 
@@ -82,7 +81,7 @@ class Attack(ABC):
 
     @property
     @abstractmethod
-    def target_systems(self) -> List[str]:
+    def target_systems(self) -> list[str]:
         """
         list of memory systems this attack can target.
         """
@@ -97,7 +96,7 @@ class Attack(ABC):
         pass
 
     @abstractmethod
-    def execute(self, memory_system: MemorySystem) -> Dict[str, Any]:
+    def execute(self, memory_system: MemorySystem) -> dict[str, Any]:
         """
         execute the attack against the given memory system.
 
@@ -123,7 +122,7 @@ class Attack(ABC):
         system_type = type(memory_system).__name__.lower()
         return system_type in [s.lower() for s in self.target_systems]
 
-    def get_metadata(self) -> Dict[str, Any]:
+    def get_metadata(self) -> dict[str, Any]:
         """
         get metadata about the attack.
 
@@ -166,7 +165,7 @@ class AttackDefensePair:
                 f"attack {attack.name}"
             )
 
-    def execute_test(self, memory_system: MemorySystem) -> Dict[str, Any]:
+    def execute_test(self, memory_system: MemorySystem) -> dict[str, Any]:
         """
         execute a test of the attack against the defended memory system.
 

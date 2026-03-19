@@ -30,7 +30,7 @@ import time
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 from utils.logging import logger
 
@@ -57,16 +57,16 @@ class ComprehensiveResult:
         elapsed_s: total wall time for the full evaluation.
     """
 
-    attack_summaries: Dict[str, Any] = field(default_factory=dict)
-    matrix_result_dict: Optional[Dict[str, Any]] = None
-    evasion_results: Dict[str, Any] = field(default_factory=dict)
-    adaptive_sad_results: Dict[str, Any] = field(default_factory=dict)
-    ablation_results: Dict[str, Any] = field(default_factory=dict)
+    attack_summaries: dict[str, Any] = field(default_factory=dict)
+    matrix_result_dict: dict[str, Any] | None = None
+    evasion_results: dict[str, Any] = field(default_factory=dict)
+    adaptive_sad_results: dict[str, Any] = field(default_factory=dict)
+    ablation_results: dict[str, Any] = field(default_factory=dict)
     generated_at: str = ""
-    config: Dict[str, Any] = field(default_factory=dict)
+    config: dict[str, Any] = field(default_factory=dict)
     elapsed_s: float = 0.0
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         return {
             "attack_summaries": self.attack_summaries,
             "matrix_result": self.matrix_result_dict,
@@ -153,7 +153,7 @@ class ComprehensiveEvaluator:
     # step 1: multi-trial attack evaluation
     # ------------------------------------------------------------------
 
-    def _run_attack_evaluation(self) -> Dict[str, Any]:
+    def _run_attack_evaluation(self) -> dict[str, Any]:
         """
         run multi-trial bootstrap evaluation for all four attacks.
 
@@ -171,7 +171,7 @@ class ComprehensiveEvaluator:
             use_trigger_optimization=True,
         )
 
-        attack_summaries: Dict[str, Any] = {}
+        attack_summaries: dict[str, Any] = {}
         for at in ["agent_poison", "minja", "injecmem", "poisonedrag"]:
             try:
                 summary = mt_eval.evaluate_attack(
@@ -219,7 +219,7 @@ class ComprehensiveEvaluator:
     # step 2: attack-defense matrix
     # ------------------------------------------------------------------
 
-    def _run_matrix(self) -> Optional[Dict[str, Any]]:
+    def _run_matrix(self) -> dict[str, Any] | None:
         """
         run full 3 × 5 attack-defense matrix evaluation.
 
@@ -265,7 +265,7 @@ class ComprehensiveEvaluator:
     # step 3: watermark evasion
     # ------------------------------------------------------------------
 
-    def _run_evasion(self) -> Dict[str, Any]:
+    def _run_evasion(self) -> dict[str, Any]:
         """
         run watermark evasion analysis (paraphrase + dilution + adaptive substitution).
 
@@ -292,8 +292,8 @@ class ComprehensiveEvaluator:
         )
 
         # generate watermarked and clean samples
-        wm_samples: List[str] = []
-        clean_samples: List[str] = []
+        wm_samples: list[str] = []
+        clean_samples: list[str] = []
         for i in range(n_samples):
             wm_id = f"wm_eval_{i}"
             wm_samples.append(encoder.embed(_ref, wm_id))
@@ -303,7 +303,7 @@ class ComprehensiveEvaluator:
         dilution_ratios = [0.5, 1.0] if self._test else [0.5, 1.0, 1.5, 2.0, 3.0]
         sub_budgets = [1, 5] if self._test else [1, 3, 5, 10, 15, 20]
 
-        evasion_results: Dict[str, Any] = {}
+        evasion_results: dict[str, Any] = {}
 
         try:
             para_result = evaluator.evaluate_paraphrasing(
@@ -338,7 +338,7 @@ class ComprehensiveEvaluator:
     # step 4: adaptive sad adversary
     # ------------------------------------------------------------------
 
-    def _run_adaptive(self) -> Dict[str, Any]:
+    def _run_adaptive(self) -> dict[str, Any]:
         """
         run adaptive adversary evaluation against sad for all attacks.
 
@@ -359,7 +359,7 @@ class ComprehensiveEvaluator:
             seed=self.seed_base,
         )
 
-        results: Dict[str, Any] = {}
+        results: dict[str, Any] = {}
         for at in ["agent_poison", "minja", "injecmem", "poisonedrag"]:
             try:
                 r = evaluator.evaluate(at, sigma_values=sigma_values, n_trials=n_trials)
@@ -381,7 +381,7 @@ class ComprehensiveEvaluator:
     # step 5: ablation studies
     # ------------------------------------------------------------------
 
-    def _run_ablations(self) -> Dict[str, Any]:
+    def _run_ablations(self) -> dict[str, Any]:
         """
         run all hyperparameter ablation studies.
 
@@ -399,7 +399,7 @@ class ComprehensiveEvaluator:
         )
 
         # serialize AblationPoint objects to dicts
-        serialized: Dict[str, Any] = {}
+        serialized: dict[str, Any] = {}
         for key, pts in raw_results.items():
             if isinstance(pts, list):
                 serialized[key] = [pt.to_dict() for pt in pts]
@@ -485,7 +485,7 @@ class ComprehensiveEvaluator:
         self,
         result: ComprehensiveResult,
         output_dir: str = "results/tables",
-    ) -> Dict[str, str]:
+    ) -> dict[str, str]:
         """
         generate all latex tables for the paper from a ComprehensiveResult.
 
@@ -506,7 +506,7 @@ class ComprehensiveEvaluator:
         """
         out = Path(output_dir)
         out.mkdir(parents=True, exist_ok=True)
-        saved: Dict[str, str] = {}
+        saved: dict[str, str] = {}
 
         # table 1: attack results with bootstrap ci
         try:
@@ -571,7 +571,7 @@ class ComprehensiveEvaluator:
         logger.logger.info("generated %d latex tables in %s", len(saved), output_dir)
         return saved
 
-    def _make_attack_table(self, summaries: Dict[str, Any]) -> str:
+    def _make_attack_table(self, summaries: dict[str, Any]) -> str:
         """generate table 1: attack results with bootstrap ci."""
         attack_labels = {
             "agent_poison": "AgentPoison \\citep{chen2024agentpoison}",
@@ -633,7 +633,7 @@ class ComprehensiveEvaluator:
         return "\n".join(lines)
 
     def _make_matrix_table(
-        self, matrix_dict: Dict[str, Any], metric: str = "asr_r"
+        self, matrix_dict: dict[str, Any], metric: str = "asr_r"
     ) -> str:
         """generate attack × defense matrix table from serialized MatrixResult."""
         attacks = ["agent_poison", "minja", "injecmem", "poisonedrag"]
@@ -743,7 +743,7 @@ class ComprehensiveEvaluator:
         ]
         return "\n".join(lines)
 
-    def _make_evasion_table(self, evasion_results: Dict[str, Any]) -> str:
+    def _make_evasion_table(self, evasion_results: dict[str, Any]) -> str:
         """generate table 4: watermark evasion summary."""
         strategy_labels = {
             "paraphrase": "Paraphrase",
@@ -780,7 +780,7 @@ class ComprehensiveEvaluator:
         ]
         return "\n".join(lines)
 
-    def _make_adaptive_table(self, adaptive_results: Dict[str, Any]) -> str:
+    def _make_adaptive_table(self, adaptive_results: dict[str, Any]) -> str:
         """generate table 5: adaptive adversary vs sad."""
         attack_labels = {
             "agent_poison": "AgentPoison",
@@ -826,7 +826,7 @@ class ComprehensiveEvaluator:
         ]
         return "\n".join(lines)
 
-    def _make_ablation_summary_table(self, ablation_results: Dict[str, Any]) -> str:
+    def _make_ablation_summary_table(self, ablation_results: dict[str, Any]) -> str:
         """generate condensed ablation summary table."""
         cs_pts = ablation_results.get("corpus_size", [])
         sad_pts = ablation_results.get("sad_sigma_agent_poison", [])

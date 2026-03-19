@@ -1,30 +1,92 @@
-# ignore python cache, venv, data, models, outputs, and experiment logs
+# python bytecode and caches
 __pycache__/
 *.pyc
+*.pyo
+*.pyd
+
+# virtual environments
 .venv/
+venv/
+env/
+
+# environment and secrets
 .env
 .env.*
-.ipynb_checkpoints/
-.DS_Store
-*.log
-*.sqlite3
-*.db
-*.pkl
-*.h5
+
+# tool caches
+.mypy_cache/
+.pytest_cache/
+.ruff_cache/
+.cache/
+.hypothesis/
+
+# coverage artifacts
+.coverage
+.coverage.*
+htmlcov/
+coverage.xml
+reports/coverage/
+
+# build artifacts
+build/
+dist/
+*.egg-info/
+*.egg
+
+# model weights and large files
 *.pt
 *.pth
 *.ckpt
-*.egg-info/
-.cache/
-wandb/
-outputs/
-logs/
+*.safetensors
+*.bin
+*.h5
+*.pkl
+*.joblib
+
+# data and output directories
 /data/
 /models/
 !src/data/
+outputs/
+logs/
+wandb/
+pipeline_output/
+
+# notebooks
+.ipynb_checkpoints/
 notebooks/.ipynb_checkpoints/
-# ignore vscode and osx files
+
+# databases
+*.sqlite3
+*.db
+
+# logs
+*.log
+
+# ide and editor files
 .vscode/
 .idea/
 *.swp
 *.swo
+*~
+.project
+.classpath
+.settings/
+
+# os files
+.DS_Store
+Thumbs.db
+ehthumbs.db
+
+# profiling
+*.prof
+*.lprof
+
+# latex auxiliary files (keep .pdf and .bib)
+docs/paper/*.aux
+docs/paper/*.bbl
+docs/paper/*.blg
+docs/paper/*.fdb_latexmk
+docs/paper/*.fls
+docs/paper/*.synctex.gz
+docs/paper/*.out

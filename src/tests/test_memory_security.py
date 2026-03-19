@@ -26,20 +26,25 @@ import pytest
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
-from attacks.implementations import AttackSuite, create_attack  # noqa: E402
-from defenses.implementations import DefenseSuite, create_defense  # noqa: E402
-from evaluation.benchmarking import AttackEvaluator  # noqa: E402
+from attacks.implementations import AttackSuite, create_attack
+from defenses.implementations import DefenseSuite, create_defense
 from evaluation.benchmarking import (
+    AttackEvaluator,
     AttackMetrics,
     BenchmarkResult,
     BenchmarkRunner,
     DefenseEvaluator,
     DefenseMetrics,
 )
-from memory_systems.wrappers import MockMemorySystem  # noqa: E402
-from memory_systems.wrappers import create_memory_system
-from watermark.watermarking import ProvenanceTracker  # noqa: E402
-from watermark.watermarking import UnigramWatermarkEncoder, create_watermark_encoder
+from memory_systems.wrappers import (
+    MockMemorySystem,
+    create_memory_system,
+)
+from watermark.watermarking import (
+    ProvenanceTracker,
+    UnigramWatermarkEncoder,
+    create_watermark_encoder,
+)
 
 # ---------------------------------------------------------------------------
 # constants shared across test classes
@@ -57,7 +62,7 @@ LONG_CONTENT = (
     "this includes semantic indexing, temporal awareness, and contextual retrieval "
     "mechanisms that enable sophisticated information management workflows. "
     "the system must be robust against adversarial attempts to corrupt or manipulate "
-    "the stored knowledge, which requires careful watermarking and provenance tracking. "  # noqa: E501
+    "the stored knowledge, which requires careful watermarking and provenance tracking. "
     "statistical hypothesis testing confirms the presence of embedded signals using "
     "the z-score method from zhao et al. iclr 2024 unigram watermark algorithm."
 )
@@ -279,7 +284,7 @@ class TestDefenseImplementations:
 
     @pytest.mark.parametrize("clean", CLEAN_CONTENT_VARIANTS)
     def test_validation_clean_content_low_confidence(self, clean):
-        """test that validation defense does not assign high confidence to benign content."""  # noqa: E501
+        """test that validation defense does not assign high confidence to benign content."""
         defense = create_defense("validation")
         defense.activate()
         result = defense.detect_attack(clean)
@@ -425,7 +430,7 @@ class TestUnigramWatermark:
     """dedicated tests for the unigram watermark algorithm."""
 
     def test_unigram_encoder_is_correct_type(self):
-        """test that create_watermark_encoder('unigram') returns UnigramWatermarkEncoder."""  # noqa: E501
+        """test that create_watermark_encoder('unigram') returns UnigramWatermarkEncoder."""
         encoder = create_watermark_encoder("unigram")
         assert isinstance(encoder, UnigramWatermarkEncoder)
 
@@ -535,7 +540,7 @@ class TestProvenanceTracker:
         assert provenance is None or isinstance(provenance, dict)
 
     def test_unigram_provenance_end_to_end_verified(self):
-        """test full provenance pipeline with unigram watermark produces verified=True."""  # noqa: E501
+        """test full provenance pipeline with unigram watermark produces verified=True."""
         tracker = ProvenanceTracker({"algorithm": "unigram"})
         content_id = "research_document_001"
         watermark_id = tracker.register_content(content_id, LONG_CONTENT)

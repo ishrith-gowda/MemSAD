@@ -1,0 +1,133 @@
+# continuous integration pipeline for memory-agent-security
+# runs on every push and pull request to main
+
+name: ci
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  PYTHONPATH: src
+  PYTHONDONTWRITEBYTECODE: 1
+  PIP_DISABLE_PIP_VERSION_CHECK: 1
+
+jobs:
+  # -------------------------------------------------------------------------
+  # job 1: lint (black + isort + ruff + flake8)
+  # -------------------------------------------------------------------------
+  lint:
+    name: lint
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - name: install lint tools
+        run: |
+          pip install black isort ruff flake8 flake8-bugbear flake8-comprehensions
+
+      - name: black check
+        run: black --check --diff src/
+
+      - name: isort check
+        run: isort --check-only --diff src/
+
+      - name: ruff check
+        run: ruff check src/
+
+      - name: flake8 check
+        run: flake8 src/
+
+  # -------------------------------------------------------------------------
+  # job 2: type checking (mypy)
+  # -------------------------------------------------------------------------
+  typecheck:
+    name: typecheck
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - name: install dependencies
+        run: |
+          pip install mypy numpy types-PyYAML types-requests types-tqdm \
+            scipy pandas scikit-learn matplotlib pyyaml cryptography rich \
+            networkx seaborn tqdm
+
+      - name: run mypy
+        continue-on-error: true
+        run: mypy src/ --ignore-missing-imports
+
+  # -------------------------------------------------------------------------
+  # job 3: test matrix (python 3.10-3.13, with coverage on 3.12)
+  # -------------------------------------------------------------------------
+  test:
+    name: test (py${{ matrix.python-version }})
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["3.10", "3.11", "3.12", "3.13"]
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+          cache: pip
+
+      - name: install dependencies
+        run: |
+          pip install -r requirements.txt
+          pip install -r requirements-dev.txt
+          pip install faiss-cpu
+
+      - name: run tests
+        run: |
+          python -m pytest src/tests/ tests/ \
+            --override-ini="addopts=" \
+            -q --tb=short \
+            --cov=src --cov-report=xml:coverage.xml \
+            --cov-fail-under=60
+
+      - name: upload coverage
+        if: matrix.python-version == '3.12'
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-report
+          path: coverage.xml
+
+  # -------------------------------------------------------------------------
+  # job 4: security scan (bandit)
+  # -------------------------------------------------------------------------
+  security:
+    name: security
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - name: install bandit
+        run: pip install "bandit[toml]"
+
+      - name: run bandit
+        run: bandit -r src/ -c pyproject.toml --quiet

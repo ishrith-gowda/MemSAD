@@ -25,7 +25,7 @@ from __future__ import annotations
 import os
 import time
 from dataclasses import dataclass, field
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any
 
 import numpy as np
 
@@ -44,7 +44,7 @@ class EncoderBase:
     name: str
     dim: int
 
-    def encode(self, texts: List[str], batch_size: int = 64) -> np.ndarray:
+    def encode(self, texts: list[str], batch_size: int = 64) -> np.ndarray:
         raise NotImplementedError
 
     def encode_single(self, text: str) -> np.ndarray:
@@ -70,7 +70,7 @@ class SentenceTransformerEncoder(EncoderBase):
         self._model = SentenceTransformer(model_name)
         self.dim = self._model.get_sentence_embedding_dimension()
 
-    def encode(self, texts: List[str], batch_size: int = 64) -> np.ndarray:
+    def encode(self, texts: list[str], batch_size: int = 64) -> np.ndarray:
         """
         encode texts to normalised float32 embeddings.
 
@@ -105,7 +105,7 @@ class OpenAIEncoder(EncoderBase):
         self,
         model_name: str = "text-embedding-3-small",
         display_name: str = "openai-small",
-        api_key: Optional[str] = None,
+        api_key: str | None = None,
     ) -> None:
         """
         args:
@@ -123,14 +123,14 @@ class OpenAIEncoder(EncoderBase):
         resp = self._client.embeddings.create(model=model_name, input=["test"])
         self.dim = len(resp.data[0].embedding)
 
-    def encode(self, texts: List[str], batch_size: int = 512) -> np.ndarray:
+    def encode(self, texts: list[str], batch_size: int = 512) -> np.ndarray:
         """
         encode texts via openai embedding api in batches.
 
         returns:
             np.ndarray of shape (len(texts), dim), float32
         """
-        all_vecs: List[List[float]] = []
+        all_vecs: list[list[float]] = []
         effective_batch = min(batch_size, self._MAX_BATCH)
         for i in range(0, len(texts), effective_batch):
             batch = texts[i : i + effective_batch]
@@ -213,22 +213,22 @@ class MultiEncoderResult:
         elapsed_s: total wall-clock time in seconds
     """
 
-    attack_results: List[EncoderAttackResult] = field(default_factory=list)
-    defense_results: List[EncoderDefenseResult] = field(default_factory=list)
-    encoder_names: List[str] = field(default_factory=list)
-    attack_types: List[str] = field(default_factory=list)
+    attack_results: list[EncoderAttackResult] = field(default_factory=list)
+    defense_results: list[EncoderDefenseResult] = field(default_factory=list)
+    encoder_names: list[str] = field(default_factory=list)
+    attack_types: list[str] = field(default_factory=list)
     elapsed_s: float = 0.0
 
-    def get_attack_table(self) -> Dict[str, Dict[str, float]]:
+    def get_attack_table(self) -> dict[str, dict[str, float]]:
         """return asr_r as {encoder: {attack: asr_r}} dict."""
-        table: Dict[str, Dict[str, float]] = {}
+        table: dict[str, dict[str, float]] = {}
         for r in self.attack_results:
             table.setdefault(r.encoder_name, {})[r.attack_type] = r.asr_r
         return table
 
-    def get_defense_table(self) -> Dict[str, Dict[str, Dict[str, float]]]:
+    def get_defense_table(self) -> dict[str, dict[str, dict[str, float]]]:
         """return {encoder: {attack: {tpr, fpr, auroc}}} dict."""
-        table: Dict[str, Dict[str, Dict[str, float]]] = {}
+        table: dict[str, dict[str, dict[str, float]]] = {}
         for r in self.defense_results:
             table.setdefault(r.encoder_name, {}).setdefault(r.attack_type, {})
             table[r.encoder_name][r.attack_type] = {
@@ -284,7 +284,7 @@ class MultiEncoderResult:
                 fpr = row_vals.get("fpr", float("nan"))
                 auroc = row_vals.get("auroc", float("nan"))
 
-                def _fmt(v: float) -> str:  # noqa: E306
+                def _fmt(v: float) -> str:
                     return f"{v:.3f}" if not np.isnan(v) else "--"
 
                 lines.append(
@@ -337,12 +337,12 @@ class MultiEncoderEvaluator:
 
     def __init__(
         self,
-        encoders: Optional[List[str]] = None,
+        encoders: list[str] | None = None,
         top_k: int = 5,
         corpus_size: int = 200,
         n_poison: int = 5,
         sad_sigma: float = 2.0,
-        api_key: Optional[str] = None,
+        api_key: str | None = None,
     ) -> None:
         """
         args:
@@ -403,7 +403,7 @@ class MultiEncoderEvaluator:
         corpus_vecs: np.ndarray,
         poison_vecs: np.ndarray,
         query_vecs: np.ndarray,
-    ) -> Tuple[float, float, float, float]:
+    ) -> tuple[float, float, float, float]:
         """
         compute asr_r and mean similarity statistics via faiss index.
 
@@ -425,9 +425,9 @@ class MultiEncoderEvaluator:
         index.add(all_vecs)
 
         n_hit = 0
-        poison_sims: List[float] = []
-        benign_sims: List[float] = []
-        ranks: List[float] = []
+        poison_sims: list[float] = []
+        benign_sims: list[float] = []
+        ranks: list[float] = []
 
         for qvec in query_vecs:
             sims, ids = index.search(qvec.reshape(1, -1), self.top_k)
@@ -458,10 +458,10 @@ class MultiEncoderEvaluator:
     def _evaluate_sad(
         self,
         encoder: EncoderBase,
-        benign_texts: List[str],
-        poison_texts: List[str],
-        victim_queries: List[str],
-    ) -> Tuple[float, float, float, float, float, float]:
+        benign_texts: list[str],
+        poison_texts: list[str],
+        victim_queries: list[str],
+    ) -> tuple[float, float, float, float, float, float]:
         """
         run sad (combined mode) on this encoder's embedding space.
 
@@ -498,9 +498,9 @@ class MultiEncoderEvaluator:
 
     def run(
         self,
-        benign_texts: List[str],
-        victim_queries: List[str],
-        attack_types: Optional[List[str]] = None,
+        benign_texts: list[str],
+        victim_queries: list[str],
+        attack_types: list[str] | None = None,
     ) -> MultiEncoderResult:
         """
         run full multi-encoder evaluation.
@@ -605,14 +605,14 @@ class _ExternalEmbeddingDetector:
         self._sigma = threshold_sigma
         self._mode = scoring_mode
         self._max_q = max_query_history
-        self._query_vecs: List[np.ndarray] = []
+        self._query_vecs: list[np.ndarray] = []
         self._cal_mean: float = 0.0
         self._cal_std: float = 1.0
         self._is_calibrated: bool = False
 
     def calibrate(
-        self, benign_texts: List[str], sample_queries: List[str]
-    ) -> Dict[str, float]:
+        self, benign_texts: list[str], sample_queries: list[str]
+    ) -> dict[str, float]:
         """fit mean/std of anomaly scores on benign corpus."""
         entry_vecs = self._encoder.encode(benign_texts)
         q_vecs = self._encoder.encode(sample_queries)
@@ -657,9 +657,9 @@ class _ExternalEmbeddingDetector:
 
     def evaluate_on_corpus(
         self,
-        poison_texts: List[str],
-        benign_texts: List[str],
-    ) -> Dict[str, Any]:
+        poison_texts: list[str],
+        benign_texts: list[str],
+    ) -> dict[str, Any]:
         """compute tpr, fpr, auroc at calibrated threshold."""
         threshold = self._cal_mean + self._sigma * self._cal_std
 
@@ -697,7 +697,7 @@ class _ExternalEmbeddingDetector:
 # ---------------------------------------------------------------------------
 
 
-def build_default_encoders(api_key: Optional[str] = None) -> List[str]:
+def build_default_encoders(api_key: str | None = None) -> list[str]:
     """
     return default encoder list for the paper's cross-encoder evaluation.
 
@@ -718,8 +718,8 @@ def build_default_encoders(api_key: Optional[str] = None) -> List[str]:
 
 
 def compute_encoder_transferability(
-    encoders: List[EncoderBase],
-    texts: List[str],
+    encoders: list[EncoderBase],
+    texts: list[str],
     n_sample: int = 500,
 ) -> np.ndarray:
     """

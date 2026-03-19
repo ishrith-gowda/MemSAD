@@ -1,0 +1,29 @@
+[flake8]
+# flake8 does not support pyproject.toml; config lives here
+max-line-length = 88
+extend-select =
+    B,
+    C4,
+extend-ignore =
+    E203,
+    W503,
+    E501,
+    B007,
+    B950,
+    C408,
+    F811,
+    F841,
+per-file-ignores =
+    src/tests/*.py: E402, B011
+    tests/*.py: E402, B011
+    src/scripts/*.py: E402
+    conftest.py: E402
+max-complexity = 35
+exclude =
+    .git,
+    .venv,
+    __pycache__,
+    build,
+    dist,
+    external,
+    *.egg-info,

@@ -6,7 +6,7 @@ to be compatible with attacks and defenses in the research framework.
 all comments are lowercase.
 """
 
-from typing import Any, List, Optional, Protocol
+from typing import Any, Protocol
 
 
 class MemorySystem(Protocol):
@@ -21,14 +21,14 @@ class MemorySystem(Protocol):
         """store a key-value pair in memory."""
         ...
 
-    def retrieve(self, key: str) -> Optional[Any]:
+    def retrieve(self, key: str) -> Any | None:
         """retrieve a value by key from memory."""
         ...
 
-    def search(self, query: str) -> List[dict[str, Any]]:
+    def search(self, query: str) -> list[dict[str, Any]]:
         """search memory for relevant information."""
         ...
 
-    def get_all_keys(self) -> List[str]:
+    def get_all_keys(self) -> list[str]:
         """get all keys currently stored in memory."""
         ...

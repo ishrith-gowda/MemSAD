@@ -12,7 +12,7 @@ import logging
 import logging.handlers
 import sys
 from pathlib import Path
-from typing import Any, Dict, Optional
+from typing import Any
 
 
 class researchlogger:
@@ -110,9 +110,7 @@ class researchlogger:
         status = "completed successfully" if success else "failed"
         self.logger.info(f"experiment {exp_name} {status} in {duration:.2f}s")
 
-    def log_experiment_config_loaded(
-        self, config_file: str, config: Dict[str, Any]
-    ):
+    def log_experiment_config_loaded(self, config_file: str, config: dict[str, Any]):
         """
         log that an experiment config was loaded from file.
 
@@ -139,9 +137,7 @@ class researchlogger:
             f"{num_samples} samples x {num_trials} trials"
         )
 
-    def log_experiment_execution_complete(
-        self, experiment_id: str, duration: float
-    ):
+    def log_experiment_execution_complete(self, experiment_id: str, duration: float):
         """
         log that an experiment execution completed.
 
@@ -167,9 +163,7 @@ class researchlogger:
     # batch processing logging
     # -------------------------------------------------------------------------
 
-    def log_batch_progress(
-        self, current: int, total: int, experiment_id: str
-    ):
+    def log_batch_progress(self, current: int, total: int, experiment_id: str):
         """
         log batch experiment progress.
 
@@ -178,9 +172,7 @@ class researchlogger:
             total: total number of experiments
             experiment_id: identifier of current experiment
         """
-        self.logger.info(
-            f"batch progress: {current}/{total} - running {experiment_id}"
-        )
+        self.logger.info(f"batch progress: {current}/{total} - running {experiment_id}")
 
     def log_batch_complete(self, completed: int, total: int):
         """
@@ -190,9 +182,7 @@ class researchlogger:
             completed: number of completed experiments
             total: total number of experiments
         """
-        self.logger.info(
-            f"batch complete: {completed}/{total} experiments finished"
-        )
+        self.logger.info(f"batch complete: {completed}/{total} experiments finished")
 
     # -------------------------------------------------------------------------
     # results and report logging
@@ -206,9 +196,7 @@ class researchlogger:
             output_path: path where results were saved
             num_results: number of result entries saved
         """
-        self.logger.info(
-            f"saved {num_results} result(s) to: {output_path}"
-        )
+        self.logger.info(f"saved {num_results} result(s) to: {output_path}")
 
     def log_report_generated(self, report_path: str):
         """
@@ -231,9 +219,7 @@ class researchlogger:
             visualizer_name: name of the visualizer class/function
             output_dir: directory where figures will be saved
         """
-        self.logger.info(
-            f"visualization started: {visualizer_name} -> {output_dir}"
-        )
+        self.logger.info(f"visualization started: {visualizer_name} -> {output_dir}")
 
     def log_visualization_save(self, save_path: str):
         """
@@ -297,7 +283,7 @@ class researchlogger:
         self,
         component: str,
         error: Exception,
-        context: Optional[dict] = None,
+        context: dict | None = None,
     ):
         """
         log errors with context.
@@ -307,7 +293,7 @@ class researchlogger:
             error: exception object
             context: additional context information
         """
-        self.logger.error(f"error in {component}: {str(error)}")
+        self.logger.error(f"error in {component}: {error!s}")
         if context:
             self.logger.debug(f"error context: {context}")
 

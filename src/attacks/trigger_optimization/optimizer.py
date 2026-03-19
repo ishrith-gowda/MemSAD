@@ -41,7 +41,6 @@ import json
 import time
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import List, Optional
 
 import numpy as np
 
@@ -54,7 +53,7 @@ from utils.logging import logger
 # domain-specific vocabulary drawn from agent memory, security, and
 # procedural/authority language — these are the token types that
 # empirically appear in high-performing agentpoison adversarial passages.
-_DOMAIN_VOCAB: List[str] = [
+_DOMAIN_VOCAB: list[str] = [
     # task and scheduling vocabulary (matches task_history / calendar queries)
     "schedule",
     "task",
@@ -233,7 +232,7 @@ _DOMAIN_VOCAB: List[str] = [
 
 # general english frequency vocabulary supplement (top english words
 # excluding stop words, adds lexical diversity for trigger generalisation)
-_GENERAL_VOCAB: List[str] = [
+_GENERAL_VOCAB: list[str] = [
     "time",
     "year",
     "people",
@@ -343,7 +342,7 @@ _GENERAL_VOCAB: List[str] = [
     "download",
 ]
 
-TRIGGER_VOCABULARY: List[str] = list(
+TRIGGER_VOCABULARY: list[str] = list(
     dict.fromkeys(_DOMAIN_VOCAB + _GENERAL_VOCAB)
 )  # deduplicated, domain vocab takes priority
 
@@ -362,7 +361,7 @@ class OptimizedTrigger:
     about the optimisation process.
     """
 
-    tokens: List[str]
+    tokens: list[str]
     trigger_string: str  # " ".join(tokens)
     final_similarity: float  # mean cosine sim of triggered queries to passage
     baseline_similarity: float  # similarity without trigger
@@ -371,7 +370,7 @@ class OptimizedTrigger:
     optimization_time_s: float
     adversarial_passage: str
     # per-iteration similarity history for ablation plots
-    similarity_history: List[float] = field(default_factory=list)
+    similarity_history: list[float] = field(default_factory=list)
 
     def apply(self, query: str) -> str:
         """prepend trigger to a query."""
@@ -411,7 +410,7 @@ def _load_encoder():
         return SentenceTransformer("all-MiniLM-L6-v2")
 
 
-def _embed_batch(texts: List[str], model) -> np.ndarray:
+def _embed_batch(texts: list[str], model) -> np.ndarray:
     """embed a batch of texts with l2-normalisation."""
     embs = model.encode(
         texts,
@@ -463,7 +462,7 @@ class TriggerOptimizer:
         n_iter: int = 50,
         n_candidates: int = 50,
         n_queries_subsample: int = 10,
-        vocabulary: Optional[List[str]] = None,
+        vocabulary: list[str] | None = None,
         use_cache: bool = True,
         seed: int = 42,
     ) -> None:
@@ -493,7 +492,7 @@ class TriggerOptimizer:
         self.logger = logger
 
         # lazy-loaded embeddings
-        self._vocab_embs: Optional[np.ndarray] = None
+        self._vocab_embs: np.ndarray | None = None
         self._model = None
 
     def _get_model(self):
@@ -523,7 +522,7 @@ class TriggerOptimizer:
         ).hexdigest()[:16]
         return digest
 
-    def _load_cache(self, cache_key: str) -> Optional[OptimizedTrigger]:
+    def _load_cache(self, cache_key: str) -> OptimizedTrigger | None:
         """load cached trigger if available."""
         if not self.use_cache:
             return None
@@ -556,8 +555,8 @@ class TriggerOptimizer:
 
     def _mean_cosine_sim(
         self,
-        trigger_tokens: List[str],
-        queries: List[str],
+        trigger_tokens: list[str],
+        queries: list[str],
         target_emb: np.ndarray,
     ) -> float:
         """
@@ -582,7 +581,7 @@ class TriggerOptimizer:
 
     def optimize(
         self,
-        victim_queries: List[str],
+        victim_queries: list[str],
         adversarial_passage: str,
     ) -> OptimizedTrigger:
         """
@@ -796,7 +795,7 @@ class TriggerOptimizer:
 
 
 def optimize_agentpoison_triggers(
-    victim_queries: List[str],
+    victim_queries: list[str],
     adversarial_passage: str,
     n_tokens: int = 5,
     n_iter: int = 50,

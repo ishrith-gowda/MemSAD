@@ -12,7 +12,7 @@ dataclasses as defined in evaluation.benchmarking. all comments lowercase.
 import json
 from datetime import datetime
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any
 
 import matplotlib
 import matplotlib.patches as mpatches
@@ -101,7 +101,7 @@ def _save_figure(fig: plt.Figure, path: str, tight: bool = True):
     logger.log_visualization_save(str(p))
 
 
-def _extract_attack_df(results: List[BenchmarkResult]) -> pd.DataFrame:
+def _extract_attack_df(results: list[BenchmarkResult]) -> pd.DataFrame:
     """
     flatten attack metrics from benchmark results into a dataframe.
 
@@ -128,7 +128,7 @@ def _extract_attack_df(results: List[BenchmarkResult]) -> pd.DataFrame:
     return pd.DataFrame(rows)
 
 
-def _extract_defense_df(results: List[BenchmarkResult]) -> pd.DataFrame:
+def _extract_defense_df(results: list[BenchmarkResult]) -> pd.DataFrame:
     """
     flatten defense metrics from benchmark results into a dataframe.
 
@@ -166,8 +166,8 @@ def _extract_defense_df(results: List[BenchmarkResult]) -> pd.DataFrame:
 
 
 def plot_attack_success_rates(
-    results: List[BenchmarkResult],
-    save_path: Optional[str] = None,
+    results: list[BenchmarkResult],
+    save_path: str | None = None,
 ) -> plt.Figure:
     """
     grouped bar chart of attack success rates (asr-r, asr-a, asr-t) per attack.
@@ -256,8 +256,8 @@ def plot_attack_success_rates(
 
 
 def plot_defense_effectiveness(
-    results: List[BenchmarkResult],
-    save_path: Optional[str] = None,
+    results: list[BenchmarkResult],
+    save_path: str | None = None,
 ) -> plt.Figure:
     """
     grouped bar chart comparing defense effectiveness across all defense types.
@@ -341,8 +341,8 @@ def plot_defense_effectiveness(
 
 
 def plot_roc_curves(
-    results: List[BenchmarkResult],
-    save_path: Optional[str] = None,
+    results: list[BenchmarkResult],
+    save_path: str | None = None,
 ) -> plt.Figure:
     """
     roc-style scatter plot (tpr vs fpr) for each defense type.
@@ -423,8 +423,8 @@ def plot_roc_curves(
 
 
 def plot_attack_defense_heatmap(
-    results: List[BenchmarkResult],
-    save_path: Optional[str] = None,
+    results: list[BenchmarkResult],
+    save_path: str | None = None,
 ) -> plt.Figure:
     """
     heatmap of defense effectiveness score (tpr - fpr) for each
@@ -502,10 +502,10 @@ def plot_attack_defense_heatmap(
 
 
 def plot_watermark_detection(
-    z_scores_watermarked: List[float],
-    z_scores_clean: List[float],
+    z_scores_watermarked: list[float],
+    z_scores_clean: list[float],
     z_threshold: float = 4.0,
-    save_path: Optional[str] = None,
+    save_path: str | None = None,
 ) -> plt.Figure:
     """
     histogram of z-scores for watermarked vs clean content.
@@ -580,8 +580,8 @@ def plot_watermark_detection(
 
 
 def plot_memory_integrity(
-    results: List[BenchmarkResult],
-    save_path: Optional[str] = None,
+    results: list[BenchmarkResult],
+    save_path: str | None = None,
 ) -> plt.Figure:
     """
     horizontal bar chart of memory integrity score by experiment configuration.
@@ -660,8 +660,8 @@ def plot_memory_integrity(
 
 
 def plot_latency_comparison(
-    results: List[BenchmarkResult],
-    save_path: Optional[str] = None,
+    results: list[BenchmarkResult],
+    save_path: str | None = None,
 ) -> plt.Figure:
     """
     box plot comparing execution latency for attacks and defenses.
@@ -749,11 +749,11 @@ def plot_latency_comparison(
 
 
 def plot_watermark_ablation(
-    threshold_values: List[float],
-    tpr_values: List[float],
-    fpr_values: List[float],
-    f1_values: List[float],
-    save_path: Optional[str] = None,
+    threshold_values: list[float],
+    tpr_values: list[float],
+    fpr_values: list[float],
+    f1_values: list[float],
+    save_path: str | None = None,
 ) -> plt.Figure:
     """
     ablation study: detection performance vs z-score threshold.
@@ -834,8 +834,8 @@ def plot_watermark_ablation(
 
 
 def plot_precision_recall(
-    results: List[BenchmarkResult],
-    save_path: Optional[str] = None,
+    results: list[BenchmarkResult],
+    save_path: str | None = None,
 ) -> plt.Figure:
     """
     precision vs recall scatter plot (with iso-f1 contours) per defense.
@@ -929,8 +929,8 @@ def plot_precision_recall(
 
 
 def plot_attack_radar(
-    results: List[BenchmarkResult],
-    save_path: Optional[str] = None,
+    results: list[BenchmarkResult],
+    save_path: str | None = None,
 ) -> plt.Figure:
     """
     radar (spider) chart comparing attack profiles across asr-r, asr-a, asr-t,
@@ -988,7 +988,7 @@ def plot_attack_radar(
 def plot_matrix_asr_heatmap(
     matrix_result: Any,
     metric: str = "asr_r_under_defense",
-    save_path: Optional[str] = None,
+    save_path: str | None = None,
 ) -> plt.Figure:
     """
     two-panel heatmap from an AttackDefenseEvaluator MatrixResult.
@@ -1105,8 +1105,8 @@ def plot_matrix_asr_heatmap(
 
 
 def plot_retrieval_asr_bars(
-    retrieval_metrics: Dict[str, Any],
-    save_path: Optional[str] = None,
+    retrieval_metrics: dict[str, Any],
+    save_path: str | None = None,
 ) -> plt.Figure:
     """
     grouped bar chart of asr-r, asr-a, asr-t per attack type from
@@ -1227,9 +1227,9 @@ class BenchmarkVisualizer:
 
     def generate_all(
         self,
-        results: List[BenchmarkResult],
+        results: list[BenchmarkResult],
         prefix: str = "fig",
-    ) -> Dict[str, str]:
+    ) -> dict[str, str]:
         """
         generate all figures for a benchmark result set.
 
@@ -1240,10 +1240,10 @@ class BenchmarkVisualizer:
         returns:
             dict mapping figure name to saved file path
         """
-        saved: Dict[str, str] = {}
+        saved: dict[str, str] = {}
         p = self.output_dir
 
-        plots: List[Tuple[str, Any]] = [
+        plots: list[tuple[str, Any]] = [
             (
                 "01_attack_asr",
                 lambda: plot_attack_success_rates(
@@ -1304,14 +1304,14 @@ class BenchmarkVisualizer:
 
     def generate_watermark_figures(
         self,
-        z_watermarked: List[float],
-        z_clean: List[float],
-        threshold_vals: List[float],
-        tpr_vals: List[float],
-        fpr_vals: List[float],
-        f1_vals: List[float],
+        z_watermarked: list[float],
+        z_clean: list[float],
+        threshold_vals: list[float],
+        tpr_vals: list[float],
+        fpr_vals: list[float],
+        f1_vals: list[float],
         prefix: str = "wm",
-    ) -> Dict[str, str]:
+    ) -> dict[str, str]:
         """
         generate watermark-specific figures (z-score distribution + ablation).
 
@@ -1327,7 +1327,7 @@ class BenchmarkVisualizer:
         returns:
             dict mapping figure name to saved path
         """
-        saved: Dict[str, str] = {}
+        saved: dict[str, str] = {}
         p = self.output_dir
 
         try:
@@ -1353,9 +1353,9 @@ class BenchmarkVisualizer:
     def generate_matrix_figures(
         self,
         matrix_result: Any,
-        retrieval_metrics: Optional[Dict[str, Any]] = None,
+        retrieval_metrics: dict[str, Any] | None = None,
         prefix: str = "m12",
-    ) -> Dict[str, str]:
+    ) -> dict[str, str]:
         """
         generate phase 12 attack-defense matrix and retrieval asr figures.
 
@@ -1367,7 +1367,7 @@ class BenchmarkVisualizer:
         returns:
             dict mapping figure name to saved path
         """
-        saved: Dict[str, str] = {}
+        saved: dict[str, str] = {}
         p = self.output_dir
 
         try:
@@ -1391,12 +1391,12 @@ class BenchmarkVisualizer:
 
     def generate_phase13_figures(
         self,
-        attack_summaries: Optional[Dict[str, Any]] = None,
-        adaptive_results: Optional[Dict[str, Any]] = None,
-        evasion_results: Optional[Dict[str, Any]] = None,
-        ablation_results: Optional[Dict[str, Any]] = None,
+        attack_summaries: dict[str, Any] | None = None,
+        adaptive_results: dict[str, Any] | None = None,
+        evasion_results: dict[str, Any] | None = None,
+        ablation_results: dict[str, Any] | None = None,
         prefix: str = "p13",
-    ) -> Dict[str, str]:
+    ) -> dict[str, str]:
         """
         generate all phase 13 publication figures.
 
@@ -1419,7 +1419,7 @@ class BenchmarkVisualizer:
         returns:
             dict mapping figure name to saved path
         """
-        saved: Dict[str, str] = {}
+        saved: dict[str, str] = {}
         p = self.output_dir
 
         # comprehensive 4-panel summary
@@ -1555,13 +1555,13 @@ class BenchmarkVisualizer:
 
 
 def plot_ablation_curve(
-    ablation_points: List[Any],
+    ablation_points: list[Any],
     param_label: str,
     metric: str = "asr_r",
     metric_label: str = "ASR-R",
     title: str = "",
     color: str = "#2c7bb6",
-    save_path: Optional[str] = None,
+    save_path: str | None = None,
 ) -> plt.Figure:
     """
     line plot with bootstrap 95% ci shading for a single ablation study.
@@ -1641,10 +1641,10 @@ def plot_ablation_curve(
 
 
 def plot_ablation_tpr_fpr(
-    ablation_points: List[Any],
+    ablation_points: list[Any],
     param_label: str,
     title: str = "",
-    save_path: Optional[str] = None,
+    save_path: str | None = None,
 ) -> plt.Figure:
     """
     two-panel line plot: tpr and fpr vs. a hyperparameter.
@@ -1698,7 +1698,7 @@ def plot_ablation_tpr_fpr(
 def plot_adaptive_tradeoff(
     adaptive_result: Any,
     title: str = "Evasion–Retrieval Tradeoff (Adaptive vs. SAD)",
-    save_path: Optional[str] = None,
+    save_path: str | None = None,
 ) -> plt.Figure:
     """
     two-panel figure showing the fundamental adversarial tradeoff.
@@ -1802,9 +1802,9 @@ def plot_adaptive_tradeoff(
 
 
 def plot_evasion_analysis(
-    evasion_results: Dict[str, Any],
+    evasion_results: dict[str, Any],
     title: str = "Watermark Evasion Analysis",
-    save_path: Optional[str] = None,
+    save_path: str | None = None,
 ) -> plt.Figure:
     """
     three-panel figure summarising the watermark evasion results.
@@ -1901,9 +1901,9 @@ def plot_evasion_analysis(
 
 
 def plot_comprehensive_summary(
-    attack_summaries: Dict[str, Any],
-    adaptive_results: Dict[str, Any],
-    save_path: Optional[str] = None,
+    attack_summaries: dict[str, Any],
+    adaptive_results: dict[str, Any],
+    save_path: str | None = None,
 ) -> plt.Figure:
     """
     4-panel comprehensive summary figure for the paper.
@@ -2081,7 +2081,7 @@ class StatisticalAnalyzer:
         """initialize statistical analyzer."""
         pass
 
-    def analyze_attack_patterns(self, results: List[BenchmarkResult]) -> Dict[str, Any]:
+    def analyze_attack_patterns(self, results: list[BenchmarkResult]) -> dict[str, Any]:
         """
         compute per-attack descriptive statistics.
 
@@ -2092,7 +2092,7 @@ class StatisticalAnalyzer:
             nested dict with per-attack mean/std/ci for each metric
         """
         df = _extract_attack_df(results)
-        analysis: Dict[str, Any] = {}
+        analysis: dict[str, Any] = {}
 
         if df.empty:
             return analysis
@@ -2116,8 +2116,8 @@ class StatisticalAnalyzer:
         return analysis
 
     def analyze_defense_robustness(
-        self, results: List[BenchmarkResult]
-    ) -> Dict[str, Any]:
+        self, results: list[BenchmarkResult]
+    ) -> dict[str, Any]:
         """
         compute per-defense descriptive statistics.
 
@@ -2128,7 +2128,7 @@ class StatisticalAnalyzer:
             nested dict with per-defense mean/std/ci for each metric
         """
         df = _extract_defense_df(results)
-        analysis: Dict[str, Any] = {}
+        analysis: dict[str, Any] = {}
 
         if df.empty:
             return analysis
@@ -2152,7 +2152,7 @@ class StatisticalAnalyzer:
         return analysis
 
     def generate_latex_table(
-        self, results: List[BenchmarkResult], output_path: str
+        self, results: list[BenchmarkResult], output_path: str
     ) -> str:
         """
         generate a latex table of attack/defense metrics for paper inclusion.
@@ -2227,7 +2227,7 @@ class StatisticalAnalyzer:
         return latex_str
 
     def generate_statistical_report(
-        self, results: List[BenchmarkResult], output_path: str
+        self, results: list[BenchmarkResult], output_path: str
     ) -> str:
         """
         generate full statistical report as json.
@@ -2282,7 +2282,7 @@ class StatisticalAnalyzer:
 
 
 def create_experiment_dashboard(
-    results: List[BenchmarkResult],
+    results: list[BenchmarkResult],
     output_dir: str = "reports/dashboard",
 ) -> str:
     """
@@ -2308,14 +2308,11 @@ def create_experiment_dashboard(
     analyzer.generate_latex_table(results, latex_path)
 
     # html index
-    figure_imgs = "\n".join(
-        f"""
+    figure_imgs = "\n".join(f"""
         <div class="figure">
             <h3>{name.replace("_", " ").title()}</h3>
             <img src="figures/{Path(path).name}" alt="{name}" style="max-width:100%;">
-        </div>"""
-        for name, path in saved_plots.items()
-    )
+        </div>""" for name, path in saved_plots.items())
 
     html = f"""<!DOCTYPE html>
 <html lang="en">

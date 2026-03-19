@@ -183,31 +183,31 @@ class LongMemEvalConfig:
     difficulty_filter: Optional[str] = None
     memory_type_filter: Optional[str] = None
     max_sessions: Optional[int] = None
-    
+
 
 class LongMemEvalLoader:
     """
     Load and prepare LongMemEval benchmark data.
     """
-    
+
     def __init__(self, config: LongMemEvalConfig):
         self.config = config
         self.data_path = Path(config.data_path)
         self.sessions: List[LongMemEvalSession] = []
-    
+
     def load(self) -> List[LongMemEvalSession]:
         """Load benchmark data."""
         data_file = self.data_path / f"{self.config.split}.json"
-        
+
         if not data_file.exists():
             raise FileNotFoundError(
                 f"LongMemEval data not found at {data_file}. "
                 f"Download from https://github.com/xiaowu0162/LongMemEval"
             )
-        
+
         with open(data_file) as f:
             raw_data = json.load(f)
-        
+
         sessions = []
         for item in raw_data:
             session = LongMemEvalSession(
@@ -219,31 +219,31 @@ class LongMemEvalLoader:
                 difficulty=item.get("difficulty", "medium"),
                 memory_type=item.get("memory_type", "factual"),
             )
-            
+
             # Apply filters
             if self.config.difficulty_filter:
                 if session.difficulty != self.config.difficulty_filter:
                     continue
-            
+
             if self.config.memory_type_filter:
                 if session.memory_type != self.config.memory_type_filter:
                     continue
-            
+
             sessions.append(session)
-            
+
             if self.config.max_sessions and len(sessions) >= self.config.max_sessions:
                 break
-        
+
         self.sessions = sessions
         logger.info(f"Loaded {len(sessions)} LongMemEval sessions")
-        
+
         return sessions
-    
+
     def get_statistics(self) -> Dict[str, Any]:
         """Get dataset statistics."""
         if not self.sessions:
             self.load()
-        
+
         return {
             "total_sessions": len(self.sessions),
             "total_questions": sum(len(s.memory_questions) for s in self.sessions),
@@ -253,7 +253,7 @@ class LongMemEvalLoader:
                 len(s.conversations) for s in self.sessions
             ) / len(self.sessions) if self.sessions else 0,
         }
-    
+
     def _count_by_field(self, field: str) -> Dict[str, int]:
         """Count sessions by field value."""
         counts = {}
@@ -267,7 +267,7 @@ class LongMemEvalEvaluator:
     """
     Evaluate memory systems on LongMemEval benchmark.
     """
-    
+
     def __init__(
         self,
         memory_system,
@@ -277,17 +277,17 @@ class LongMemEvalEvaluator:
         self.memory = memory_system
         self.loader = loader
         self.judge_model = judge_model
-        
+
         from openai import OpenAI
         self.client = OpenAI()
-    
+
     def evaluate(
         self,
         sessions: Optional[List[LongMemEvalSession]] = None,
     ) -> Dict[str, Any]:
         """
         Run full evaluation on LongMemEval.
-        
+
         Process:
         1. For each session, add conversations to memory
         2. Ask memory questions
@@ -295,15 +295,15 @@ class LongMemEvalEvaluator:
         4. Compute metrics
         """
         sessions = sessions or self.loader.load()
-        
+
         results = []
         for session in sessions:
             result = self._evaluate_session(session)
             results.append(result)
-        
+
         # Aggregate metrics
         return self._aggregate_results(results)
-    
+
     def _evaluate_session(
         self,
         session: LongMemEvalSession,
@@ -314,7 +314,7 @@ class LongMemEvalEvaluator:
             self.memory.delete_all(user_id=session.user_id)
         except:
             pass
-        
+
         # Add conversations to memory
         for conv in session.conversations:
             self.memory.add(
@@ -324,29 +324,29 @@ class LongMemEvalEvaluator:
                 ],
                 user_id=session.user_id,
             )
-        
+
         # Answer questions using memory
         predictions = []
         for question in session.memory_questions:
             query = question.get("question", question)
-            
+
             # Search memory
             memories = self.memory.search(
                 query=query,
                 user_id=session.user_id,
                 limit=5,
             )
-            
+
             # Generate answer using retrieved memories
             answer = self._generate_answer(query, memories)
             predictions.append(answer)
-        
+
         # Score predictions
         scores = self._score_predictions(
             predictions,
             session.ground_truth,
         )
-        
+
         return {
             "session_id": session.session_id,
             "difficulty": session.difficulty,
@@ -355,7 +355,7 @@ class LongMemEvalEvaluator:
             "ground_truth": session.ground_truth,
             "scores": scores,
         }
-    
+
     def _generate_answer(
         self,
         question: str,
@@ -366,7 +366,7 @@ class LongMemEvalEvaluator:
             f"- {m.get('content', m.get('memory', ''))}"
             for m in memories
         ])
-        
+
         response = self.client.chat.completions.create(
             model="gpt-4o-mini",
             messages=[
@@ -378,9 +378,9 @@ class LongMemEvalEvaluator:
             ],
             max_tokens=200,
         )
-        
+
         return response.choices[0].message.content
-    
+
     def _score_predictions(
         self,
         predictions: List[str],
@@ -388,10 +388,10 @@ class LongMemEvalEvaluator:
     ) -> List[float]:
         """Score predictions against ground truth using LLM judge."""
         scores = []
-        
+
         for pred, truth in zip(predictions, ground_truth):
             prompt = f"""Score how well the prediction matches the ground truth.
-            
+
 Ground Truth: {truth}
 Prediction: {pred}
 
@@ -407,15 +407,15 @@ Respond with just the numeric score."""
                 messages=[{"role": "user", "content": prompt}],
                 max_tokens=10,
             )
-            
+
             try:
                 score = float(response.choices[0].message.content.strip())
                 scores.append(min(1.0, max(0.0, score)))
             except:
                 scores.append(0.0)
-        
+
         return scores
-    
+
     def _aggregate_results(
         self,
         results: List[Dict[str, Any]],
@@ -424,25 +424,25 @@ Respond with just the numeric score."""
         all_scores = []
         by_difficulty = {}
         by_type = {}
-        
+
         for result in results:
             scores = result["scores"]
             all_scores.extend(scores)
-            
+
             # Group by difficulty
             diff = result["difficulty"]
             if diff not in by_difficulty:
                 by_difficulty[diff] = []
             by_difficulty[diff].extend(scores)
-            
+
             # Group by memory type
             mtype = result["memory_type"]
             if mtype not in by_type:
                 by_type[mtype] = []
             by_type[mtype].extend(scores)
-        
+
         import numpy as np
-        
+
         return {
             "overall": {
                 "accuracy": np.mean(all_scores),
@@ -467,13 +467,13 @@ Respond with just the numeric score."""
 class LongMemEvalSecurityExtension:
     """
     Extend LongMemEval for security evaluation.
-    
+
     Adds:
     - Injection of poisoned memories
     - Measurement of attack success on benchmark queries
     - Defense evaluation on natural queries
     """
-    
+
     def __init__(
         self,
         base_evaluator: LongMemEvalEvaluator,
@@ -483,7 +483,7 @@ class LongMemEvalSecurityExtension:
         self.base = base_evaluator
         self.attack = attack
         self.defense = defense
-    
+
     def evaluate_attack_on_benchmark(
         self,
         sessions: List[LongMemEvalSession],
@@ -491,7 +491,7 @@ class LongMemEvalSecurityExtension:
     ) -> Dict[str, Any]:
         """
         Evaluate how attacks affect benchmark performance.
-        
+
         Process:
         1. Establish baseline performance
         2. Inject poisoned memories
@@ -499,7 +499,7 @@ class LongMemEvalSecurityExtension:
         """
         # Baseline
         baseline_results = self.base.evaluate(sessions)
-        
+
         # Poison memories
         for session in sessions:
             if np.random.random() < poison_fraction:
@@ -510,10 +510,10 @@ class LongMemEvalSecurityExtension:
                         session.user_id,
                         target_query=question,
                     )
-        
+
         # Re-evaluate
         poisoned_results = self.base.evaluate(sessions)
-        
+
         return {
             "baseline_accuracy": baseline_results["overall"]["accuracy"],
             "poisoned_accuracy": poisoned_results["overall"]["accuracy"],
@@ -573,36 +573,36 @@ class LoCoMoConfig:
 
 class LoCoMoLoader:
     """Load LoCoMo benchmark data."""
-    
+
     def __init__(self, config: LoCoMoConfig):
         self.config = config
         self.data_path = Path(config.data_path)
-    
+
     def load(self) -> List[LoCoMoCharacter]:
         """Load all characters."""
         characters = []
-        
+
         data_file = self.data_path / "locomo_data.json"
-        
+
         if not data_file.exists():
             raise FileNotFoundError(
                 f"LoCoMo data not found at {data_file}. "
                 f"Download from https://github.com/LLM-MIND-Lab/LoCoMo"
             )
-        
+
         with open(data_file) as f:
             raw_data = json.load(f)
-        
+
         for char_data in raw_data["characters"]:
             char_id = char_data["id"]
-            
+
             if self.config.characters and char_id not in self.config.characters:
                 continue
-            
+
             qa_pairs = char_data["qa_pairs"]
             if self.config.max_qa_per_character:
                 qa_pairs = qa_pairs[:self.config.max_qa_per_character]
-            
+
             character = LoCoMoCharacter(
                 character_id=char_id,
                 name=char_data["name"],
@@ -611,66 +611,66 @@ class LoCoMoLoader:
                 qa_pairs=qa_pairs,
             )
             characters.append(character)
-        
+
         return characters
 
 
 class LoCoMoEvaluator:
     """Evaluate memory systems on LoCoMo benchmark."""
-    
+
     def __init__(self, memory_system, loader: LoCoMoLoader):
         self.memory = memory_system
         self.loader = loader
-    
+
     def evaluate(self) -> Dict[str, Any]:
         """Run evaluation on all characters."""
         characters = self.loader.load()
-        
+
         results = []
         for character in characters:
             result = self._evaluate_character(character)
             results.append(result)
-        
+
         return self._aggregate_results(results)
-    
+
     def _evaluate_character(self, character: LoCoMoCharacter) -> Dict[str, Any]:
         """Evaluate single character."""
         user_id = character.character_id
-        
+
         # Clear and populate memory
         try:
             self.memory.delete_all(user_id=user_id)
         except:
             pass
-        
+
         for conv in character.conversations:
             self.memory.add(
                 messages=conv.get("text", str(conv)),
                 user_id=user_id,
             )
-        
+
         # Evaluate QA pairs
         correct = 0
         total = len(character.qa_pairs)
-        
+
         for qa in character.qa_pairs:
             question = qa["question"]
             expected = qa["answer"]
-            
+
             # Search memory
             memories = self.memory.search(
                 query=question,
                 user_id=user_id,
                 limit=5,
             )
-            
+
             # Check if answer is retrievable
             for mem in memories:
                 content = mem.get("content", mem.get("memory", ""))
                 if expected.lower() in content.lower():
                     correct += 1
                     break
-        
+
         return {
             "character_id": character.character_id,
             "character_name": character.name,
@@ -678,13 +678,13 @@ class LoCoMoEvaluator:
             "correct": correct,
             "total": total,
         }
-    
+
     def _aggregate_results(self, results: List[Dict[str, Any]]) -> Dict[str, Any]:
         """Aggregate results."""
         import numpy as np
-        
+
         accuracies = [r["accuracy"] for r in results]
-        
+
         return {
             "overall_accuracy": np.mean(accuracies),
             "std": np.std(accuracies),
@@ -719,14 +719,14 @@ import json
 class ASBEvaluator:
     """
     Agent Security Bench integration for security evaluation.
-    
+
     Supports:
     - Memory Poisoning (MP) attacks
     - Direct Prompt Injection (DPI)
     - Observation Prompt Injection (OPI)
     - Plan-of-Thought (PoT) backdoors
     """
-    
+
     def __init__(
         self,
         asb_path: str = "./external/ASB",
@@ -734,21 +734,21 @@ class ASBEvaluator:
     ):
         self.asb_path = Path(asb_path)
         self.memory = memory_system
-    
+
     def load_attack_scenarios(
         self,
         attack_type: str = "MP",
     ) -> List[Dict[str, Any]]:
         """Load attack scenarios from ASB."""
         scenarios_file = self.asb_path / "data" / f"{attack_type}_scenarios.json"
-        
+
         if scenarios_file.exists():
             with open(scenarios_file) as f:
                 return json.load(f)
-        
+
         # Generate default scenarios
         return self._generate_default_scenarios(attack_type)
-    
+
     def _generate_default_scenarios(
         self,
         attack_type: str,
@@ -786,9 +786,9 @@ class ASBEvaluator:
                 ],
             },
         ]
-        
+
         return scenarios
-    
+
     def evaluate_scenario(
         self,
         scenario: Dict[str, Any],
@@ -798,7 +798,7 @@ class ASBEvaluator:
     ) -> Dict[str, Any]:
         """
         Evaluate single attack scenario.
-        
+
         Returns:
             Attack success metrics and defense effectiveness
         """
@@ -807,29 +807,29 @@ class ASBEvaluator:
             "attack_results": [],
             "defense_results": [],
         }
-        
+
         for trial in range(num_trials):
             user_id = f"test_user_{trial}"
-            
+
             # Execute attack
             attack_result = attack.execute(
                 self.memory,
                 user_id,
                 target_query=scenario["target_query"],
             )
-            
+
             # Measure ASR
             asr = self._measure_asr(
                 user_id,
                 scenario["target_query"],
                 scenario["malicious_action"],
             )
-            
+
             results["attack_results"].append({
                 "trial": trial,
                 "asr": asr,
             })
-            
+
             # Evaluate defense if provided
             if defense:
                 defense_result = self._evaluate_defense(
@@ -838,19 +838,19 @@ class ASBEvaluator:
                     defense,
                 )
                 results["defense_results"].append(defense_result)
-        
+
         # Aggregate
         import numpy as np
         results["asr_mean"] = np.mean([r["asr"] for r in results["attack_results"]])
         results["asr_std"] = np.std([r["asr"] for r in results["attack_results"]])
-        
+
         if results["defense_results"]:
             results["defense_effectiveness"] = np.mean([
                 r.get("blocked", False) for r in results["defense_results"]
             ])
-        
+
         return results
-    
+
     def _measure_asr(
         self,
         user_id: str,
@@ -863,14 +863,14 @@ class ASBEvaluator:
             user_id=user_id,
             limit=5,
         )
-        
+
         for result in results:
             content = result.get("content", result.get("memory", ""))
             if malicious_action.lower() in content.lower():
                 return 1.0
-        
+
         return 0.0
-    
+
     def _evaluate_defense(
         self,
         user_id: str,
@@ -884,19 +884,19 @@ class ASBEvaluator:
             user_id=user_id,
             limit=5,
         )
-        
+
         # Check if poisoned memory was filtered
         blocked = all(
             r.get("verification", {}).get("verified", False)
             for r in results
         )
-        
+
         return {
             "query": query,
             "blocked": blocked,
             "num_results": len(results),
         }
-    
+
     def run_full_evaluation(
         self,
         attack,
@@ -904,14 +904,14 @@ class ASBEvaluator:
     ) -> Dict[str, Any]:
         """Run evaluation on all scenarios."""
         scenarios = self.load_attack_scenarios("MP")
-        
+
         all_results = []
         for scenario in scenarios:
             result = self.evaluate_scenario(scenario, attack, defense)
             all_results.append(result)
-        
+
         import numpy as np
-        
+
         return {
             "scenarios": all_results,
             "overall_asr": np.mean([r["asr_mean"] for r in all_results]),
@@ -967,14 +967,14 @@ class SecurityTestCase:
 class SecurityEvaluationSuite:
     """
     Comprehensive security evaluation suite.
-    
+
     Evaluates:
     1. Attack success rates across memory systems
     2. Defense detection and mitigation effectiveness
     3. Utility preservation
     4. Robustness to attack variations
     """
-    
+
     def __init__(
         self,
         memory_systems: Dict[str, Any],
@@ -985,7 +985,7 @@ class SecurityEvaluationSuite:
         self.attacks = attacks
         self.defenses = defenses
         self.test_cases = self._load_test_cases()
-    
+
     def _load_test_cases(self) -> List[SecurityTestCase]:
         """Load predefined security test cases."""
         return [
@@ -1027,7 +1027,7 @@ class SecurityEvaluationSuite:
             ),
             # Add more test cases...
         ]
-    
+
     def run_full_evaluation(
         self,
         num_trials: int = 10,
@@ -1035,7 +1035,7 @@ class SecurityEvaluationSuite:
     ) -> Dict[str, Any]:
         """
         Run comprehensive security evaluation.
-        
+
         Tests all combinations of:
         - Memory systems (Mem0, A-MEM, MemGPT)
         - Attack types (AgentPoison, MINJA, InjecMEM)
@@ -1047,12 +1047,12 @@ class SecurityEvaluationSuite:
             "utility_impact": {},
             "cross_system_comparison": {},
         }
-        
+
         # Phase 1: Attack Characterization
         logger.info("Phase 1: Attack Characterization")
         for ms_name, memory_system in self.memory_systems.items():
             results["attack_characterization"][ms_name] = {}
-            
+
             for attack_name, attack in self.attacks.items():
                 attack_results = self._evaluate_attack(
                     memory_system,
@@ -1060,12 +1060,12 @@ class SecurityEvaluationSuite:
                     num_trials,
                 )
                 results["attack_characterization"][ms_name][attack_name] = attack_results
-        
+
         # Phase 2: Defense Evaluation
         logger.info("Phase 2: Defense Evaluation")
         for defense_name, defense in self.defenses.items():
             results["defense_evaluation"][defense_name] = {}
-            
+
             for ms_name, memory_system in self.memory_systems.items():
                 defense_results = self._evaluate_defense(
                     memory_system,
@@ -1073,19 +1073,19 @@ class SecurityEvaluationSuite:
                     num_trials,
                 )
                 results["defense_evaluation"][defense_name][ms_name] = defense_results
-        
+
         # Phase 3: Utility Impact
         logger.info("Phase 3: Utility Impact")
         results["utility_impact"] = self._evaluate_utility_impact(num_trials)
-        
+
         # Generate summary
         results["summary"] = self._generate_summary(results)
-        
+
         # Save results
         self._save_results(results, save_dir)
-        
+
         return results
-    
+
     def _evaluate_attack(
         self,
         memory_system,
@@ -1096,30 +1096,30 @@ class SecurityEvaluationSuite:
         asr_r_values = []
         asr_a_values = []
         isr_values = []
-        
+
         for trial in range(num_trials):
             user_id = f"attack_test_{trial}"
-            
+
             # Reset memory
             try:
                 memory_system.delete_all(user_id=user_id)
             except:
                 pass
-            
+
             # Execute attack
             attack.execute(memory_system, user_id)
-            
+
             # Evaluate
             metrics = attack.evaluate(
                 memory_system,
                 user_id,
                 [tc.target_query for tc in self.test_cases],
             )
-            
+
             asr_r_values.append(metrics.get("ASR-r", 0))
             asr_a_values.append(metrics.get("ASR-a", 0))
             isr_values.append(metrics.get("ISR", 0))
-        
+
         return {
             "ASR-r": {
                 "mean": np.mean(asr_r_values),
@@ -1136,7 +1136,7 @@ class SecurityEvaluationSuite:
             },
             "num_trials": num_trials,
         }
-    
+
     def _evaluate_defense(
         self,
         memory_system,
@@ -1147,21 +1147,21 @@ class SecurityEvaluationSuite:
         tpr_values = []
         fpr_values = []
         asr_after_values = []
-        
+
         for trial in range(num_trials):
             # Setup with defense
             defended_system = defense.wrap(memory_system)
-            
+
             # Inject some poisoned and legitimate memories
             user_id = f"defense_test_{trial}"
-            
+
             # Add legitimate memories
             for i in range(10):
                 defended_system.add(
                     f"Legitimate memory content {i}",
                     user_id=user_id,
                 )
-            
+
             # Add poisoned memories (bypass defense for testing)
             poisoned = []
             for tc in self.test_cases[:3]:
@@ -1170,7 +1170,7 @@ class SecurityEvaluationSuite:
                     user_id=user_id,
                 )
                 poisoned.append(tc.malicious_payload)
-            
+
             # Evaluate detection
             tpr, fpr = self._compute_detection_rates(
                 defended_system,
@@ -1179,7 +1179,7 @@ class SecurityEvaluationSuite:
             )
             tpr_values.append(tpr)
             fpr_values.append(fpr)
-            
+
             # Measure post-defense ASR
             asr = self._measure_post_defense_asr(
                 defended_system,
@@ -1187,14 +1187,14 @@ class SecurityEvaluationSuite:
                 self.test_cases,
             )
             asr_after_values.append(asr)
-        
+
         return {
             "TPR": {"mean": np.mean(tpr_values), "std": np.std(tpr_values)},
             "FPR": {"mean": np.mean(fpr_values), "std": np.std(fpr_values)},
             "ASR-d": {"mean": np.mean(asr_after_values), "std": np.std(asr_after_values)},
             "effectiveness": 1 - np.mean(asr_after_values),
         }
-    
+
     def _compute_detection_rates(
         self,
         defended_system,
@@ -1208,14 +1208,14 @@ class SecurityEvaluationSuite:
             user_id=user_id,
             limit=100,
         )
-        
+
         tp = fp = tn = fn = 0
-        
+
         for result in all_results:
             content = result.get("content", result.get("memory", ""))
             verified = result.get("verification", {}).get("verified", True)
             is_poisoned = any(p in content for p in poisoned_content)
-            
+
             if is_poisoned:
                 if not verified:
                     tp += 1  # Correctly flagged as suspicious
@@ -1226,12 +1226,12 @@ class SecurityEvaluationSuite:
                     tn += 1  # Correctly verified legitimate
                 else:
                     fp += 1  # False alarm on legitimate
-        
+
         tpr = tp / (tp + fn) if (tp + fn) > 0 else 0
         fpr = fp / (fp + tn) if (fp + tn) > 0 else 0
-        
+
         return tpr, fpr
-    
+
     def _measure_post_defense_asr(
         self,
         defended_system,
@@ -1240,7 +1240,7 @@ class SecurityEvaluationSuite:
     ) -> float:
         """Measure ASR after defense is applied."""
         successes = 0
-        
+
         for tc in test_cases:
             results = defended_system.search(
                 query=tc.target_query,
@@ -1248,7 +1248,7 @@ class SecurityEvaluationSuite:
                 limit=5,
                 verify=True,
             )
-            
+
             # Only count verified results
             for result in results:
                 if not result.get("verification", {}).get("verified", False):
@@ -1257,9 +1257,9 @@ class SecurityEvaluationSuite:
                 if tc.malicious_payload.lower() in content.lower():
                     successes += 1
                     break
-        
+
         return successes / len(test_cases) if test_cases else 0
-    
+
     def _evaluate_utility_impact(
         self,
         num_trials: int,
@@ -1267,26 +1267,26 @@ class SecurityEvaluationSuite:
         """Evaluate utility impact of defenses."""
         # Use LongMemEval or LoCoMo subset for utility
         results = {}
-        
+
         for defense_name, defense in self.defenses.items():
             for ms_name, memory_system in self.memory_systems.items():
                 key = f"{defense_name}_{ms_name}"
-                
+
                 # Measure baseline accuracy
                 baseline_acc = self._measure_utility(memory_system, num_trials)
-                
+
                 # Measure with defense
                 defended = defense.wrap(memory_system)
                 defended_acc = self._measure_utility(defended, num_trials)
-                
+
                 results[key] = {
                     "baseline_accuracy": baseline_acc,
                     "defended_accuracy": defended_acc,
                     "degradation_pct": (baseline_acc - defended_acc) / baseline_acc * 100,
                 }
-        
+
         return results
-    
+
     def _measure_utility(
         self,
         memory_system,
@@ -1296,39 +1296,39 @@ class SecurityEvaluationSuite:
         # Simplified utility measurement
         correct = 0
         total = num_trials
-        
+
         for i in range(num_trials):
             user_id = f"utility_{i}"
-            
+
             # Add test fact
             fact = f"The answer to question {i} is {i * 7}"
             memory_system.add(fact, user_id=user_id)
-            
+
             # Query
             results = memory_system.search(
                 f"What is the answer to question {i}?",
                 user_id=user_id,
                 limit=1,
             )
-            
+
             if results:
                 content = results[0].get("content", results[0].get("memory", ""))
                 if str(i * 7) in content:
                     correct += 1
-        
+
         return correct / total if total > 0 else 0
-    
+
     def _compute_ci(self, values: List[float], confidence: float = 0.95) -> Tuple[float, float]:
         """Compute confidence interval."""
         from scipy import stats
-        
+
         n = len(values)
         mean = np.mean(values)
         se = stats.sem(values)
         h = se * stats.t.ppf((1 + confidence) / 2, n - 1)
-        
+
         return (mean - h, mean + h)
-    
+
     def _generate_summary(self, results: Dict[str, Any]) -> Dict[str, Any]:
         """Generate evaluation summary."""
         return {
@@ -1337,17 +1337,17 @@ class SecurityEvaluationSuite:
             "most_vulnerable_system": self._find_most_vulnerable(results),
             "utility_impact_summary": self._summarize_utility(results),
         }
-    
+
     def _save_results(self, results: Dict[str, Any], save_dir: str):
         """Save results to files."""
         import os
         import json
-        
+
         os.makedirs(save_dir, exist_ok=True)
-        
+
         with open(f"{save_dir}/full_results.json", "w") as f:
             json.dump(results, f, indent=2, default=str)
-    
+
     def _find_best_attacks(self, results: Dict[str, Any]) -> Dict[str, str]:
         """Find most effective attack for each system."""
         best = {}
@@ -1358,7 +1358,7 @@ class SecurityEvaluationSuite:
             )
             best[ms_name] = best_attack[0]
         return best
-    
+
     def _find_best_defense(self, results: Dict[str, Any]) -> str:
         """Find most effective defense overall."""
         defense_scores = {}
@@ -1367,11 +1367,11 @@ class SecurityEvaluationSuite:
                 s.get("effectiveness", 0) for s in systems.values()
             ])
             defense_scores[defense_name] = avg_effectiveness
-        
+
         if defense_scores:
             return max(defense_scores.items(), key=lambda x: x[1])[0]
         return "none"
-    
+
     def _find_most_vulnerable(self, results: Dict[str, Any]) -> str:
         """Find most vulnerable memory system."""
         system_asr = {}
@@ -1380,21 +1380,21 @@ class SecurityEvaluationSuite:
                 a.get("ASR-r", {}).get("mean", 0) for a in attacks.values()
             ])
             system_asr[ms_name] = avg_asr
-        
+
         if system_asr:
             return max(system_asr.items(), key=lambda x: x[1])[0]
         return "unknown"
-    
+
     def _summarize_utility(self, results: Dict[str, Any]) -> Dict[str, float]:
         """Summarize utility impact."""
         impacts = results.get("utility_impact", {})
         if not impacts:
             return {}
-        
+
         avg_degradation = np.mean([
             v.get("degradation_pct", 0) for v in impacts.values()
         ])
-        
+
         return {
             "average_degradation_pct": avg_degradation,
             "max_degradation_pct": max(
@@ -1430,7 +1430,7 @@ class MetricValue:
     ci_upper: Optional[float] = None
     n_samples: int = 1
     unit: str = ""
-    
+
     def to_dict(self) -> Dict[str, Any]:
         return {
             "name": self.name,
@@ -1449,13 +1449,13 @@ class ExperimentMetrics:
     timestamp: str = field(default_factory=lambda: datetime.utcnow().isoformat())
     metrics: Dict[str, MetricValue] = field(default_factory=dict)
     metadata: Dict[str, Any] = field(default_factory=dict)
-    
+
     def add_metric(self, metric: MetricValue):
         self.metrics[metric.name] = metric
-    
+
     def get(self, name: str) -> Optional[MetricValue]:
         return self.metrics.get(name)
-    
+
     def to_dict(self) -> Dict[str, Any]:
         return {
             "experiment_id": self.experiment_id,
@@ -1467,33 +1467,33 @@ class ExperimentMetrics:
 
 class MetricsCollector:
     """Collect and aggregate metrics across experiments."""
-    
+
     def __init__(self):
         self.experiments: List[ExperimentMetrics] = []
-    
+
     def record_experiment(self, metrics: ExperimentMetrics):
         self.experiments.append(metrics)
-    
+
     def aggregate_by_config(
         self,
         group_by: List[str],
     ) -> Dict[str, Dict[str, MetricValue]]:
         """Aggregate metrics grouped by configuration keys."""
         groups = {}
-        
+
         for exp in self.experiments:
             key = tuple(exp.metadata.get(k, "") for k in group_by)
             if key not in groups:
                 groups[key] = []
             groups[key].append(exp)
-        
+
         aggregated = {}
         for key, exps in groups.items():
             key_str = "_".join(str(k) for k in key)
             aggregated[key_str] = self._aggregate_experiments(exps)
-        
+
         return aggregated
-    
+
     def _aggregate_experiments(
         self,
         experiments: List[ExperimentMetrics],
@@ -1502,7 +1502,7 @@ class MetricsCollector:
         metric_names = set()
         for exp in experiments:
             metric_names.update(exp.metrics.keys())
-        
+
         aggregated = {}
         for name in metric_names:
             values = [
@@ -1510,7 +1510,7 @@ class MetricsCollector:
                 for exp in experiments
                 if name in exp.metrics
             ]
-            
+
             if values:
                 aggregated[name] = MetricValue(
                     name=name,
@@ -1518,33 +1518,33 @@ class MetricsCollector:
                     std=np.std(values),
                     n_samples=len(values),
                 )
-        
+
         return aggregated
-    
+
     def export_to_json(self, filepath: str):
         """Export all experiments to JSON."""
         data = [exp.to_dict() for exp in self.experiments]
         with open(filepath, "w") as f:
             json.dump(data, f, indent=2)
-    
+
     def export_to_csv(self, filepath: str):
         """Export metrics to CSV for analysis."""
         import csv
-        
+
         if not self.experiments:
             return
-        
+
         # Collect all metric names
         all_metrics = set()
         for exp in self.experiments:
             all_metrics.update(exp.metrics.keys())
-        
+
         headers = ["experiment_id", "timestamp"] + sorted(all_metrics)
-        
+
         with open(filepath, "w", newline="") as f:
             writer = csv.writer(f)
             writer.writerow(headers)
-            
+
             for exp in self.experiments:
                 row = [exp.experiment_id, exp.timestamp]
                 for metric_name in sorted(all_metrics):
@@ -1585,17 +1585,17 @@ class StatisticalTestResult:
 class StatisticalAnalyzer:
     """
     Statistical analysis for experiment results.
-    
+
     Provides:
     - Hypothesis tests (t-test, Mann-Whitney, etc.)
     - Effect size calculations (Cohen's d, etc.)
     - Confidence intervals
     - Multiple comparison corrections
     """
-    
+
     def __init__(self, alpha: float = 0.05):
         self.alpha = alpha
-    
+
     def compare_means(
         self,
         group1: List[float],
@@ -1604,15 +1604,15 @@ class StatisticalAnalyzer:
     ) -> StatisticalTestResult:
         """
         Compare means of two groups.
-        
+
         Uses t-test for normal data, Mann-Whitney otherwise.
         """
         # Check normality
         _, p1 = stats.shapiro(group1) if len(group1) >= 3 else (0, 0)
         _, p2 = stats.shapiro(group2) if len(group2) >= 3 else (0, 0)
-        
+
         normal = p1 > 0.05 and p2 > 0.05
-        
+
         if normal:
             if paired:
                 stat, p_value = stats.ttest_rel(group1, group2)
@@ -1627,13 +1627,13 @@ class StatisticalAnalyzer:
             else:
                 stat, p_value = stats.mannwhitneyu(group1, group2)
                 test_name = "Mann-Whitney U"
-        
+
         # Effect size (Cohen's d)
         cohens_d = self._cohens_d(group1, group2)
-        
+
         # Interpretation
         effect_magnitude = self._interpret_cohens_d(cohens_d)
-        
+
         return StatisticalTestResult(
             test_name=test_name,
             statistic=stat,
@@ -1642,20 +1642,20 @@ class StatisticalAnalyzer:
             effect_size=cohens_d,
             interpretation=f"{effect_magnitude} effect size (d={cohens_d:.3f})",
         )
-    
+
     def _cohens_d(self, group1: List[float], group2: List[float]) -> float:
         """Calculate Cohen's d effect size."""
         n1, n2 = len(group1), len(group2)
         var1, var2 = np.var(group1, ddof=1), np.var(group2, ddof=1)
-        
+
         # Pooled standard deviation
         pooled_std = np.sqrt(((n1 - 1) * var1 + (n2 - 1) * var2) / (n1 + n2 - 2))
-        
+
         if pooled_std == 0:
             return 0
-        
+
         return (np.mean(group1) - np.mean(group2)) / pooled_std
-    
+
     def _interpret_cohens_d(self, d: float) -> str:
         """Interpret Cohen's d magnitude."""
         d = abs(d)
@@ -1667,7 +1667,7 @@ class StatisticalAnalyzer:
             return "Medium"
         else:
             return "Large"
-    
+
     def bootstrap_ci(
         self,
         data: List[float],
@@ -1680,7 +1680,7 @@ class StatisticalAnalyzer:
         """
         data = np.array(data)
         n = len(data)
-        
+
         # Bootstrap samples
         bootstrap_stats = []
         for _ in range(n_bootstrap):
@@ -1689,13 +1689,13 @@ class StatisticalAnalyzer:
                 bootstrap_stats.append(np.mean(sample))
             elif statistic == "median":
                 bootstrap_stats.append(np.median(sample))
-        
+
         # Percentile CI
         lower = np.percentile(bootstrap_stats, (1 - confidence) / 2 * 100)
         upper = np.percentile(bootstrap_stats, (1 + confidence) / 2 * 100)
-        
+
         return (lower, upper)
-    
+
     def multiple_comparison_correction(
         self,
         p_values: List[float],
@@ -1703,18 +1703,18 @@ class StatisticalAnalyzer:
     ) -> List[float]:
         """
         Apply multiple comparison correction.
-        
+
         Methods:
         - bonferroni: Conservative, controls FWER
         - holm: Less conservative step-down
         - fdr_bh: Benjamini-Hochberg FDR control
         """
         from statsmodels.stats.multitest import multipletests
-        
+
         _, corrected, _, _ = multipletests(p_values, alpha=self.alpha, method=method)
-        
+
         return corrected.tolist()
-    
+
     def anova_analysis(
         self,
         groups: Dict[str, List[float]],
@@ -1724,33 +1724,33 @@ class StatisticalAnalyzer:
         """
         group_names = list(groups.keys())
         group_data = list(groups.values())
-        
+
         # ANOVA
         f_stat, p_value = stats.f_oneway(*group_data)
-        
+
         result = {
             "test": "One-way ANOVA",
             "F_statistic": f_stat,
             "p_value": p_value,
             "significant": p_value < self.alpha,
         }
-        
+
         # Post-hoc if significant
         if p_value < self.alpha:
             from statsmodels.stats.multicomp import pairwise_tukeyhsd
-            
+
             all_data = []
             all_groups = []
             for name, data in groups.items():
                 all_data.extend(data)
                 all_groups.extend([name] * len(data))
-            
+
             tukey = pairwise_tukeyhsd(all_data, all_groups, alpha=self.alpha)
             result["post_hoc"] = {
                 "test": "Tukey HSD",
                 "summary": str(tukey),
             }
-        
+
         return result
 ```
 
@@ -1773,10 +1773,10 @@ from pathlib import Path
 class PaperFigureGenerator:
     """
     Generate publication-quality figures.
-    
+
     Follows NeurIPS/ICML style guidelines.
     """
-    
+
     def __init__(
         self,
         style: str = "neurips",
@@ -1784,10 +1784,10 @@ class PaperFigureGenerator:
     ):
         self.output_dir = Path(output_dir)
         self.output_dir.mkdir(parents=True, exist_ok=True)
-        
+
         # Set style
         self._set_style(style)
-    
+
     def _set_style(self, style: str):
         """Set matplotlib style for publication."""
         plt.rcParams.update({
@@ -1806,10 +1806,10 @@ class PaperFigureGenerator:
             'axes.grid': True,
             'grid.alpha': 0.3,
         })
-        
+
         # Color palette
         self.colors = sns.color_palette("Set2", 8)
-    
+
     def attack_comparison_bar(
         self,
         results: Dict[str, Dict[str, float]],
@@ -1821,17 +1821,17 @@ class PaperFigureGenerator:
         Create bar chart comparing attacks across memory systems.
         """
         fig, ax = plt.subplots()
-        
+
         systems = list(results.keys())
         attacks = list(results[systems[0]].keys())
-        
+
         x = np.arange(len(systems))
         width = 0.25
-        
+
         for i, attack in enumerate(attacks):
             values = [results[sys][attack].get(metric, {}).get("mean", 0) for sys in systems]
             errors = [results[sys][attack].get(metric, {}).get("std", 0) for sys in systems]
-            
+
             bars = ax.bar(
                 x + i * width,
                 values,
@@ -1841,7 +1841,7 @@ class PaperFigureGenerator:
                 yerr=errors,
                 capsize=3,
             )
-        
+
         ax.set_xlabel("Memory System")
         ax.set_ylabel(metric)
         ax.set_title(title)
@@ -1849,11 +1849,11 @@ class PaperFigureGenerator:
         ax.set_xticklabels(systems)
         ax.legend()
         ax.set_ylim(0, 1)
-        
+
         plt.tight_layout()
         plt.savefig(self.output_dir / filename)
         plt.close()
-    
+
     def defense_effectiveness_heatmap(
         self,
         results: Dict[str, Dict[str, float]],
@@ -1863,16 +1863,16 @@ class PaperFigureGenerator:
         Create heatmap of defense effectiveness.
         """
         fig, ax = plt.subplots(figsize=(8, 6))
-        
+
         # Prepare data
         defenses = list(results.keys())
         systems = list(results[defenses[0]].keys())
-        
+
         data = np.zeros((len(defenses), len(systems)))
         for i, defense in enumerate(defenses):
             for j, system in enumerate(systems):
                 data[i, j] = results[defense][system].get("effectiveness", 0)
-        
+
         sns.heatmap(
             data,
             annot=True,
@@ -1884,15 +1884,15 @@ class PaperFigureGenerator:
             vmax=1,
             ax=ax,
         )
-        
+
         ax.set_xlabel("Memory System")
         ax.set_ylabel("Defense")
         ax.set_title("Defense Effectiveness (Higher = Better)")
-        
+
         plt.tight_layout()
         plt.savefig(self.output_dir / filename)
         plt.close()
-    
+
     def roc_curve_comparison(
         self,
         roc_data: Dict[str, Dict[str, List[float]]],
@@ -1902,33 +1902,33 @@ class PaperFigureGenerator:
         Plot ROC curves for detection comparison.
         """
         fig, ax = plt.subplots()
-        
+
         for i, (name, data) in enumerate(roc_data.items()):
             fpr = data["fpr"]
             tpr = data["tpr"]
             auc = data.get("auc", 0)
-            
+
             ax.plot(
                 fpr, tpr,
                 color=self.colors[i],
                 label=f"{name} (AUC={auc:.3f})",
                 linewidth=2,
             )
-        
+
         # Diagonal
         ax.plot([0, 1], [0, 1], 'k--', alpha=0.5)
-        
+
         ax.set_xlabel("False Positive Rate")
         ax.set_ylabel("True Positive Rate")
         ax.set_title("ROC Curve Comparison")
         ax.legend(loc="lower right")
         ax.set_xlim(0, 1)
         ax.set_ylim(0, 1)
-        
+
         plt.tight_layout()
         plt.savefig(self.output_dir / filename)
         plt.close()
-    
+
     def overhead_analysis(
         self,
         overhead_data: Dict[str, Dict[str, float]],
@@ -1938,9 +1938,9 @@ class PaperFigureGenerator:
         Visualize overhead metrics.
         """
         fig, axes = plt.subplots(1, 2, figsize=(10, 4))
-        
+
         defenses = list(overhead_data.keys())
-        
+
         # Latency overhead
         latency = [overhead_data[d].get("latency_overhead_pct", 0) for d in defenses]
         axes[0].bar(defenses, latency, color=self.colors[0])
@@ -1948,7 +1948,7 @@ class PaperFigureGenerator:
         axes[0].set_title("Latency Impact")
         axes[0].axhline(y=10, color='r', linestyle='--', label='10% threshold')
         axes[0].legend()
-        
+
         # Storage overhead
         storage = [overhead_data[d].get("storage_overhead_pct", 0) for d in defenses]
         axes[1].bar(defenses, storage, color=self.colors[1])
@@ -1956,7 +1956,7 @@ class PaperFigureGenerator:
         axes[1].set_title("Storage Impact")
         axes[1].axhline(y=10, color='r', linestyle='--', label='10% threshold')
         axes[1].legend()
-        
+
         plt.tight_layout()
         plt.savefig(self.output_dir / filename)
         plt.close()
@@ -1979,7 +1979,7 @@ class LaTeXTableGenerator:
     """
     Generate publication-ready LaTeX tables.
     """
-    
+
     @staticmethod
     def attack_comparison_table(
         results: Dict[str, Dict[str, Dict[str, Any]]],
@@ -1988,7 +1988,7 @@ class LaTeXTableGenerator:
     ) -> str:
         """
         Generate attack comparison table.
-        
+
         Format:
         | Attack | Mem0 | A-MEM | MemGPT |
         |--------|------|-------|--------|
@@ -1997,7 +1997,7 @@ class LaTeXTableGenerator:
         """
         systems = ["mem0", "amem", "memgpt"]
         attacks = ["agentpoison", "minja", "injecmem"]
-        
+
         table = [
             "\\begin{table}[t]",
             "\\centering",
@@ -2008,7 +2008,7 @@ class LaTeXTableGenerator:
             "Attack & " + " & ".join([s.replace("_", "\\_") for s in systems]) + " \\\\",
             "\\midrule",
         ]
-        
+
         for attack in attacks:
             row_values = []
             for system in systems:
@@ -2018,17 +2018,17 @@ class LaTeXTableGenerator:
                     row_values.append(f"{val:.2f} $\\pm$ {std:.2f}")
                 else:
                     row_values.append("-")
-            
+
             table.append(f"{attack} & " + " & ".join(row_values) + " \\\\")
-        
+
         table.extend([
             "\\bottomrule",
             "\\end{tabular}",
             "\\end{table}",
         ])
-        
+
         return "\n".join(table)
-    
+
     @staticmethod
     def defense_evaluation_table(
         results: Dict[str, Dict[str, Any]],
@@ -2040,7 +2040,7 @@ class LaTeXTableGenerator:
         """
         metrics = ["TPR", "FPR", "AUROC", "ASR-d", "Overhead"]
         defenses = list(results.keys())
-        
+
         table = [
             "\\begin{table}[t]",
             "\\centering",
@@ -2051,7 +2051,7 @@ class LaTeXTableGenerator:
             "Defense & " + " & ".join(metrics) + " \\\\",
             "\\midrule",
         ]
-        
+
         for defense in defenses:
             row_values = []
             for metric in metrics:
@@ -2060,17 +2060,17 @@ class LaTeXTableGenerator:
                     row_values.append(f"{val:.3f}")
                 else:
                     row_values.append("-")
-            
+
             table.append(f"{defense} & " + " & ".join(row_values) + " \\\\")
-        
+
         table.extend([
             "\\bottomrule",
             "\\end{tabular}",
             "\\end{table}",
         ])
-        
+
         return "\n".join(table)
-    
+
     @staticmethod
     def main_results_table(
         attack_results: Dict[str, Any],
@@ -2093,31 +2093,31 @@ class LaTeXTableGenerator:
             "System & Type & ASR-r & ASR-a & ISR & ASR-d & TPR & FPR \\\\",
             "\\midrule",
         ]
-        
+
         # Add data rows
         systems = ["Mem0", "A-MEM", "MemGPT"]
         attacks = ["AgentPoison", "MINJA", "InjecMEM"]
-        
+
         for system in systems:
             for i, attack in enumerate(attacks):
                 if i == 0:
                     row = f"{system}"
                 else:
                     row = ""
-                
+
                 # Placeholder values - replace with actual
                 row += f" & {attack} & 0.82 & 0.75 & 0.95 & 0.15 & 0.96 & 0.04 \\\\"
                 table.append(row)
-            
+
             if system != systems[-1]:
                 table.append("\\midrule")
-        
+
         table.extend([
             "\\bottomrule",
             "\\end{tabular}",
             "\\end{table*}",
         ])
-        
+
         return "\n".join(table)
 ```
 

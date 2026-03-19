@@ -7,7 +7,7 @@ all comments are lowercase.
 """
 
 import sys
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 from memory_systems.base import MemorySystem
 from utils.logging import logger
@@ -22,7 +22,7 @@ class Mem0Wrapper(MemorySystem):
     memory content.
     """
 
-    def __init__(self, config: Optional[Dict[str, Any]] = None):
+    def __init__(self, config: dict[str, Any] | None = None):
         """
         initialize the Mem0 wrapper.
 
@@ -65,7 +65,7 @@ class Mem0Wrapper(MemorySystem):
             self.logger.log_error("mem0_store", e, {"key": key})
             raise
 
-    def retrieve(self, key: str) -> Optional[Any]:
+    def retrieve(self, key: str) -> Any | None:
         """
         retrieve a value by key from Mem0 memory.
 
@@ -85,7 +85,7 @@ class Mem0Wrapper(MemorySystem):
             self.logger.log_error("mem0_retrieve", e, {"key": key})
             raise
 
-    def search(self, query: str) -> List[Dict[str, Any]]:
+    def search(self, query: str) -> list[dict[str, Any]]:
         """
         search Mem0 memory for relevant information.
 
@@ -102,7 +102,7 @@ class Mem0Wrapper(MemorySystem):
             self.logger.log_error("mem0_search", e, {"query": query})
             raise
 
-    def get_all_keys(self) -> List[str]:
+    def get_all_keys(self) -> list[str]:
         """
         get all keys currently stored in Mem0 memory.
 
@@ -132,7 +132,7 @@ class AMEMWrapper(MemorySystem):
     providing consistent interface for agentic memory operations.
     """
 
-    def __init__(self, config: Optional[Dict[str, Any]] = None):
+    def __init__(self, config: dict[str, Any] | None = None):
         """
         initialize the A-MEM wrapper.
 
@@ -172,7 +172,7 @@ class AMEMWrapper(MemorySystem):
             self.logger.log_error("amem_store", e, {"key": key})
             raise
 
-    def retrieve(self, key: str) -> Optional[Any]:
+    def retrieve(self, key: str) -> Any | None:
         """
         retrieve a value by key from A-MEM memory.
 
@@ -188,7 +188,7 @@ class AMEMWrapper(MemorySystem):
             self.logger.log_error("amem_retrieve", e, {"key": key})
             raise
 
-    def search(self, query: str) -> List[Dict[str, Any]]:
+    def search(self, query: str) -> list[dict[str, Any]]:
         """
         search A-MEM memory for relevant information.
 
@@ -205,7 +205,7 @@ class AMEMWrapper(MemorySystem):
             self.logger.log_error("amem_search", e, {"query": query})
             raise
 
-    def get_all_keys(self) -> List[str]:
+    def get_all_keys(self) -> list[str]:
         """
         get all keys currently stored in A-MEM memory.
 
@@ -227,7 +227,7 @@ class MemGPTWrapper(MemorySystem):
     providing consistent interface for LLM-powered memory operations.
     """
 
-    def __init__(self, config: Optional[Dict[str, Any]] = None):
+    def __init__(self, config: dict[str, Any] | None = None):
         """
         initialize the MemGPT wrapper.
 
@@ -285,7 +285,7 @@ class MemGPTWrapper(MemorySystem):
             self.logger.log_error("memgpt_store", e, {"key": key})
             raise
 
-    def retrieve(self, key: str) -> Optional[Any]:
+    def retrieve(self, key: str) -> Any | None:
         """
         retrieve a value by key from MemGPT memory.
 
@@ -308,7 +308,7 @@ class MemGPTWrapper(MemorySystem):
             self.logger.log_error("memgpt_retrieve", e, {"key": key})
             raise
 
-    def search(self, query: str) -> List[Dict[str, Any]]:
+    def search(self, query: str) -> list[dict[str, Any]]:
         """
         search MemGPT memory for relevant information.
 
@@ -328,7 +328,7 @@ class MemGPTWrapper(MemorySystem):
             self.logger.log_error("memgpt_search", e, {"query": query})
             raise
 
-    def get_all_keys(self) -> List[str]:
+    def get_all_keys(self) -> list[str]:
         """
         get all keys currently stored in MemGPT memory.
 
@@ -359,7 +359,7 @@ class MockMemorySystem:
     for testing attacks, defenses, and evaluation without requiring api keys.
     """
 
-    def __init__(self, config: Optional[Dict[str, Any]] = None):
+    def __init__(self, config: dict[str, Any] | None = None):
         """
         initialize mock memory system.
 
@@ -367,7 +367,7 @@ class MockMemorySystem:
             config: configuration (unused, for interface compatibility)
         """
         self.config = config or {}
-        self.storage: Dict[str, Any] = {}
+        self.storage: dict[str, Any] = {}
         self.logger = logger
         self.logger.logger.info("mock memory system initialized")
 
@@ -375,11 +375,11 @@ class MockMemorySystem:
         """store a key-value pair in memory."""
         self.storage[key] = value
 
-    def retrieve(self, key: str) -> Optional[Any]:
+    def retrieve(self, key: str) -> Any | None:
         """retrieve a value by key from memory."""
         return self.storage.get(key)
 
-    def search(self, query: str) -> List[Dict[str, Any]]:
+    def search(self, query: str) -> list[dict[str, Any]]:
         """search memory for relevant information."""
         results = []
         query_lower = query.lower()
@@ -389,13 +389,13 @@ class MockMemorySystem:
                 results.append({"key": key, "value": value, "score": 0.8})
         return results
 
-    def get_all_keys(self) -> List[str]:
+    def get_all_keys(self) -> list[str]:
         """get all keys currently stored in memory."""
         return list(self.storage.keys())
 
 
 def create_memory_system(
-    system_type: str, config: Optional[Dict[str, Any]] = None
+    system_type: str, config: dict[str, Any] | None = None
 ) -> MemorySystem:
     """
     factory function to create memory system wrappers.

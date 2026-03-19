@@ -8,7 +8,7 @@ all comments are lowercase.
 """
 
 from abc import ABC, abstractmethod
-from typing import TYPE_CHECKING, Any, Dict, List, Optional
+from typing import TYPE_CHECKING, Any
 
 from memory_systems.base import MemorySystem
 from utils.config import config_manager
@@ -27,7 +27,7 @@ class Defense(ABC):
     activate method and provide metadata about their protection capabilities.
     """
 
-    def __init__(self, name: str, config: Optional[Dict[str, Any]] = None):
+    def __init__(self, name: str, config: dict[str, Any] | None = None):
         """
         initialize the defense.
 
@@ -57,7 +57,7 @@ class Defense(ABC):
 
     @property
     @abstractmethod
-    def protected_attacks(self) -> List[str]:
+    def protected_attacks(self) -> list[str]:
         """
         list of attack types this defense can protect against.
         """
@@ -95,7 +95,7 @@ class Defense(ABC):
         pass
 
     @abstractmethod
-    def detect_attack(self, operation: str, **kwargs) -> Dict[str, Any]:
+    def detect_attack(self, operation: str, **kwargs) -> dict[str, Any]:
         """
         detect if an attack is occurring during a memory operation.
 
@@ -120,7 +120,7 @@ class Defense(ABC):
         """
         return attack.attack_type in self.protected_attacks
 
-    def get_metadata(self) -> Dict[str, Any]:
+    def get_metadata(self) -> dict[str, Any]:
         """
         get metadata about the defense.
 
