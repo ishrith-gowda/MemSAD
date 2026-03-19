@@ -46,21 +46,13 @@ from utils.logging import logger
 # availability check
 # ---------------------------------------------------------------------------
 
-_DPR_AVAILABLE = False
 _DPR_MODEL_NAME = "facebook/dpr-ctx_encoder-single-nq-base"
 _GPT2_MODEL_NAME = "gpt2"
 
-try:
-    from transformers import (
-        DPRContextEncoder,
-        DPRContextEncoderTokenizerFast,
-        GPT2LMHeadModel,
-        GPT2TokenizerFast,
-    )
-
-    _DPR_AVAILABLE = True
-except ImportError:
-    pass
+# torch is imported unconditionally above; model classes are imported lazily
+# in _load_dpr_encoder() and _load_gpt2() to avoid segfault on apple silicon
+# with torch 2.9+ / python 3.13 (operator registration crash at import time).
+_DPR_AVAILABLE = True
 
 # ---------------------------------------------------------------------------
 # module-level model cache (loaded once per process)
@@ -76,6 +68,11 @@ def _load_dpr_encoder():
     """lazy-load and cache the dpr context encoder."""
     global _DPR_ENCODER_CACHE, _DPR_TOKENIZER_CACHE
     if _DPR_ENCODER_CACHE is None:
+        from transformers import (
+            DPRContextEncoder,
+            DPRContextEncoderTokenizerFast,
+        )
+
         _DPR_TOKENIZER_CACHE = DPRContextEncoderTokenizerFast.from_pretrained(
             _DPR_MODEL_NAME
         )
@@ -88,6 +85,8 @@ def _load_gpt2():
     """lazy-load and cache the gpt2 model for perplexity filtering."""
     global _GPT2_MODEL_CACHE, _GPT2_TOKENIZER_CACHE
     if _GPT2_MODEL_CACHE is None:
+        from transformers import GPT2LMHeadModel, GPT2TokenizerFast
+
         _GPT2_TOKENIZER_CACHE = GPT2TokenizerFast.from_pretrained(_GPT2_MODEL_NAME)
         _GPT2_MODEL_CACHE = GPT2LMHeadModel.from_pretrained(_GPT2_MODEL_NAME)
         _GPT2_MODEL_CACHE.eval()

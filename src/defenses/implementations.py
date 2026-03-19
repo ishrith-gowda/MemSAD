@@ -1008,6 +1008,10 @@ class _SADDefenseAdapter(Defense):
         self.active = True
         return True
 
+    def deactivate(self) -> bool:
+        self.active = False
+        return True
+
 
 class _RobustRAGDefenseAdapter(Defense):
     """adapter wrapping robustragdefense in the standard defense api."""
@@ -1040,6 +1044,10 @@ class _RobustRAGDefenseAdapter(Defense):
 
     def activate(self, *args, **kwargs) -> bool:
         self.active = True
+        return True
+
+    def deactivate(self) -> bool:
+        self.active = False
         return True
 
 

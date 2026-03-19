@@ -50,8 +50,11 @@ _TRANSFORMERS_AVAILABLE = False
 try:
     import torch
     import torch.nn.functional as F
-    from transformers import GPT2LMHeadModel, GPT2TokenizerFast
 
+    # defer model class imports to avoid segfault on apple silicon with
+    # torch 2.9+ / python 3.13 (operator registration crash at import time).
+    # GPT2LMHeadModel and GPT2TokenizerFast are imported lazily in
+    # _load_model_and_tokenizer() instead.
     _TRANSFORMERS_AVAILABLE = True
 except ImportError:
     pass
@@ -69,6 +72,8 @@ def _load_model_and_tokenizer(model_name: str = "gpt2"):
     """lazy-load gpt2 model and tokenizer, cached globally."""
     global _MODEL_CACHE, _TOKENIZER_CACHE, _VOCAB_SIZE
     if _MODEL_CACHE is None:
+        from transformers import GPT2LMHeadModel, GPT2TokenizerFast
+
         tok = GPT2TokenizerFast.from_pretrained(model_name)
         if tok.pad_token is None:
             tok.pad_token = tok.eos_token

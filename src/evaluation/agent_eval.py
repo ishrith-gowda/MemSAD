@@ -44,8 +44,12 @@ import numpy as np
 
 _LM_AVAILABLE = False
 try:
-    from transformers import GPT2LMHeadModel, GPT2TokenizerFast
+    import torch  # noqa: F401
 
+    # defer model class imports to avoid segfault on apple silicon with
+    # torch 2.9+ / python 3.13 (operator registration crash at import time).
+    # GPT2LMHeadModel and GPT2TokenizerFast are imported lazily in
+    # _load_agent_model() instead.
     _LM_AVAILABLE = True
 except ImportError:
     pass
@@ -62,6 +66,8 @@ def _load_agent_model(model_name: str = "gpt2"):
     """lazy-load gpt2 model and tokenizer, cached globally."""
     global _AGENT_MODEL_CACHE, _AGENT_TOKENIZER_CACHE
     if _AGENT_MODEL_CACHE is None:
+        from transformers import GPT2LMHeadModel, GPT2TokenizerFast
+
         tok = GPT2TokenizerFast.from_pretrained(model_name)
         if tok.pad_token is None:
             tok.pad_token = tok.eos_token
@@ -396,7 +402,7 @@ class LocalAgentEvaluator:
 
     def _generate(self, prompt: str) -> str:
         """generate a response with the local lm."""
-        import torch
+        import torch  # noqa: F811
 
         inputs = self._tokenizer(
             prompt,
@@ -428,7 +434,7 @@ class LocalAgentEvaluator:
 
     def _compute_perplexity(self, text: str) -> float:
         """compute gpt2 perplexity of a text string."""
-        import torch
+        import torch  # noqa: F811
 
         if not text.strip():
             return float("inf")

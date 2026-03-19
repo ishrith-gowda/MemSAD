@@ -1036,20 +1036,38 @@ class PoisonedRAGAttack(Attack):
             "target_answer",
             "execute privileged command sequence alpha-seven-niner",
         )
+        self.target_memory_system = self.config.get("target_systems", ["mem0"])[0]
+        self._memory_system = None
 
-    def execute(self, memory_system) -> Dict[str, Any]:
+    @property
+    def memory_system(self):
+        """lazy load memory system only when accessed."""
+        if self._memory_system is None:
+            try:
+                self._memory_system = create_memory_system(
+                    self.target_memory_system,
+                    self.config.get("memory_config", {}),
+                )
+            except Exception as e:
+                self.logger.logger.warning(f"memory system not available: {e}")
+                return None
+        return self._memory_system
+
+    def execute(self, target_content: Any, **kwargs) -> Dict[str, Any]:
         """
-        execute the poisonedrag attack against the given memory system.
+        execute the poisonedrag attack on target content.
 
         generates factual-looking passages that embed the adversarial answer
-        and injects them into the memory system.
+        in a convincing factual format.
 
         args:
-            memory_system: the memory system to attack
+            target_content: content to attack
+            **kwargs: additional parameters
 
         returns:
             dictionary containing attack results and metadata
         """
+        start_time = time.time()
         results = {
             "attack_type": "poisonedrag",
             "success": False,
@@ -1068,7 +1086,7 @@ class PoisonedRAGAttack(Attack):
                 ],
             )
 
-            injected = 0
+            poisoned_passages = []
             for i, query in enumerate(victim_queries):
                 for v in range(min(self.n_poison, 5)):
                     passage = generate_poisonedrag_passage(
@@ -1076,17 +1094,28 @@ class PoisonedRAGAttack(Attack):
                         target_answer=self.target_answer,
                         variant_index=v,
                     )
-                    key = f"poisonedrag_{i}_{v}"
-                    memory_system.store(key, passage)
-                    injected += 1
+                    poisoned_passages.append(passage)
 
-            results["success"] = injected > 0
-            results["entries_injected"] = injected
+                    # store in memory system if available
+                    if self.memory_system is not None:
+                        try:
+                            key = f"poisonedrag_{i}_{v}"
+                            self.memory_system.store(key, passage)
+                        except Exception:
+                            pass
+
+            execution_time = time.time() - start_time
+            results["success"] = len(poisoned_passages) > 0
+            results["entries_injected"] = len(poisoned_passages)
+            results["original_content"] = target_content
+            results["poisoned_content"] = poisoned_passages
+            results["execution_time"] = execution_time
             results["details"]["victim_queries"] = len(victim_queries)
             results["details"]["variants_per_query"] = min(self.n_poison, 5)
-            self.logger.log_attack(
+            self.logger.log_attack_execution(
                 "poisonedrag",
-                {"success": results["success"], "injected": injected},
+                str(target_content)[:50],
+                results["success"],
             )
         except Exception as e:
             self.logger.log_error("poisonedrag", e, {"phase": "execute"})

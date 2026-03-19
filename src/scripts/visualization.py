@@ -1922,8 +1922,8 @@ def plot_comprehensive_summary(
         matplotlib figure
     """
     attacks = ["agent_poison", "minja", "injecmem", "poisonedrag"]
-    attack_labels = ["AgentPoison", "MINJA", "InjecMEM"]
-    colors = ["#d7191c", "#fdae61", "#2c7bb6"]
+    attack_labels = ["AgentPoison", "MINJA", "InjecMEM", "PoisonedRAG"]
+    colors = ["#d7191c", "#fdae61", "#2c7bb6", "#1a9641"]
 
     fig, axes = plt.subplots(2, 2, figsize=(14, 10))
     axes = axes.flatten()

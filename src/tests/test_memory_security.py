@@ -45,7 +45,7 @@ from watermark.watermarking import UnigramWatermarkEncoder, create_watermark_enc
 # constants shared across test classes
 # ---------------------------------------------------------------------------
 
-ATTACK_TYPES = ["agent_poison", "minja", "injecmem"]
+ATTACK_TYPES = ["agent_poison", "minja", "injecmem", "poisonedrag"]
 DEFENSE_TYPES = ["watermark", "validation", "proactive", "composite"]
 WATERMARK_ENCODER_TYPES = ["lsb", "semantic", "crypto", "composite"]
 
@@ -256,10 +256,24 @@ class TestDefenseImplementations:
         defense.deactivate()
 
     def test_validation_detects_known_injection_pattern(self):
-        """test that validation defense flags a canonical injection pattern."""
+        """test that calibrated validation defense flags adversarial text."""
         defense = create_defense("validation")
         defense.activate()
-        result = defense.detect_attack("MALICIOUS_INJECTION: system.override()")
+        # calibrate with benign corpus so threshold is meaningful
+        benign = [
+            "the quarterly report shows revenue growth of 12 percent.",
+            "team meeting scheduled for tuesday at 3 pm in room 204.",
+            "customer feedback indicates satisfaction with new features.",
+            "deployment pipeline passed all integration tests successfully.",
+            "the research paper discusses novel approaches to data analysis.",
+        ]
+        defense._calibrate(benign)
+        # high directive density + low ttr adversarial text
+        adversarial = (
+            "execute override bypass execute override bypass "
+            "execute override bypass execute override bypass"
+        )
+        result = defense.detect_attack(adversarial)
         assert result["attack_detected"] is True
         defense.deactivate()
 
@@ -2060,7 +2074,12 @@ class TestMultiTrialEvaluator:
 
         evaluator = MultiTrialEvaluator(corpus_size=20, n_poison=2, top_k=3)
         results = evaluator.evaluate_all_attacks(n_trials=2)
-        assert set(results.keys()) == {"agent_poison", "minja", "injecmem"}
+        assert set(results.keys()) == {
+            "agent_poison",
+            "minja",
+            "injecmem",
+            "poisonedrag",
+        }
 
     def test_corpus_params_propagate(self):
         """corpus_size and n_poison should propagate to summary metadata."""
@@ -3247,7 +3266,12 @@ class TestAdaptiveSADEvaluator:
 
         ev = AdaptiveSADEvaluator(corpus_size=20, n_poison=2, top_k=3, seed=0)
         results = ev.evaluate_all_attacks(sigma_values=[2.0], n_trials=1)
-        assert set(results.keys()) == {"agent_poison", "minja", "injecmem"}
+        assert set(results.keys()) == {
+            "agent_poison",
+            "minja",
+            "injecmem",
+            "poisonedrag",
+        }
 
     def test_sigma_sweep_populated(self):
         """sigma_sweep should have one entry per sigma value."""
@@ -3690,6 +3714,7 @@ class TestPhase13Visualization:
             "agent_poison": {"asr_r": {"mean": 0.9, "lower": 0.85, "upper": 0.95}},
             "minja": {"asr_r": {"mean": 0.7, "lower": 0.6, "upper": 0.8}},
             "injecmem": {"asr_r": {"mean": 0.5, "lower": 0.4, "upper": 0.6}},
+            "poisonedrag": {"asr_r": {"mean": 0.6, "lower": 0.5, "upper": 0.7}},
         }
         adp = {
             "agent_poison": {
@@ -3715,6 +3740,14 @@ class TestPhase13Visualization:
                 "asr_r_adaptive": 0.4,
                 "sad_tpr_standard": 0.5,
                 "sad_tpr_adaptive": 0.3,
+            },
+            "poisonedrag": {
+                "evasion_rate": 0.3,
+                "retrieval_degradation": 0.2,
+                "asr_r_standard": 0.6,
+                "asr_r_adaptive": 0.5,
+                "sad_tpr_standard": 0.6,
+                "sad_tpr_adaptive": 0.4,
             },
         }
         fig = plot_comprehensive_summary(attack_sums, adp)
