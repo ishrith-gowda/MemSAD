@@ -34,6 +34,7 @@ from __future__ import annotations
 
 import time
 from dataclasses import dataclass, field
+from typing import Any
 
 import numpy as np
 
@@ -228,8 +229,8 @@ class LocalAgentEvaluator:
         self.ppl_gate_threshold = ppl_gate_threshold
         self.keyword_threshold = keyword_threshold
         self._rng = np.random.default_rng(seed)
-        self._model = None
-        self._tokenizer = None
+        self._model: Any = None
+        self._tokenizer: Any = None
 
     # -----------------------------------------------------------------------
     # public api
@@ -422,7 +423,7 @@ class LocalAgentEvaluator:
 
         # decode only the newly generated tokens
         new_ids = outputs[0][input_len:]
-        response = self._tokenizer.decode(
+        response: str = self._tokenizer.decode(
             new_ids, skip_special_tokens=True, clean_up_tokenization_spaces=True
         )
         return response.strip()
@@ -611,9 +612,7 @@ class OpenAIAgentEvaluator:
         self.keyword_threshold = keyword_threshold
         self._seed = seed
 
-    def _build_vector_index(
-        self, texts: list[str]
-    ) -> tuple[object, object, np.ndarray]:
+    def _build_vector_index(self, texts: list[str]) -> tuple[Any, Any, np.ndarray]:
         """
         build a faiss index over the provided texts.
 
@@ -624,7 +623,7 @@ class OpenAIAgentEvaluator:
         from sentence_transformers import SentenceTransformer
 
         st = SentenceTransformer("all-MiniLM-L6-v2")
-        vecs = st.encode(
+        vecs: np.ndarray = st.encode(
             texts, normalize_embeddings=True, show_progress_bar=False
         ).astype(np.float32)
         index = faiss.IndexFlatIP(vecs.shape[1])
@@ -633,16 +632,16 @@ class OpenAIAgentEvaluator:
 
     def _retrieve(
         self,
-        index: object,
-        st: object,
+        index: Any,
+        st: Any,
         query: str,
-    ) -> list[str]:
+    ) -> list[int]:
         """retrieve top-k entries from the index for a query."""
-        q_vec = st.encode(
+        q_vec: np.ndarray = st.encode(
             [query], normalize_embeddings=True, show_progress_bar=False
         ).astype(np.float32)
         _, ids = index.search(q_vec, self.top_k)
-        return ids[0].tolist()
+        return ids[0].tolist()  # type: ignore[no-any-return]
 
     def _call_agent(self, context: str) -> str:
         """call openai api and return the agent's response text."""

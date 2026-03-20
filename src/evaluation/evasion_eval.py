@@ -616,7 +616,7 @@ class WatermarkEvasionEvaluator:
         cl = clean_samples[: self.n_samples]
 
         # require green_set access from encoder
-        green_set = getattr(self.encoder, "_green_set", set())
+        green_set: set[str] = getattr(self.encoder, "_green_set", set())
         z_threshold = getattr(self.encoder, "z_threshold", 4.0)
         gamma = getattr(self.encoder, "gamma", 0.25)
 

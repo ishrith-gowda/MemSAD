@@ -286,7 +286,7 @@ def _detect_with_defense(
 
         # evaluate poison entries: simulate a retrieval set where 1 poison
         # entry is mixed with 4 benign entries (typical top_k=5 scenario)
-        poison_flagged: list[bool] = []
+        poison_flagged: list[bool] = []  # type: ignore[no-redef]
         benign_subset = (
             list(benign_sample)[:4] if len(benign_sample) >= 4 else list(benign_sample)
         )
@@ -300,7 +300,7 @@ def _detect_with_defense(
             poison_flagged.append(poison_idx in result.flagged_indices)
 
         # evaluate benign entries: all-benign retrieval set should flag nothing
-        benign_flagged: list[bool] = []
+        benign_flagged: list[bool] = []  # type: ignore[no-redef]
         for i, text in enumerate(benign_sample):
             others = [b for j, b in enumerate(benign_sample) if j != i][:4]
             mixed = others + [text]
@@ -326,14 +326,14 @@ def _detect_with_defense(
                 0.0,
             )
 
-        poison_flagged: list[bool] = []
+        poison_flagged: list[bool] = []  # type: ignore[no-redef]
         for text in poison_texts:
             t0 = time.perf_counter()
             result = defense.detect_attack(text)
             latencies.append((time.perf_counter() - t0) * 1000)
             poison_flagged.append(bool(result.get("attack_detected", False)))
 
-        benign_flagged: list[bool] = []
+        benign_flagged: list[bool] = []  # type: ignore[no-redef]
         for text in benign_sample:
             t0 = time.perf_counter()
             result = defense.detect_attack(text)
@@ -526,7 +526,7 @@ class AttackDefenseEvaluator:
         # average all numeric fields
         def avg(field_name: str) -> float:
             vals = [getattr(r, field_name) for r in results]
-            return sum(vals) / len(vals)
+            return float(sum(vals) / len(vals))
 
         return PairResult(
             attack_type=attack_type,

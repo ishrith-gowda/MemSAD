@@ -118,7 +118,7 @@ def mock_memory_system() -> Mock:
 
 
 @pytest.fixture
-def mock_mem0_wrapper(mock_memory_system: Mock) -> Mock:
+def mock_mem0_wrapper(mock_memory_system: Mock):
     """create a mock Mem0Wrapper for testing without the external mem0 library."""
     from unittest.mock import patch
 
@@ -129,7 +129,7 @@ def mock_mem0_wrapper(mock_memory_system: Mock) -> Mock:
 
 
 @pytest.fixture
-def mock_amem_wrapper(mock_memory_system: Mock) -> Mock:
+def mock_amem_wrapper(mock_memory_system: Mock):
     """create a mock AMEMWrapper for testing without the external amem library."""
     from unittest.mock import patch
 
@@ -140,7 +140,7 @@ def mock_amem_wrapper(mock_memory_system: Mock) -> Mock:
 
 
 @pytest.fixture
-def mock_memgpt_wrapper(mock_memory_system: Mock) -> Mock:
+def mock_memgpt_wrapper(mock_memory_system: Mock):
     """create a mock MemGPTWrapper for testing without the external letta library."""
     from unittest.mock import patch
 

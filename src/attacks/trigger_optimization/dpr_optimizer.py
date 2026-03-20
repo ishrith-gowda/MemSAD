@@ -34,6 +34,7 @@ from __future__ import annotations
 
 import time
 from dataclasses import dataclass, field
+from typing import Any
 
 import numpy as np
 import torch
@@ -57,10 +58,10 @@ _DPR_AVAILABLE = True
 # module-level model cache (loaded once per process)
 # ---------------------------------------------------------------------------
 
-_DPR_ENCODER_CACHE: object | None = None
-_DPR_TOKENIZER_CACHE: object | None = None
-_GPT2_MODEL_CACHE: object | None = None
-_GPT2_TOKENIZER_CACHE: object | None = None
+_DPR_ENCODER_CACHE: Any = None
+_DPR_TOKENIZER_CACHE: Any = None
+_GPT2_MODEL_CACHE: Any = None
+_GPT2_TOKENIZER_CACHE: Any = None
 
 
 def _load_dpr_encoder():
@@ -177,10 +178,10 @@ class DPRTriggerOptimizer:
         self.seed = seed
         self._rng = np.random.default_rng(seed)
         # models loaded lazily on first call
-        self._encoder = None
-        self._tokenizer = None
-        self._gpt2 = None
-        self._gpt2_tok = None
+        self._encoder: Any = None
+        self._tokenizer: Any = None
+        self._gpt2: Any = None
+        self._gpt2_tok: Any = None
         # vocabulary state
         self._vocab_embeddings: torch.Tensor | None = None
         self._vocab_ids: list[int] | None = None
@@ -315,6 +316,8 @@ class DPRTriggerOptimizer:
         grad = self._compute_gradient(trigger_ids, pos, queries, target_emb)
 
         # linear score: grad · vocab_embedding for each vocab token
+        assert self._vocab_embeddings is not None
+        assert self._vocab_ids is not None
         scores = (grad @ self._vocab_embeddings.T).detach().cpu().numpy()
 
         # select top candidates by linear score
@@ -356,6 +359,8 @@ class DPRTriggerOptimizer:
         returns:
             gradient tensor [d]
         """
+        assert self._encoder is not None
+        assert self._tokenizer is not None
         encoder = self._encoder
         tokenizer = self._tokenizer
 
@@ -406,7 +411,7 @@ class DPRTriggerOptimizer:
         # return gradient at trigger position (clipped to valid range)
         seq_len = grad.shape[1]
         trig_seq_pos = min(trigger_pos_in_seq, seq_len - 1)
-        return grad[0, trig_seq_pos, :].detach()  # [d]
+        return grad[0, trig_seq_pos, :].detach()  # type: ignore[no-any-return]  # [d]
 
     # -----------------------------------------------------------------------
     # evaluation helpers
@@ -430,6 +435,8 @@ class DPRTriggerOptimizer:
 
     def _encode_texts(self, texts: list[str]) -> torch.Tensor:
         """encode list of strings with dpr encoder, returns l2-normalized [n, d]."""
+        assert self._tokenizer is not None
+        assert self._encoder is not None
         inputs = self._tokenizer(
             texts,
             return_tensors="pt",
@@ -457,6 +464,8 @@ class DPRTriggerOptimizer:
         fast linear init: project vocab embeddings onto (target - query_mean)
         and select the top n_tokens tokens as the starting point.
         """
+        assert self._vocab_embeddings is not None
+        assert self._vocab_ids is not None
         # direction from query centroid toward target
         query_mean = baseline_embs.mean(dim=0)  # [d]
         direction = F.normalize((target_emb - query_mean).unsqueeze(0), dim=-1)[0]
@@ -547,6 +556,8 @@ class DPRTriggerOptimizer:
         (no ## subword prefix) to ensure triggers are readable.
         """
         # access bert embedding matrix from dpr encoder
+        assert self._encoder is not None
+        assert self._tokenizer is not None
         embed_weight = (
             self._encoder.ctx_encoder.bert_model.embeddings.word_embeddings.weight.detach()
         )  # [vocab_size, d]
@@ -586,6 +597,8 @@ class DPRTriggerOptimizer:
 
     def _tokens_to_ids(self, tokens: list[str]) -> list[int]:
         """convert token strings to dpr vocab ids."""
+        assert self._tokenizer is not None
+        assert self._vocab_ids is not None
         return [
             self._tokenizer.convert_tokens_to_ids(t) or self._vocab_ids[0]
             for t in tokens
@@ -593,6 +606,7 @@ class DPRTriggerOptimizer:
 
     def _ids_to_tokens(self, ids: list[int]) -> list[str]:
         """convert dpr vocab ids to token strings."""
+        assert self._tokenizer is not None
         return [self._tokenizer.convert_ids_to_tokens(i) or "unknown" for i in ids]
 
 

@@ -722,7 +722,7 @@ class ProactiveDefense(Defense):
                 }
 
             # lazy-load sentence-transformer encoder
-            if not hasattr(self, "_st_encoder") or self._st_encoder is None:
+            if not hasattr(self, "_st_encoder") or self._st_encoder is None:  # type: ignore[has-type]
                 from sentence_transformers import SentenceTransformer
 
                 self._st_encoder = SentenceTransformer("all-MiniLM-L6-v2")
@@ -831,7 +831,7 @@ class CompositeDefense(Defense):
         super().__init__("composite", config)
 
         # initialize component defenses
-        self.defenses = {
+        self.defenses: dict[str, Any] = {
             "watermark": WatermarkDefense(self.config.get("watermark_config", {})),
             "validation": ContentValidationDefense(
                 self.config.get("validation_config", {})

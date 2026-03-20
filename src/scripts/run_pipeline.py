@@ -667,7 +667,7 @@ def run_pipeline(
     print(f"  dashboard            : {dashboard_path}")
     print("=" * 60)
 
-    return dashboard_path
+    return str(dashboard_path)
 
 
 # ---------------------------------------------------------------------------

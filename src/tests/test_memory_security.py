@@ -3694,7 +3694,7 @@ class TestPhase13Visualization:
         matplotlib.use("Agg")
         from scripts.visualization import plot_adaptive_tradeoff
 
-        fake_result = {"sigma_sweep": []}
+        fake_result: dict[str, list[object]] = {"sigma_sweep": []}
         fig = plot_adaptive_tradeoff(fake_result)
         assert fig is not None
 

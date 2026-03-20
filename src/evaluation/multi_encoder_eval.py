@@ -48,7 +48,7 @@ class EncoderBase:
         raise NotImplementedError
 
     def encode_single(self, text: str) -> np.ndarray:
-        return self.encode([text])[0]
+        return self.encode([text])[0]  # type: ignore[no-any-return]
 
 
 class SentenceTransformerEncoder(EncoderBase):
@@ -68,7 +68,7 @@ class SentenceTransformerEncoder(EncoderBase):
 
         self.name = display_name
         self._model = SentenceTransformer(model_name)
-        self.dim = self._model.get_sentence_embedding_dimension()
+        self.dim: int = self._model.get_sentence_embedding_dimension() or 0
 
     def encode(self, texts: list[str], batch_size: int = 64) -> np.ndarray:
         """
@@ -142,7 +142,7 @@ class OpenAIEncoder(EncoderBase):
         # l2-normalise (openai returns unit-norm embeddings, but defensive)
         norms = np.linalg.norm(arr, axis=1, keepdims=True)
         norms = np.where(norms < 1e-9, 1.0, norms)
-        return arr / norms
+        return arr / norms  # type: ignore[no-any-return]
 
 
 # ---------------------------------------------------------------------------
@@ -782,7 +782,7 @@ def _linear_cka(X: np.ndarray, Y: np.ndarray) -> float:
         row_mean = M.mean(axis=1, keepdims=True)
         col_mean = M.mean(axis=0, keepdims=True)
         total_mean = M.mean()
-        return M - row_mean - col_mean + total_mean
+        return M - row_mean - col_mean + total_mean  # type: ignore[no-any-return]
 
     Kc = _centre(K)
     Lc = _centre(L)

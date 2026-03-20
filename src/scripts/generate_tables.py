@@ -25,6 +25,7 @@ import argparse
 import sys
 import time
 from pathlib import Path
+from typing import Any
 
 # add src/ to path when running from within src/ or project root
 _HERE = Path(__file__).resolve().parent
@@ -109,10 +110,10 @@ def generate_all_tables(
 
     total_elapsed = time.time() - t0
     print(f"\ndone in {total_elapsed:.1f}s — tables written to {output_dir}")
-    return tables
+    return tables  # type: ignore[no-any-return]
 
 
-def _print_summary(result: object) -> None:
+def _print_summary(result: Any) -> None:
     """print a brief summary of the evaluation results to stdout."""
     print("")
     if result.attack_summaries:

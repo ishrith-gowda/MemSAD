@@ -524,11 +524,12 @@ def plot_watermark_detection(
     """
     fig, ax = plt.subplots(figsize=(8, 5))
 
-    bins = np.linspace(
+    bins_arr = np.linspace(
         min(min(z_scores_clean, default=-5), min(z_scores_watermarked, default=-5)) - 1,
         max(max(z_scores_clean, default=15), max(z_scores_watermarked, default=15)) + 1,
         40,
     )
+    bins = bins_arr.tolist()
 
     ax.hist(
         z_scores_clean,
@@ -968,7 +969,7 @@ def plot_attack_radar(
         ax.plot(angles, values, "o-", color=color, linewidth=2, label=label)
         ax.fill(angles, values, color=color, alpha=0.12)
 
-    ax.set_thetagrids(np.degrees(angles[:-1]), metric_labels, fontsize=11)
+    ax.set_thetagrids(np.degrees(angles[:-1]), metric_labels, fontsize=11)  # type: ignore[attr-defined]
     ax.set_ylim(0, 1)
     ax.set_title("Attack Profile Comparison", fontweight="bold", pad=20)
     ax.legend(loc="upper right", bbox_to_anchor=(1.35, 1.1), framealpha=0.9)
@@ -2239,7 +2240,7 @@ class StatisticalAnalyzer:
         returns:
             path to saved report
         """
-        report = {
+        report: dict[str, Any] = {
             "timestamp": datetime.now().isoformat(),
             "total_experiments": len(results),
             "attack_analysis": self.analyze_attack_patterns(results),

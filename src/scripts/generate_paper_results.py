@@ -119,7 +119,7 @@ def run_comprehensive_evaluation(
 
     elapsed = time.time() - t0
     log.info("comprehensive evaluation complete in %.1fs", elapsed)
-    return result, evaluator
+    return result, evaluator  # type: ignore[return-value]
 
 
 # ---------------------------------------------------------------------------
@@ -133,7 +133,7 @@ def generate_tables(result: Any, evaluator: Any) -> dict[str, str]:
     saved = evaluator.generate_paper_tables(result, str(_TABLES_DIR))
     for table_name, path in saved.items():
         log.info("  table %s → %s", table_name, Path(path).name)
-    return saved
+    return saved  # type: ignore[no-any-return]
 
 
 # ---------------------------------------------------------------------------

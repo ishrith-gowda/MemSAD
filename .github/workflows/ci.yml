@@ -70,8 +70,7 @@ jobs:
             networkx seaborn tqdm
 
       - name: run mypy
-        continue-on-error: true
-        run: mypy src/ --ignore-missing-imports
+        run: mypy src/
 
   # -------------------------------------------------------------------------
   # job 3: test matrix (python 3.10-3.13, with coverage on 3.12)

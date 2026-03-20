@@ -636,8 +636,8 @@ class AblationStudy:
                     from evaluation.retrieval_sim import RetrievalSimulator
 
                     sim = RetrievalSimulator(
-                        corpus_size=self.corpus_size,
-                        n_poison_per_attack=self.n_poison,
+                        corpus_size=200,
+                        n_poison_per_attack=5,
                         top_k=5,
                         use_trigger_optimization=False,
                         seed=seed,
@@ -1099,32 +1099,32 @@ class AblationStudy:
             row_parts = []
             if i < len(cs_pts):
                 pt = cs_pts[i]
-                v = (
+                v_cs: int | float = (
                     int(pt.param_value)
                     if pt.param_value == int(pt.param_value)
                     else pt.param_value
                 )
-                row_parts.append(f"{v} & {pt.asr_r_mean:.3f}")
+                row_parts.append(f"{v_cs} & {pt.asr_r_mean:.3f}")
             else:
                 row_parts.append("& ")
             if i < len(tk_pts):
                 pt = tk_pts[i]
-                v = (
+                v_tk: int | float = (
                     int(pt.param_value)
                     if pt.param_value == int(pt.param_value)
                     else pt.param_value
                 )
-                row_parts.append(f"{v} & {pt.asr_r_mean:.3f}")
+                row_parts.append(f"{v_tk} & {pt.asr_r_mean:.3f}")
             else:
                 row_parts.append("& ")
             if i < len(pc_pts):
                 pt = pc_pts[i]
-                v = (
+                v_pc: int | float = (
                     int(pt.param_value)
                     if pt.param_value == int(pt.param_value)
                     else pt.param_value
                 )
-                row_parts.append(f"{v} & {pt.asr_r_mean:.3f}")
+                row_parts.append(f"{v_pc} & {pt.asr_r_mean:.3f}")
             else:
                 row_parts.append("& ")
             if i < len(sad_pts):

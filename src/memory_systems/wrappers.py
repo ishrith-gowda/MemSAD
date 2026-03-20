@@ -30,7 +30,7 @@ class Mem0Wrapper(MemorySystem):
             config: configuration for Mem0 system
         """
         self.config = config or {}
-        self.client = None
+        self.client: Any = None
         self.user_id = self.config.get("user_id", "default_user")
         self.logger = logger
 
@@ -140,7 +140,7 @@ class AMEMWrapper(MemorySystem):
             config: configuration for A-MEM system
         """
         self.config = config or {}
-        self.client = None
+        self.client: Any = None
         self.logger = logger
 
         try:
@@ -213,7 +213,7 @@ class AMEMWrapper(MemorySystem):
             list of memory keys
         """
         try:
-            return self.client.get_all_memory_keys()
+            return self.client.get_all_memory_keys()  # type: ignore[no-any-return]
         except Exception as e:
             self.logger.log_error("amem_get_keys", e)
             raise
@@ -235,7 +235,7 @@ class MemGPTWrapper(MemorySystem):
             config: configuration for MemGPT system
         """
         self.config = config or {}
-        self.client = None
+        self.client: Any = None
         self.agent_id = self.config.get("agent_id")
         self.logger = logger
 

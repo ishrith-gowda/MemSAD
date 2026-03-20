@@ -314,7 +314,7 @@ class AdaptivePassageCrafter:
         self.max_substitutions = max_substitutions
         self.target_sigma_multiple = target_sigma_multiple
         self._rng = random.Random(seed)
-        self._encoder = None
+        self._encoder: Any = None
         self._synonyms = _ADAPTIVE_SYNONYMS
 
     @property
@@ -443,7 +443,7 @@ class AdaptivePassageCrafter:
 
             current_passage = best_passage
             current_sim = best_sim
-            substitution_log.append((best_word, best_replacement))
+            substitution_log.append((best_word, best_replacement or ""))
             n_subs += 1
 
         evasion_successful = current_sim <= sad_threshold

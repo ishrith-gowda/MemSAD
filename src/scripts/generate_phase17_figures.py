@@ -88,7 +88,7 @@ def _compute_char_level_z_scores(
     delta: float = 2.0,
     secret_key: str = "watermark",
     watermarked: bool = True,
-    n_rng: np.random.Generator = None,
+    n_rng: np.random.Generator | None = None,
 ) -> list[float]:
     """
     compute character-level unigram z-scores for a list of texts.
@@ -154,7 +154,7 @@ def _compute_token_level_z_scores(
     delta: float = 2.0,
     secret_key: str = "watermark",
     watermarked: bool = True,
-    n_rng: np.random.Generator = None,
+    n_rng: np.random.Generator | None = None,
 ) -> list[float]:
     """
     compute token-level unigram z-scores for a list of texts.

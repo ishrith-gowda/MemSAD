@@ -292,6 +292,8 @@ class LexicalDiversityGate:
         rep_rate = _repetition_rate(tokens)
 
         lex_score = self._score_from_components(ttr, ngram_overlap, rep_rate)
+        assert self.calibration_mean is not None
+        assert self.calibration_std is not None
         threshold = self.calibration_mean - self.threshold_sigma * self.calibration_std
 
         return LexicalDiversityResult(
@@ -349,6 +351,8 @@ class LexicalDiversityGate:
         neg_scores = [-s for s in scores]
         auroc = _auroc_from_scores(neg_scores, labels)
 
+        assert self.calibration_mean is not None
+        assert self.calibration_std is not None
         threshold = self.calibration_mean - self.threshold_sigma * self.calibration_std
 
         # component averages

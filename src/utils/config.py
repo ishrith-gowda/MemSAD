@@ -8,6 +8,7 @@ all comments are lowercase.
 
 from collections.abc import Callable
 from pathlib import Path
+from typing import Any
 
 import yaml
 from omegaconf import DictConfig, OmegaConf
@@ -29,8 +30,8 @@ class configmanager:
             config_dir: base directory for configuration files
         """
         self.config_dir = Path(config_dir)
-        self._loaded_configs = {}
-        self._validators = {}
+        self._loaded_configs: dict[str, Any] = {}
+        self._validators: dict[str, Any] = {}
 
     def load_config(self, config_path: str, validate: bool = True) -> DictConfig:
         """
@@ -62,7 +63,7 @@ class configmanager:
                 self._validate_config(config_path, config)
 
             self._loaded_configs[config_path] = config
-            return config
+            return config  # type: ignore[no-any-return]
 
         except yaml.YAMLError as e:
             raise ValueError(f"invalid yaml in {config_path}: {e}")

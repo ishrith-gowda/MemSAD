@@ -15,6 +15,7 @@ from __future__ import annotations
 
 import sys
 from pathlib import Path
+from typing import Any
 
 import matplotlib
 import matplotlib.pyplot as plt
@@ -337,7 +338,7 @@ def generate_graph_attack_figure() -> None:
     ]
 
     # attack configurations
-    attacks = {
+    attacks: dict[str, dict[str, Any]] = {
         "Hub Insertion": {
             "method": "hub",
             "poison_text": (
@@ -362,8 +363,8 @@ def generate_graph_attack_figure() -> None:
         },
     }
 
-    results = {}
-    degree_data = {}
+    results: dict[str, Any] = {}
+    degree_data: dict[str, Any] = {}
 
     for attack_name, config in attacks.items():
         # fresh graph for each attack
@@ -423,7 +424,7 @@ def generate_graph_attack_figure() -> None:
             max(dd["benign"]) if dd["benign"] else 0,
             max(dd["poison"]) if dd["poison"] else 0,
         )
-        bins = np.arange(0, max_deg + 2) - 0.5
+        bins = (np.arange(0, max_deg + 2) - 0.5).tolist()
 
         ax.hist(
             dd["benign"],

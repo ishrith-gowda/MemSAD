@@ -256,7 +256,7 @@ class ComprehensiveEvaluator:
                 defenses=defenses,
                 n_trials=n_trials,
             )
-            return matrix.to_dict()
+            return matrix.to_dict()  # type: ignore[no-any-return]
         except Exception as exc:
             logger.log_error("matrix_eval", exc, {})
             return None

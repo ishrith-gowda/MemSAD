@@ -44,7 +44,7 @@ def load_watermark_config() -> dict[str, Any]:
     config_path = Path("configs/defenses/watermark.yaml")
     if config_path.exists():
         with open(config_path) as f:
-            return yaml.safe_load(f)
+            return yaml.safe_load(f)  # type: ignore[no-any-return]
     return {}
 
 
@@ -237,7 +237,7 @@ class UnigramWatermarkEncoder(WatermarkEncoder):
         # find any green character as fallback
         for green_char in self._green_set:
             if green_char.isalpha() == char.isalpha():
-                return green_char
+                return green_char  # type: ignore[no-any-return]
 
         return char
 
@@ -322,7 +322,7 @@ class UnigramWatermarkEncoder(WatermarkEncoder):
 
         z_score = (green_count - expected_green) / std_dev
 
-        return z_score
+        return float(z_score)
 
     def extract(self, content: str) -> str | None:
         """
@@ -767,7 +767,7 @@ class CompositeWatermarkEncoder(WatermarkEncoder):
             return None
 
         # Find consensus watermark
-        watermark_counts = {}
+        watermark_counts: dict[str | None, int] = {}
         for watermark in extractions.values():
             watermark_counts[watermark] = watermark_counts.get(watermark, 0) + 1
 
@@ -833,7 +833,7 @@ def create_watermark_encoder(
                 "install them with: pip install torch transformers"
             )
         cfg = config or {}
-        return TokenLevelWatermarkEncoder(
+        return TokenLevelWatermarkEncoder(  # type: ignore[no-any-return]
             gamma=cfg.get("gamma", 0.25),
             delta=cfg.get("delta", 2.0),
             z_threshold=cfg.get("z_threshold", 4.0),

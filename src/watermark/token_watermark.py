@@ -38,6 +38,7 @@ from __future__ import annotations
 import hashlib
 import math
 from dataclasses import dataclass
+from typing import Any
 
 import numpy as np
 
@@ -161,9 +162,9 @@ class TokenLevelWatermarkEncoder:
         self.temperature = temperature
         self._rng = np.random.default_rng(seed)
         # lazy-loaded
-        self._model = None
-        self._tokenizer = None
-        self._vocab_size = None
+        self._model: Any = None
+        self._tokenizer: Any = None
+        self._vocab_size: int | None = None
         # green list: built once after model is loaded
         self._green_set: set[int] | None = None
 
@@ -317,7 +318,7 @@ class TokenLevelWatermarkEncoder:
                         break
 
         # decode full generated text (prefix + new tokens)
-        full_text = self._tokenizer.decode(
+        full_text: str = self._tokenizer.decode(
             generated_ids, skip_special_tokens=True, clean_up_tokenization_spaces=True
         )
         return full_text
@@ -356,7 +357,7 @@ class TokenLevelWatermarkEncoder:
         """lazy-load gpt2 model and tokenizer."""
         if self._model is None:
             self._model, self._tokenizer = _load_model_and_tokenizer(self.model_name)
-            self._vocab_size = self._tokenizer.vocab_size
+            self._vocab_size = int(self._tokenizer.vocab_size)
 
 
 # ---------------------------------------------------------------------------

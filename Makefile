@@ -76,7 +76,7 @@ ruff: ## run ruff only
 
 .PHONY: typecheck
 typecheck: ## run mypy type checker
-	$(PYTHON) -m mypy $(SRC) --ignore-missing-imports
+	$(PYTHON) -m mypy $(SRC)
 
 # ---------------------------------------------------------------------------
 # security

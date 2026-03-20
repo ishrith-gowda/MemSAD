@@ -182,7 +182,7 @@ class SemanticAnomalyDetector:
         self.scoring_mode = scoring_mode
 
         # lazy-loaded encoder (avoids heavy import at module load time)
-        self._encoder = None
+        self._encoder: Any = None
 
         # calibration statistics
         self.calibration_mean: float | None = None
@@ -256,7 +256,7 @@ class SemanticAnomalyDetector:
         sample_queries: list[str],
         train_fraction: float = 1.0,
         seed: int = 42,
-    ) -> dict[str, float]:
+    ) -> dict[str, Any]:
         """
         fit calibration statistics on a labeled benign corpus.
 
@@ -358,7 +358,7 @@ class SemanticAnomalyDetector:
         benign_entries: list[str],
         victim_queries: list[str],
         trigger_str: str,
-    ) -> dict[str, float]:
+    ) -> dict[str, Any]:
         """
         fit calibration statistics using triggered victim queries.
 
@@ -443,6 +443,8 @@ class SemanticAnomalyDetector:
             anomaly_score = alpha * max_sim + (1.0 - alpha) * mean_sim
         else:
             anomaly_score = max_sim
+        assert self.calibration_mean is not None  # guaranteed by is_calibrated check
+        assert self.calibration_std is not None  # guaranteed by is_calibrated check
         threshold = self.calibration_mean + self.threshold_sigma * self.calibration_std
         sigma_mult = (anomaly_score - self.calibration_mean) / self.calibration_std
 
@@ -468,6 +470,9 @@ class SemanticAnomalyDetector:
 
         if not self.is_calibrated:
             raise RuntimeError("calibrate() must be called before detect_batch()")
+
+        assert self.calibration_mean is not None  # guaranteed by is_calibrated check
+        assert self.calibration_std is not None  # guaranteed by is_calibrated check
 
         if not self._query_embeddings:
             threshold = (
@@ -565,6 +570,8 @@ class SemanticAnomalyDetector:
         precision = tp / (tp + fp) if (tp + fp) > 0 else 0.0
         f1 = 2.0 * precision * tpr / (precision + tpr) if (precision + tpr) > 0 else 0.0
         auroc = _compute_auroc(scores, labels)
+        assert self.calibration_mean is not None  # guaranteed by is_calibrated check
+        assert self.calibration_std is not None  # guaranteed by is_calibrated check
         threshold = self.calibration_mean + self.threshold_sigma * self.calibration_std
 
         return {

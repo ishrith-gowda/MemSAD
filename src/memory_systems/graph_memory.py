@@ -119,7 +119,7 @@ class GraphMemorySystem:
         from sentence_transformers import SentenceTransformer
 
         self._st = SentenceTransformer(encoder_model)
-        self._dim = self._st.get_sentence_embedding_dimension()
+        self._dim: int = self._st.get_sentence_embedding_dimension() or 0
         self.edge_threshold = edge_threshold
         self.top_k = top_k
         self.hop_depth = hop_depth
@@ -171,7 +171,7 @@ class GraphMemorySystem:
 
         # auto-construct semantic edges to all existing nodes
         if len(self.nodes) > 1:
-            existing_vecs = np.stack([n.embedding for n in self.nodes[:-1]])
+            existing_vecs = np.stack([n.embedding for n in self.nodes[:-1]])  # type: ignore[misc]
             sims = existing_vecs @ vec
             for i, sim in enumerate(sims):
                 if float(sim) >= self.edge_threshold:
@@ -225,7 +225,7 @@ class GraphMemorySystem:
 
             # connect to all previously added nodes
             if len(self.nodes) > 1:
-                prev_vecs = np.stack([n.embedding for n in self.nodes[:-1]])
+                prev_vecs = np.stack([n.embedding for n in self.nodes[:-1]])  # type: ignore[misc]
                 sims = prev_vecs @ vec
                 for j, sim in enumerate(sims):
                     if float(sim) >= self.edge_threshold:
@@ -254,7 +254,7 @@ class GraphMemorySystem:
             return []
 
         q_vec = self._encode([query])[0]
-        all_vecs = np.stack([n.embedding for n in self.nodes])
+        all_vecs = np.stack([n.embedding for n in self.nodes])  # type: ignore[misc]
         sims = all_vecs @ q_vec
 
         top_ids = np.argsort(sims)[::-1][: min(self.top_k, len(sims))]
@@ -374,7 +374,7 @@ class GraphMemorySystem:
         returns:
             list of node_ids for the inserted cluster
         """
-        nids = []
+        nids: list[int] = []
         for text in poison_texts:
             nid = self.add_node(
                 text=text,
@@ -526,6 +526,7 @@ class GraphMemorySystem:
 
     def _encode(self, texts: list[str]) -> np.ndarray:
         """encode texts to normalised float32 vectors."""
-        return self._st.encode(
+        vecs: Any = self._st.encode(
             texts, normalize_embeddings=True, show_progress_bar=False
-        ).astype(np.float32)
+        )
+        return np.asarray(vecs, dtype=np.float32)

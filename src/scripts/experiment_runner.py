@@ -75,7 +75,7 @@ class ExperimentRunner:
             config = json.load(f)
 
         logger.log_experiment_config_loaded(experiment_file, config)
-        return config
+        return config  # type: ignore[no-any-return]
 
     def run_single_experiment(
         self, experiment_config: dict[str, Any]

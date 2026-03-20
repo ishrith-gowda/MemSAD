@@ -35,7 +35,7 @@ def load_attack_config(attack_type: str) -> dict[str, Any]:
     config_path = Path("configs/attacks") / f"{attack_type}.yaml"
     if config_path.exists():
         with open(config_path) as f:
-            return yaml.safe_load(f)
+            return yaml.safe_load(f)  # type: ignore[no-any-return]
     return {}
 
 
@@ -1108,8 +1108,8 @@ class PoisonedRAGAttack(Attack):
             results["original_content"] = target_content
             results["poisoned_content"] = poisoned_passages
             results["execution_time"] = execution_time
-            results["details"]["victim_queries"] = len(victim_queries)
-            results["details"]["variants_per_query"] = min(self.n_poison, 5)
+            results["details"]["victim_queries"] = len(victim_queries)  # type: ignore[index]
+            results["details"]["variants_per_query"] = min(self.n_poison, 5)  # type: ignore[index]
             self.logger.log_attack_execution(
                 "poisonedrag",
                 str(target_content)[:50],

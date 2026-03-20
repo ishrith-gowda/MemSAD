@@ -286,7 +286,7 @@ class AttackEvaluator:
                     for c in test_content
                     if isinstance(c, str) and len(c.split()) >= 3
                 ]
-                return sim.evaluate_attack(
+                return sim.evaluate_attack(  # type: ignore[no-any-return]
                     attack_type, extra_victim_queries=extra_victims
                 )
             except Exception as exc:
@@ -612,7 +612,7 @@ class BenchmarkRunner:
             self.results.append(result)
 
             self.logger.logger.info(f"completed benchmark experiment: {experiment_id}")
-            return result
+            return result  # type: ignore[no-any-return]
 
         except Exception as e:
             self.logger.log_error(
@@ -781,9 +781,9 @@ class EvaluationReportGenerator:
         all_defense_tpr = []
         all_defense_fpr = []
         for result in results:
-            for metrics in result.defense_metrics.values():
-                all_defense_tpr.extend([metrics.tpr] * metrics.total_tests)
-                all_defense_fpr.extend([metrics.fpr] * metrics.total_tests)
+            for d_metrics in result.defense_metrics.values():
+                all_defense_tpr.extend([d_metrics.tpr] * d_metrics.total_tests)
+                all_defense_fpr.extend([d_metrics.fpr] * d_metrics.total_tests)
 
         avg_defense_tpr = statistics.mean(all_defense_tpr) if all_defense_tpr else 0
         avg_defense_fpr = statistics.mean(all_defense_fpr) if all_defense_fpr else 0
