@@ -150,11 +150,11 @@ ci: format-check lint typecheck test-all ## run full ci pipeline locally
 
 .PHONY: pipeline
 pipeline: ## run end-to-end evaluation pipeline (quick mode)
-	PYTHONPATH=$(SRC) $(PYTHON) -m scripts.run_pipeline --mode quick
+	PYTHONPATH=$(SRC) $(PYTHON) -m scripts.run_pipeline
 
 .PHONY: pipeline-full
 pipeline-full: ## run end-to-end evaluation pipeline (full mode)
-	PYTHONPATH=$(SRC) $(PYTHON) -m scripts.run_pipeline --mode full
+	PYTHONPATH=$(SRC) $(PYTHON) -m scripts.run_pipeline --full
 
 # ---------------------------------------------------------------------------
 # paper
