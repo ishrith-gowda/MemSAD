@@ -239,7 +239,7 @@ class DPRTriggerOptimizer:
         current_sim = self._eval_trigger(trigger_ids, queries, target_emb)
         similarity_history.append(current_sim)
 
-        for iteration in range(self.n_iter):
+        for _iteration in range(self.n_iter):
             improved = False
             for pos in range(self.n_tokens):
                 best_ids, best_sim = self._hotflip_step(

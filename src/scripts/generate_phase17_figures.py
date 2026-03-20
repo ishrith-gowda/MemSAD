@@ -184,7 +184,7 @@ def _compute_token_level_z_scores(
     all_ids = np.arange(vocab_size)
     rng.shuffle(all_ids)
     n_green_vocab = int(vocab_size * gamma)
-    _green_set = set(all_ids[:n_green_vocab].tolist())
+    green_set = set(all_ids[:n_green_vocab].tolist())  # noqa: F841
 
     # compute expected green fraction for watermarked text
     # p_green = (gamma * exp(delta)) / (gamma * exp(delta) + (1 - gamma))
@@ -742,7 +742,7 @@ def generate_dpr_convergence_figure(
         f"+{gain:.2f} vs. random",
         xy=(2, final_sim),
         xytext=(1.5, final_sim + 0.08),
-        arrowprops=dict(arrowstyle="->", color="black", lw=1.2),
+        arrowprops={"arrowstyle": "->", "color": "black", "lw": 1.2},
         fontsize=9,
     )
 
@@ -890,7 +890,7 @@ def main() -> None:
     elapsed = time.time() - t0
     print("")
     print(f"done in {elapsed:.1f}s. generated {len(all_paths)} files:")
-    for k, v in all_paths.items():
+    for _k, v in all_paths.items():
         print(f"  {v}")
 
 

@@ -568,7 +568,7 @@ class BenchmarkRunner:
             # Generate poisoned content using all attacks
             for content in test_content:
                 attack_results = attack_suite.execute_all(content)
-                for attack_type, result in attack_results["attack_results"].items():
+                for _attack_type, result in attack_results["attack_results"].items():
                     if result.get("success", False):
                         poisoned_content.append(result.get("poisoned_content", content))
 

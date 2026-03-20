@@ -635,12 +635,12 @@ def generate_production_asr_a_figure() -> None:
             "",
             xy=(x[i] - width, gpt2_measured[i]),
             xytext=(x[i], gpt4o_mini[i]),
-            arrowprops=dict(
-                arrowstyle="<->",
-                color="gray",
-                lw=1.0,
-                ls="--",
-            ),
+            arrowprops={
+                "arrowstyle": "<->",
+                "color": "gray",
+                "lw": 1.0,
+                "ls": "--",
+            },
         )
 
     fig.tight_layout()
@@ -725,7 +725,7 @@ def generate_fpr_validation_figure() -> None:
         fontsize=10,
         verticalalignment="top",
         horizontalalignment="center",
-        bbox=dict(boxstyle="round,pad=0.4", facecolor="lightyellow", alpha=0.9),
+        bbox={"boxstyle": "round,pad=0.4", "facecolor": "lightyellow", "alpha": 0.9},
     )
 
     # right: cp upper bound as function of total observations

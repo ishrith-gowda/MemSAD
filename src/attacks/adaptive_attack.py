@@ -583,7 +583,7 @@ class AdaptiveSADEvaluator:
         if attack_type == "agent_poison":
             n = self.n_poison
             passage = generate_centroid_agentpoison_passage(victim_queries)
-            for i in range(n):
+            for _i in range(n):
                 poison_entries.append(passage)
         elif attack_type == "minja":
             n = self.n_poison * 2

@@ -884,7 +884,7 @@ class CompositeDefense(Defense):
         """
         try:
             success_count = 0
-            for name, defense in self.defenses.items():
+            for _name, defense in self.defenses.items():
                 if defense.deactivate(**kwargs):
                     success_count += 1
 

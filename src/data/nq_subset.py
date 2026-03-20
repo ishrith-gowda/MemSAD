@@ -229,7 +229,7 @@ class NQSubset:
             list of dicts with keys: query, topic, category
         """
         queries: list[dict[str, str]] = []
-        for q, a in self._qa_pairs:
+        for q, _a in self._qa_pairs:
             queries.append(
                 {
                     "query": q,

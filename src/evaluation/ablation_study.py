@@ -550,7 +550,7 @@ class AblationStudy:
 
                     # generate clean (unwatermarked) samples
                     clean_z_scores: list[float] = []
-                    for i in range(n_samples):
+                    for _i in range(n_samples):
                         stats = encoder.get_detection_stats(_ref)
                         clean_z_scores.append(stats["z_score"])
 

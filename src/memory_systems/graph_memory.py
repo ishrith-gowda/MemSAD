@@ -210,7 +210,7 @@ class GraphMemorySystem:
         """
         vecs = self._encode(texts)
         new_ids = []
-        for i, (text, vec) in enumerate(zip(texts, vecs)):
+        for _i, (text, vec) in enumerate(zip(texts, vecs)):
             nid = self._next_id
             self._next_id += 1
             node = MemoryNode(

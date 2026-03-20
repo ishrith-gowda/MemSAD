@@ -165,7 +165,7 @@ def run_all_encoders() -> dict:
         nested dict: encoder_name -> attack_name -> metric_dict
     """
     all_results = {}
-    for enc_name, enc_label in _ENCODERS:
+    for enc_name, _enc_label in _ENCODERS:
         print(f"  evaluating encoder: {enc_name} ...")
         all_results[enc_name] = _run_encoder_experiment(enc_name)
     return all_results

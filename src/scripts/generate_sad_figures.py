@@ -127,7 +127,7 @@ def generate_sad_roc_figure() -> Path:
         xytext=(0.06, 0.78),
         fontsize=7.5,
         ha="left",
-        arrowprops=dict(arrowstyle="->", lw=0.9, color="black"),
+        arrowprops={"arrowstyle": "->", "lw": 0.9, "color": "black"},
     )
 
     ax.set_xlim(-0.02, 1.02)

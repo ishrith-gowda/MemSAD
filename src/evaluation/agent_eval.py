@@ -401,7 +401,7 @@ class LocalAgentEvaluator:
 
     def _generate(self, prompt: str) -> str:
         """generate a response with the local lm."""
-        import torch
+        import torch  # noqa: F811
 
         inputs = self._tokenizer(
             prompt,
@@ -433,7 +433,7 @@ class LocalAgentEvaluator:
 
     def _compute_perplexity(self, text: str) -> float:
         """compute gpt2 perplexity of a text string."""
-        import torch
+        import torch  # noqa: F811
 
         if not text.strip():
             return float("inf")

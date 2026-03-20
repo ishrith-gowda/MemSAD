@@ -275,7 +275,7 @@ class UnigramWatermarkEncoder(WatermarkEncoder):
         target_green = int(len(alnum_chars) * target_green_proportion)
         needed_replacements = max(0, target_green - current_green)
 
-        for i, char in enumerate(content):
+        for _i, char in enumerate(content):
             # with probability proportional to delta, replace non-green with green
             if (
                 not self._is_green(char)
