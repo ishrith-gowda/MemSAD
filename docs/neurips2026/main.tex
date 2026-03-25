@@ -53,7 +53,7 @@ Defending LLM Agent Memory Systems}
 
 \begin{abstract}
 LLM agents increasingly rely on persistent external memory to maintain context across sessions, yet the security of these memory systems remains largely unexplored.
-We present a unified evaluation framework for three memory poisoning attacks---\agentpoison{}, \minja{}, and \injecmem{}---implemented over a realistic FAISS-backed vector store with 200 synthetic agent memory entries.
+We present a unified evaluation framework for three memory poisoning attacks (\agentpoison{}, \minja{}, and \injecmem{}) implemented over a realistic FAISS-backed vector store with 200 synthetic agent memory entries.
 We identify and correct a systematic evaluation error in prior \agentpoison{} simulations: issuing un-triggered victim queries at evaluation time underestimates attack success rate from 0.25 to 1.00.
 On the defense side, we propose \emph{Semantic Anomaly Detection} (\sad{}), which flags adversarial entries by their anomalously high cosine similarity to observed queries without requiring labeled attack examples.
 We prove that any continuous perturbation reducing \sad{}'s anomaly score simultaneously reduces retrieval rank (gradient coupling), while identifying a discrete loophole: synonym-invariant encoders enable word-level evasion at $\Delta\asrr\!\approx\!0$.
@@ -68,7 +68,7 @@ Modern LLM agents persist context across sessions through external memory system
 These systems store user preferences, task history, conversation summaries, and factual knowledge as dense vector embeddings, retrieving semantically relevant entries to condition the agent's next response.
 The practical utility of persistent memory is well established; its security implications are not.
 
-An adversary who can influence the contents of an agent's memory---whether through direct write access, crafted user interaction, or exploitation of the agent's self-storage mechanism---can covertly redirect agent behavior across arbitrary future sessions.
+An adversary who can influence the contents of an agent's memory (whether through direct write access, crafted user interaction, or exploitation of the agent's self-storage mechanism) can covertly redirect agent behavior across arbitrary future sessions.
 Unlike jailbreaks, which operate on a single interaction, memory poisoning attacks \emph{persist}: a single adversarial entry may remain in memory for weeks and trigger on every related query.
 The agent has no inherent mechanism to distinguish a legitimate memory from an injected one.
 
@@ -104,7 +104,7 @@ Concurrent work on tool-use manipulation~\citep{yang2024watch} shows that simila
 Our work differs from RAG poisoning in that the adversarial entries are \emph{agent-generated, semantically coherent memories} that persist across sessions without further adversarial interaction, and defenses must operate at write time without full corpus visibility.
 
 \paragraph{Anomaly detection and watermarking.}
-STRIP~\citep{gao2019strip} and Neural Cleanse~\citep{wang2019neuralcleanse} are model-centric defenses requiring inference-time or white-box model access---inapplicable to write-time memory content where defenses target raw stored text rather than model weights or activations.
+STRIP~\citep{gao2019strip} and Neural Cleanse~\citep{wang2019neuralcleanse} are model-centric defenses requiring inference-time or white-box model access, rendering them inapplicable to write-time memory content where defenses target raw stored text rather than model weights or activations.
 \citet{zhao2024watermark} propose provably robust token-level watermarks (AUROC\,$>$\,0.97) with formal guarantees under bounded paraphrasing.
 We adapt their scheme to memory provenance and propose \sad{} as a complementary similarity-based detector operating without model access.
 \citet{lee2018simple} show that Mahalanobis distance to class centroids is an effective out-of-distribution detector; our cosine similarity threshold is the retrieval-space analogue adapted to the unsupervised, query-conditioned memory setting.
@@ -204,7 +204,7 @@ The trigger is a short token sequence (e.g., ``system task context access compli
 \label{sec:sad}
 
 \paragraph{Motivation.}
-Memory poisoning attacks succeed precisely because adversarial entries are semantically close to victim queries---this closeness, necessary for retrieval, is itself a detectable signal.
+Memory poisoning attacks succeed precisely because adversarial entries are semantically close to victim queries; this closeness, necessary for retrieval, is itself a detectable signal.
 Legitimate memory entries from benign sources are not expected to be highly similar to any particular observed query pattern.
 \sad{} exploits this asymmetry: it requires no labeled attack examples and no model access, only a benign reference corpus (the existing memory contents) for calibration.
 
@@ -344,12 +344,12 @@ Bootstrap 95\% CIs from 5 independent random seeds.
 \end{table}
 
 Table~\ref{tab:attack_results} reports main results; Figure~\ref{fig:attack_asr} visualizes the three metrics.
-\agentpoison{} achieves $\asrr\!=\!1.00$ with the corrected triggered-query protocol and centroid-targeting passage---a 4$\times$ increase over the un-triggered baseline (0.25).
+\agentpoison{} achieves $\asrr\!=\!1.00$ with the corrected triggered-query protocol and centroid-targeting passage, a $4\times$ increase over the un-triggered baseline (0.25).
 This result has an important implication: simulations that evaluate \agentpoison{} without trigger prepending substantially underestimate attacker capability, as the paper's evaluation protocol (Algorithm~2 in~\citet{chen2024agentpoison}) explicitly issues triggered queries.
 
 \minja{} achieves $\asrr\!=\!0.65$ in our FAISS simulation.
 The original paper reports ISR\,=\,98.2\% (injection success rate), which measures write-time poisoning success; our $\asrr\!=\!0.65$ measures retrieval-time exposure given that poison entries have already been stored.\footnote{ISR and $\asrr$ measure complementary threat surfaces: ISR quantifies write-time success; $\asrr$ quantifies retrieval-time exposure.}
-The gap between ISR and $\asrr$ arises because successfully stored poison entries must still compete with 200 benign entries for top-$k$ retrieval slots---a harder task than initial injection.
+The gap between ISR and $\asrr$ arises because successfully stored poison entries must still compete with 200 benign entries for top-$k$ retrieval slots, a harder task than initial injection.
 \minja{}'s bridging-step passages are highly targeted to specific victim queries, yielding strong per-query retrieval but incomplete coverage across the full victim query set.
 
 \injecmem{} achieves intermediate recall ($\asrr\!=\!0.50$) by compensating for lower per-entry similarity with volume: 15 broad-anchor entries cover more of the query space than \agentpoison{}'s 5 centroid entries, but each individual anchor has lower cosine similarity to any specific query.
@@ -501,14 +501,14 @@ Proactive detection catches broad-recall passages but misses targeted ones.
 Composite portfolios cover all gaps by combining these complementary signals.
 
 \paragraph{Triggered-query calibration is a natural defense property.}
-The \agentpoison{} blind spot is resolved without architectural changes---once triggered queries appear in the rolling history (as they naturally will after attack deployment), \sad{} becomes fully effective.
+The \agentpoison{} blind spot is resolved without architectural changes: once triggered queries appear in the rolling history (as they naturally will after attack deployment), \sad{} becomes fully effective.
 This makes \sad{} an inherently adaptive defense at no additional cost.
 
 \paragraph{Deployment recommendations.}
 Based on our findings, we recommend a three-layer defense architecture for production memory systems:
 (i)~\emph{Provenance layer}: validate memory provenance at write time using watermarking ($O(|entry|)$ cost per entry), ensuring that only entries generated by authorized components are stored.
 (ii)~\emph{Anomaly layer}: monitor per-entry anomaly scores via rolling \sad{} calibration ($m_{\max}\!=\!100$ queries, combined scoring, $k\!=\!2.0$), providing content-based detection that operates independently of provenance.
-(iii)~\emph{Ensemble layer}: apply composite portfolios combining watermark, validation, and proactive detection for defense-in-depth---our matrix shows the composite achieves $\asrr\!=\!0.000$ for all attacks.
+(iii)~\emph{Ensemble layer}: apply composite portfolios combining watermark, validation, and proactive detection for defense-in-depth; our matrix shows the composite achieves $\asrr\!=\!0.000$ for all attacks.
 The computational overhead of the full pipeline is modest: watermark verification requires a single z-score computation, \sad{} requires $m_{\max}$ cosine similarity computations per candidate entry (parallelizable via FAISS batch search), and proactive detection requires 16 additional similarity computations.
 For a system processing 100 memory writes per day, the total defense overhead is negligible compared to the embedding inference cost.
 
@@ -526,7 +526,7 @@ We presented a unified framework for evaluating memory poisoning attacks and def
 Our key contributions are: (1)~a systematic evaluation correction showing \agentpoison{} is 4$\times$ more effective than previously simulated, (2)~\sad{}, a novel calibration-based defense with gradient coupling guarantees against continuous adversaries, (3)~a comprehensive attack-defense matrix demonstrating that composite portfolios are both necessary and sufficient for complete coverage, and (4)~characterization of the discrete synonym loophole as an open challenge motivating defenses that operate jointly in semantic and lexical space.
 
 Our results carry several implications for the broader LLM agent ecosystem.
-First, the evaluation correction for \agentpoison{} suggests that other adversarial ML benchmarks may similarly underestimate attack capability when evaluation protocols deviate from the specified threat model---a concern that extends beyond memory poisoning to RAG attacks, prompt injection, and backdoor evaluation more generally.
+First, the evaluation correction for \agentpoison{} suggests that other adversarial ML benchmarks may similarly underestimate attack capability when evaluation protocols deviate from the specified threat model, a concern that extends beyond memory poisoning to RAG attacks, prompt injection, and backdoor evaluation more generally.
 Second, the gradient coupling theorem (Proposition~\ref{prop:gradient_tension}) provides a formal foundation for understanding the fundamental tension between evasion and effectiveness in similarity-based detection, while the synonym loophole identifies a precise boundary condition where this guarantee breaks down.
 Third, the success of composite portfolios in achieving complete coverage reinforces the defense-in-depth principle: no single detection signal is sufficient, but complementary signals can be combined to cover all known attack vectors.
 
@@ -562,7 +562,7 @@ The specificity threshold $\tau\!=\!0.19$ was selected to minimize FPR on a held
 \paragraph{Evaluation correction detail.}
 Prior to our correction, \agentpoison{} was evaluated by issuing plain queries $q$ without the trigger $\trigger^*$.
 The paper's Algorithm~2~\citep{chen2024agentpoison} specifies triggered queries $q \oplus \trigger^*$.
-Without the trigger, the centroid passage must compete with benign entries on generic similarity---a much easier task for defenders.
+Without the trigger, the centroid passage must compete with benign entries on generic similarity, a much easier task for defenders.
 With trigger prepending, $\asrr$ increases from 0.25 to 1.00.
 
 \section{Ablation Studies}
