@@ -671,13 +671,11 @@ This parallels certified robustness results in RAG security~\citep{xiang2024robu
 Theorem~\ref{thm:minimax_lower} shows \emph{any} threshold detector requires $\Omega(1/\rho^2)$ calibration samples; \memsad{} matches this up to $\log(1/\delta)$ (Remark~\ref{rem:optimality}).
 The practical implication: defense designers should maximize the signal-to-noise ratio $\rho$ (e.g., via triggered calibration, which raises $\rho$ from $\sim 1.2$ to $\sim 3.8$ for \agentpoison{}) rather than developing more complex detection algorithms.
 
-\paragraph{Online adaptivity.}
-The regret bound (Theorem~\ref{thm:regret}) provides actionable guidance for deployment: for drift rate $\Delta \approx 10^{-3}$ (typical for slowly evolving user interests) and $\sigma \approx 0.1$, the optimal window is $m_{\max}^* \approx (\sigma/\Delta)^{2/3} \approx 46$ queries, yielding per-step regret $\approx 0.02$.
-The triggered-calibration mechanism provides a natural form of online adaptation: once \agentpoison{}-style triggered queries appear in the rolling history, the calibration statistics shift automatically (threshold: $0.482 \to 0.432$), recovering $\tpr = 1.00$ without architectural changes.
-
-\paragraph{Deployment.}
-We recommend a three-layer defense: (i)~\emph{Provenance}: watermark at write time ($O(|c|)$), (ii)~\emph{Anomaly}: rolling \memsad{} ($m_{\max}$ per Theorem~\ref{thm:regret}, combined scoring, $\kappa = 2.0$), (iii)~\emph{Ensemble}: composite portfolio.
-Total overhead: $\sim 200$ms per batch (Appendix~\ref{app:complexity}), negligible vs.\ LLM generation ($\sim 1$--$5$s).
+\paragraph{Online adaptivity and deployment.}
+The regret bound (Theorem~\ref{thm:regret}) yields $m_{\max}^* \approx 46$ queries for typical drift ($\Delta \approx 10^{-3}$, $\sigma \approx 0.1$), with per-step regret $\approx 0.02$.
+Triggered calibration provides natural adaptation: once triggered queries appear, the threshold shifts ($0.482 \to 0.432$), recovering $\tpr = 1.00$.
+We recommend three-layer defense: (i)~watermark at write time, (ii)~rolling \memsad{} ($\kappa = 2.0$, combined scoring), (iii)~composite ensemble.
+Total overhead: $\sim 200$ms per batch (Appendix~\ref{app:complexity}), negligible vs.\ LLM generation.
 
 \paragraph{Limitations.}
 (i)~200-entry corpus; Appendix~\ref{app:ablation} validates $|\cM| \in \{50, \ldots, 500\}$.
@@ -688,12 +686,9 @@ Total overhead: $\sim 200$ms per batch (Appendix~\ref{app:complexity}), negligib
 
 %% ============================================================
 \section{Conclusion}
+\vspace{-2pt}
 
-We presented \memsad{}, a formally grounded framework for memory poisoning attacks and defenses on retrieval-augmented agents.
-Key contributions: (1)~evaluation correction showing \agentpoison{} is $4\times$ more effective than previously simulated; (2)~\memsad{} with gradient coupling (Theorem~\ref{thm:gradient_coupling}) proving continuous evasion impossible, a certified detection radius (Lemma~\ref{lem:certified}) providing checkable guarantees, an information-theoretic lower bound (Theorem~\ref{thm:minimax_lower}) proving minimax optimality, and online regret bounds (Theorem~\ref{thm:regret}) with optimal window selection; (3)~formal synonym loophole (Proposition~\ref{prop:synonym}) with tight perturbation bounds; (4)~comprehensive $3 \times 5$ matrix showing composite portfolios are necessary and sufficient.
-
-The gradient coupling result establishes a formal foundation for the evasion-effectiveness tension in similarity-based detection; the certified detection radius provides deployment-ready guarantees; the information-theoretic lower bound ensures \memsad{}'s sample efficiency cannot be substantially improved within the threshold detector class; and the synonym loophole identifies a precise boundary where continuous guarantees break down, motivating future work on joint semantic-lexical detection architectures that reason about both embedding-space anomalies and surface-level linguistic patterns.
-All code, data, and evaluation scripts are open-sourced for full reproducibility.
+We presented \memsad{}, a formally grounded defense for memory poisoning in retrieval-augmented agents. The gradient coupling theorem (Theorem~\ref{thm:gradient_coupling}) proves continuous evasion impossible; the certified detection radius (Lemma~\ref{lem:certified}) provides checkable guarantees; the Le Cam lower bound (Theorem~\ref{thm:minimax_lower}) proves minimax optimality up to $\log(1/\delta)$; and online regret bounds (Theorem~\ref{thm:regret}) yield optimal window selection. The synonym loophole (Proposition~\ref{prop:synonym}) precisely delineates where continuous guarantees break down, motivating future work on joint semantic-lexical architectures. All code and data are open-sourced.
 
 %% ============================================================
 \begin{ack}
