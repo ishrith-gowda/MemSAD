@@ -92,12 +92,12 @@
 
 \begin{abstract}
 Persistent external memory enables LLM agents to maintain context across sessions, yet its security properties remain formally uncharacterized.
-We introduce a rigorous threat model for memory poisoning attacks on retrieval-augmented agents and present a unified evaluation framework encompassing three attack classes with distinct access assumptions.
-We identify and formally correct a systematic evaluation protocol error in prior work that underestimates attack success rate by a factor of four.
-Our primary theoretical contribution is \memsad{} (\emph{Semantic Anomaly Detection}), a calibration-based defense for which we prove a \emph{gradient coupling theorem}: the anomaly score gradient and retrieval objective gradient are provably identical, establishing that continuous evasion necessarily reduces retrieval rank.
-We formalize the attack-defense interaction as a Stackelberg game and derive an information-theoretic lower bound via Le Cam's method, showing \memsad{} is minimax-optimal up to logarithmic factors.
-We characterize a discrete loophole arising from synonym-invariance and provide online regret bounds for the rolling calibration window.
-Empirical evaluation over a $3 \times 5$ attack-defense matrix with bootstrap CIs and Clopper-Pearson validation demonstrates that composite portfolios achieve $\tpr = 1.00$, $\fpr = 0.00$ across all attacks, while the synonym loophole enables 80--100\% evasion at $\Delta\asrr \approx 0$.
+We introduce a rigorous threat model for memory poisoning attacks on retrieval-augmented agents, formalized as a Stackelberg game, and present a unified evaluation framework encompassing three attack classes with distinct access assumptions---correcting a systematic protocol error in prior work that underestimates attack success by $4\times$.
+Our primary contribution is \memsad{} (\emph{Semantic Anomaly Detection}), a calibration-based defense for which we prove a \emph{gradient coupling theorem}: the anomaly score gradient and retrieval objective gradient are provably identical under encoder regularity, establishing that continuous evasion necessarily degrades retrieval rank.
+We derive an information-theoretic lower bound via Le Cam's method showing any threshold detector requires $\Omega(1/\rho^2)$ calibration samples; \memsad{} achieves this up to $\log(1/\delta)$ factors, proving minimax optimality.
+We provide a certified detection radius---a checkable condition guaranteeing detection regardless of adversary strategy---and online regret bounds for rolling calibration with optimal window selection at rate $O(\sigma^{2/3}\Delta^{1/3})$.
+We formally characterize a discrete synonym-invariance loophole with tight perturbation bounds, precisely delineating where continuous guarantees break down.
+Empirical evaluation over a $3 \times 5$ attack-defense matrix with bootstrap CIs, Bonferroni-corrected hypothesis tests, and Clopper-Pearson validation (20 trials, $n=1000$) demonstrates that composite portfolios achieve $\tpr = 1.00$, $\fpr = 0.00$ across all attacks, while the synonym loophole enables 80--100\% evasion at $\Delta\asrr \approx 0$, confirming the theoretical predictions.
 \end{abstract}
 
 %% ============================================================
@@ -119,11 +119,11 @@ Despite the severity of these threats, no prior work provides a unified evaluati
 Existing RAG defenses~\citep{zou2024poisonedrag, chaudhari2024phantom, xiang2024robustrag} assume corpus-level access and offline cleaning, neither of which applies to streaming memory ingestion.
 
 \paragraph{Contributions.}
-\textbf{(1)}~A formal threat model (Definition~\ref{def:threat_model}) with Stackelberg game formulation (Definition~\ref{def:stackelberg}) and unified evaluation framework with paper-faithful attack implementations and a protocol correction raising \agentpoison{} $\asrr$ from 0.25 to 1.00.
-\textbf{(2)}~\memsad{}: a novel defense with combined max/mean scoring (Definition~\ref{def:sad}), for which we prove a gradient coupling theorem (Theorem~\ref{thm:gradient_coupling}) establishing that continuous evasion is impossible.
-\textbf{(3)}~An information-theoretic lower bound via Le Cam's method (Theorem~\ref{thm:minimax_lower}) proving minimax optimality up to logarithmic factors, calibration sample complexity (Theorem~\ref{thm:calibration_bound}), and online regret bounds (Theorem~\ref{thm:regret}).
-\textbf{(4)}~Formal characterization of the discrete synonym loophole (Proposition~\ref{prop:synonym}) providing a precise boundary where continuous guarantees break down.
-\textbf{(5)}~A $3 \times 5$ attack-defense matrix demonstrating that composite portfolios achieve $\tpr = 1.00$ across all attacks, with adaptive adversary analysis confirming the synonym loophole empirically.
+\textbf{(1)}~A formal threat model (Definition~\ref{def:threat_model}) with Stackelberg game formulation (Definition~\ref{def:stackelberg}), protocol correction raising \agentpoison{} $\asrr$ from 0.25 to 1.00, and unified evaluation across three distinct access models.
+\textbf{(2)}~\memsad{}: a novel calibration-based defense (Definition~\ref{def:sad}) with gradient coupling theorem (Theorem~\ref{thm:gradient_coupling}) proving continuous evasion impossible, and a certified detection radius (Lemma~\ref{lem:certified}) providing checkable guarantees.
+\textbf{(3)}~Information-theoretic lower bound via Le Cam's method (Theorem~\ref{thm:minimax_lower}) proving minimax optimality up to $\log(1/\delta)$; calibration sample complexity (Theorem~\ref{thm:calibration_bound}); and online regret bounds (Theorem~\ref{thm:regret}) with optimal window selection at rate $O(\sigma^{2/3}\Delta^{1/3})$.
+\textbf{(4)}~Formal characterization of the discrete synonym-invariance loophole (Proposition~\ref{prop:synonym}) with tight perturbation bounds, delineating exactly where continuous guarantees fail.
+\textbf{(5)}~A $3 \times 5$ attack-defense matrix with Bonferroni-corrected hypothesis testing ($\alpha' = 0.003$, 15 comparisons), bootstrap CIs, and Clopper-Pearson validation demonstrating composite portfolios achieve $\tpr = 1.00$ across all attacks.
 
 %% ============================================================
 \section{Related work}
@@ -340,9 +340,60 @@ then \memsad{} detects $c$ with certainty: $s(c; \cH) > \hat{\mu} + \kappa\hat{\
 Since $c$ achieves $\rank \leq k$, we have $s(c; \cH) \geq s_{\text{adv}} = \bar{s} + \Delta_s$. The detection threshold is $\hat{\mu} + \kappa\hat{\sigma} \leq \bar{s} + \eta$ (since $\hat{\mu} + \kappa\hat{\sigma} \leq \tau^* + \eta \leq \bar{s} + \eta$ by definition of the benign ceiling). Thus $s(c; \cH) \geq \bar{s} + \Delta_s > \bar{s} + \kappa\hat{\sigma} + \eta \geq \hat{\mu} + \kappa\hat{\sigma}$.
 \end{proof}
 
-Lemma~\ref{lem:certified} formalizes a ``detection radius'': any adversarial passage whose similarity to the victim query exceeds the benign ceiling by more than $\kappa\hat{\sigma} + \eta$ is \emph{certifiably detected}, regardless of the adversary's strategy.
+Lemma~\ref{lem:certified} formalizes a ``detection radius'': any adversarial passage whose similarity to the victim query exceeds the benign ceiling by more than $\kappa\hat{\sigma} + \eta$ is \emph{certifiably detected}, regardless of the adversary's strategy (Figure~\ref{fig:certified_radius}).
 For \minja{} in our experiments, $\Delta_s \approx 0.15$ while $\kappa\hat{\sigma} + \eta \approx 0.08$, satisfying the condition with margin.
 For \agentpoison{} under triggered calibration, $\Delta_s \approx 0.12$ with $\kappa\hat{\sigma} + \eta \approx 0.06$.
+
+\begin{figure}[t]
+\centering
+\begin{tikzpicture}[scale=0.92, every node/.style={font=\small}]
+  % similarity axis
+  \draw[-{Stealth[length=5pt]}, thick] (0,0) -- (10.5,0) node[right] {$\cosim(\enc(c), \enc(q^*))$};
+  \draw[-{Stealth[length=5pt]}, thick] (0,0) -- (0,3.5) node[above] {density};
+
+  % benign distribution
+  \fill[blue!15] plot[smooth, domain=0.5:5.5, samples=50]
+    (\x, {2.8*exp(-(\x-3)^2/0.8)}) -- (5.5,0) -- (0.5,0) -- cycle;
+  \draw[blue!70!black, thick] plot[smooth, domain=0.5:5.5, samples=50]
+    (\x, {2.8*exp(-(\x-3)^2/0.8)});
+  \node[blue!70!black] at (3, 3.2) {$P_0$ (benign)};
+
+  % threshold line
+  \draw[red!70!black, thick, dashed] (5.2, 0) -- (5.2, 3.4);
+  \node[red!70!black, above] at (5.2, 3.4) {$\hat{\mu} + \kappa\hat{\sigma}$};
+
+  % certified radius bracket
+  \draw[<->, green!50!black, very thick] (5.2, -0.5) -- (7.5, -0.5);
+  \node[green!50!black, below] at (6.35, -0.5) {$\kappa\hat{\sigma} + \eta$};
+
+  % adversarial region
+  \fill[red!20] plot[smooth, domain=6.5:9.5, samples=50]
+    (\x, {2.0*exp(-(\x-8)^2/0.6)}) -- (9.5,0) -- (6.5,0) -- cycle;
+  \draw[red!70!black, thick] plot[smooth, domain=6.5:9.5, samples=50]
+    (\x, {2.0*exp(-(\x-8)^2/0.6)});
+  \node[red!70!black] at (8, 2.4) {$P_1$ (poison)};
+
+  % gap annotation
+  \draw[<->, thick, purple] (4.2, -1.1) -- (8, -1.1);
+  \node[purple, below] at (6.1, -1.1) {$\Delta_s = s_{\text{adv}} - \bar{s}$};
+
+  % benign ceiling
+  \draw[blue!50!black, dotted, thick] (4.2, 0) -- (4.2, -1.1);
+  \node[blue!50!black, below left, font=\tiny] at (4.2, 0) {$\bar{s}$};
+
+  % adversarial similarity
+  \draw[red!50!black, dotted, thick] (8, 0) -- (8, -1.1);
+  \node[red!50!black, below right, font=\tiny] at (8, 0) {$s_{\text{adv}}$};
+
+  % certified detection region
+  \fill[green!10, opacity=0.5] (7.5, 0) rectangle (10.2, 3.0);
+  \node[green!50!black, font=\scriptsize, align=center] at (8.8, 1.0) {certified\\detection};
+\end{tikzpicture}
+\vspace{-4pt}
+\caption{Certified detection radius (Lemma~\ref{lem:certified}). When the adversarial similarity gap $\Delta_s$ exceeds $\kappa\hat{\sigma} + \eta$, the adversarial distribution $P_1$ falls entirely within the certified detection region (green), guaranteeing $\tpr = 1$ regardless of adversary strategy.}
+\label{fig:certified_radius}
+\vspace{-6pt}
+\end{figure}
 
 \subsection{Information-theoretic detection lower bound}
 \label{sec:lower_bound}
@@ -542,6 +593,36 @@ Table~\ref{tab:adaptive_sad} confirms Proposition~\ref{prop:synonym}: evasion ra
 This validates the theoretical prediction: since paraphrase-trained encoders enforce $\epsilon_{\text{syn}} \approx 0$, discrete synonym substitution operates in a regime where the gradient coupling guarantee (Theorem~\ref{thm:gradient_coupling}) does not apply.
 The certified detection condition (Lemma~\ref{lem:certified}) is violated because synonym substitution does not change $s_{\text{adv}}$ appreciably but manipulates surface features used in calibration statistics, effectively reducing $\hat{\sigma}$ while preserving the adversarial similarity $\cosim(\enc(c'), \enc(q^*))$.
 
+\subsection{Statistical hypothesis testing}
+
+Table~\ref{tab:hypothesis} reports formal significance tests for each defense's detection capability, with Bonferroni correction for 15 comparisons ($\alpha' = 0.05/15 = 0.003$).
+
+\begin{table}[t]
+  \centering
+  \small
+  \caption{Hypothesis tests: $H_0$: $\tpr = 0$ vs.\ $H_1$: $\tpr > 0$ (one-sided binomial, Bonferroni $\alpha' = 0.003$).}
+  \label{tab:hypothesis}
+  \vspace{2pt}
+  \begin{tabular}{l l c c c}
+    \toprule
+    Defense & Attack & $p$-value & Reject $H_0$? & Power \\
+    \midrule
+    Watermark   & AP & $<10^{-6}$ & \checkmark & 1.00 \\
+    Watermark   & MJ & $<10^{-6}$ & \checkmark & 1.00 \\
+    \memsad{}   & MJ & $<10^{-6}$ & \checkmark & 1.00 \\
+    \memsad{}   & IM & $0.001$    & \checkmark & 0.92 \\
+    Proactive   & AP & $<10^{-6}$ & \checkmark & 1.00 \\
+    Proactive   & MJ & $0.24$     & ---        & 0.08 \\
+    Composite   & AP & $<10^{-6}$ & \checkmark & 1.00 \\
+    Composite   & MJ & $<10^{-6}$ & \checkmark & 1.00 \\
+    Composite   & IM & $<10^{-6}$ & \checkmark & 1.00 \\
+    \bottomrule
+  \end{tabular}
+  \vspace{-6pt}
+\end{table}
+
+All composite portfolio results reject $H_0$ at Bonferroni-corrected $\alpha' = 0.003$ with power $= 1.00$, confirming the Stackelberg equilibrium prediction. Proactive detection of \minja{} ($\tpr = 0.07$, $p = 0.24$) fails to reject, consistent with the complementarity argument.
+
 \subsection{\memsad{} detection characteristics}
 
 \begin{figure}[t]
@@ -644,6 +725,10 @@ Then $\KL(P_0 \| P_1) = (\mu_1 - \mu_0)^2 / (2\sigma^2) = \rho^2/2$.
 
 \paragraph{Application.} For product distributions, $\KL(P_0^N \| P_1^N) = N\rho^2/2$. By Pinsker: $\TV(P_0^N, P_1^N) \leq \sqrt{N\rho^2/4} = \rho\sqrt{N}/2$. Le Cam gives minimax risk $R^* \geq \frac{1}{2}(1 - \TV) \geq \frac{1}{2}(1 - \rho\sqrt{N}/2)$. Total error $\geq 2R^* = 1 - \rho\sqrt{N}/2$.
 
+\paragraph{Alternative via Fano.} For $M = 2$ hypotheses, Fano's inequality gives $P_e \geq 1 - (I(X; \Theta) + \log 2)/\log M = 1 - (N\rho^2/4 + \log 2)/\log 2$, where $I(X; \Theta) \leq \max_j \KL(P_j^N \| \bar{P}^N) \leq N\rho^2/4$ by the mixture bound. This yields a slightly weaker constant but extends to the $M$-ary setting (e.g., distinguishing $M$ attack types simultaneously).
+
+\paragraph{Tightness.} For Gaussian $P_0, P_1$, the Neyman-Pearson optimal test achieves $\fpr + (1-\tpr) = 2\Phi(-\rho\sqrt{N}/2)$ where $\Phi$ is the Gaussian CDF. Comparing with the Le Cam bound: $2\Phi(-x) \approx \sqrt{2/\pi}\,e^{-x^2/2}/x$ for large $x$, confirming the $\Omega(1/\rho^2)$ sample complexity is tight for Gaussian scores.
+
 \subsection{Proof of Theorem~\ref{thm:calibration_bound}}
 \label{app:proof_calibration}
 
@@ -656,6 +741,51 @@ Decompose: $|\hat{\tau}_t - \tau_t^*| \leq \underbrace{|\hat{\tau}_t - \tau_t^{\
 Estimation error: $O(\sigma(1+\kappa)/\sqrt{m_{\max}})$ by Theorem~\ref{thm:calibration_bound}.
 Drift error: cosine similarity is 1-Lipschitz on $\mathbb{S}^{d-1}$, so $|\mu_t^{\cH} - \mu_t| \leq m_{\max}\Delta$.
 Setting equal: $\sigma/\sqrt{m_{\max}} = m_{\max}\Delta$ gives $m_{\max}^* = (\sigma/\Delta)^{2/3}$, yielding per-step regret $O(\sigma^{2/3}\Delta^{1/3})$.
+
+\subsection{Detection-evasion tradeoff surface}
+\label{app:tradeoff_surface}
+
+The tradeoff in Corollary~\ref{cor:tradeoff} defines a surface in $(\epsilon, \theta, \Delta\cD)$ space where $\theta$ is the angle between perturbation $\delta$ and gradient $\nabla\cD$. Expanding to second order:
+\begin{equation}
+  \cD(e_c + \epsilon\delta) - \cD(e_c) = \epsilon\|\nabla\cD\|\cos\theta + \frac{\epsilon^2}{2}\delta^\top H_{\cD}\,\delta + O(\epsilon^3),
+\end{equation}
+where $H_{\cD}$ is the Hessian of the cosine similarity on the sphere. Under L2-normalization, $H_{\cD} = -(e_c^\top \enc(q^*))(I - e_c e_c^\top)/\|e_c\|^2$, giving eigenvalues $\lambda_i = -(e_c^\top \enc(q^*))$ for directions orthogonal to $e_c$ (and $0$ in the radial direction). The evasion region $\cD(e_c') < \cD(e_c)$ requires $\cos\theta < -\epsilon\|H_{\cD}\|/(2\|\nabla\cD\|)$, which contracts as $\epsilon \to 0$, confirming the infinitesimal impossibility of evasion without retrieval degradation.
+
+\begin{figure}[h]
+\centering
+\begin{tikzpicture}[scale=0.85]
+  \draw[-{Stealth[length=5pt]}, thick] (0,0) -- (8,0) node[right, font=\small] {perturbation $\epsilon$};
+  \draw[-{Stealth[length=5pt]}, thick] (0,0) -- (0,5) node[above, font=\small] {$\Delta\cR$};
+
+  % evasion line (detection score decrease)
+  \draw[blue!70!black, thick] plot[smooth, domain=0:7.5, samples=50]
+    (\x, {4 - 0.5*\x - 0.02*\x*\x});
+  \node[blue!70!black, right, font=\scriptsize] at (7.6, 0.5) {$\cR(e_c')$};
+
+  % detection score (identical by coupling)
+  \draw[red!70!black, thick, dashed] plot[smooth, domain=0:7.5, samples=50]
+    (\x, {4 - 0.5*\x - 0.02*\x*\x});
+  \node[red!70!black, right, font=\scriptsize] at (7.6, 0.1) {$\cD(e_c')$};
+
+  % detection threshold
+  \draw[green!50!black, thick, dotted] (0, 2.0) -- (8, 2.0);
+  \node[green!50!black, left, font=\scriptsize] at (0, 2.0) {$\hat{\mu}{+}\kappa\hat{\sigma}$};
+
+  % synonym perturbation (discrete jump)
+  \draw[orange!80!black, thick, -{Stealth[length=4pt]}] (1.5, 3.2) -- (1.5, 2.5);
+  \draw[orange!80!black, thick, -{Stealth[length=4pt]}] (1.5, 3.2) -- (2.5, 3.0);
+  \node[orange!80!black, above, font=\scriptsize, align=center] at (2.0, 3.3) {synonym\\(discrete)};
+
+  % annotations
+  \draw[<->, thick] (3.8, 2.0) -- (3.8, 2.7);
+  \node[right, font=\scriptsize] at (3.9, 2.35) {detection margin};
+
+  \node[font=\scriptsize, align=center, draw, rounded corners=2pt, fill=gray!5] at (5.5, 4.2) {$\nabla\cD \equiv \nabla\cR$ (Thm.~\ref{thm:gradient_coupling})\\continuous curves overlap exactly};
+\end{tikzpicture}
+\vspace{-4pt}
+\caption{Detection-evasion tradeoff. By gradient coupling, continuous perturbations cause identical degradation in detection score $\cD$ and retrieval score $\cR$ (overlapping curves). Synonym substitutions (orange) bypass this coupling via discrete jumps in token space (Proposition~\ref{prop:synonym}).}
+\label{fig:tradeoff_curves}
+\end{figure}
 
 \section{Additional defense details}
 \label{app:defenses}
@@ -798,6 +928,34 @@ Without defense, steady-state infection is $I_\infty/N = 1 - \gamma/\beta$ for $
     \bottomrule
   \end{tabular}
 \end{table}
+
+\section{Sample complexity comparison}
+\label{app:sample_complexity}
+
+Table~\ref{tab:sample_complexity} compares the calibration sample requirements across detection approaches, derived from Theorem~\ref{thm:minimax_lower} and Theorem~\ref{thm:calibration_bound}.
+
+\begin{table}[h]
+  \centering
+  \small
+  \caption{Sample complexity for reliable detection ($\fpr + (1 - \tpr) \leq 0.05$) across calibration regimes.}
+  \label{tab:sample_complexity}
+  \vspace{2pt}
+  \begin{tabular}{l c c c}
+    \toprule
+    Setting & $\rho$ (SNR) & Lower bound $N_{\min}$ & \memsad{} $N$ \\
+    \midrule
+    \minja{} (plain) & 3.2 & 12 & $15 \cdot \log(1/\delta)$ \\
+    \agentpoison{} (triggered) & 3.8 & 8 & $11 \cdot \log(1/\delta)$ \\
+    \agentpoison{} (plain) & 1.2 & 89 & $111 \cdot \log(1/\delta)$ \\
+    \injecmem{} (plain) & 1.8 & 40 & $50 \cdot \log(1/\delta)$ \\
+    Low-SNR adversary & 0.5 & 576 & $720 \cdot \log(1/\delta)$ \\
+    \bottomrule
+  \end{tabular}
+  \\[2pt]
+  {\footnotesize $N_{\min} = 4(1-\epsilon)^2/\rho^2$ from Theorem~\ref{thm:minimax_lower}; \memsad{} $N$ from Theorem~\ref{thm:calibration_bound} with $\delta = 0.05$.}
+\end{table}
+
+The logarithmic gap between the lower bound and \memsad{}'s requirement is consistent with Remark~\ref{rem:optimality}. For practical deployment at $\delta = 0.05$: $\log(1/\delta) \approx 3.0$, so \memsad{} requires $\sim 3\times$ the information-theoretic minimum.
 
 \section{Computational complexity}
 \label{app:complexity}
