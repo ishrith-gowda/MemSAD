@@ -138,9 +138,9 @@ On the defense side, ReliabilityRAG~\citep{reliabilityrag2025} provides provable
 
 \paragraph{RAG corpus poisoning and certified defenses.}
 \citet{zou2024poisonedrag} optimize adversarial documents via HotFlip~\citep{ebrahimi2018hotflip} ($> 90\%$ ASR at million-scale).
-\citet{xiang2024robustrag} provide certified robustness via isolate-then-aggregate with provable guarantees under bounded perturbations; however, their certificates require post-retrieval processing and do not apply to pre-ingestion filtering.
-SPECTRE~\citep{hayase2021spectre} uses robust covariance estimation for spectral detection but assumes full dataset access.
-Our work differs in that defenses must operate at \emph{write time} on individual entries against a rolling query history.
+\citet{xiang2024robustrag} provide certified robustness via isolate-then-aggregate with provable guarantees under bounded perturbations; however, their certificates require post-retrieval processing of $k$ retrieved passages and do not apply to pre-ingestion filtering where each entry must be evaluated independently.
+SPECTRE~\citep{hayase2021spectre} uses robust covariance estimation for spectral detection but assumes full dataset access and $O(|\cM|^2 d)$ computation.
+Our work differs along three axes: (i)~defenses operate at \emph{write time} on individual entries ($O(md)$ per entry), (ii)~no corpus-level access is required---only a rolling query history, and (iii)~we provide both a certified detection radius (Lemma~\ref{lem:certified}) and information-theoretic optimality (Theorem~\ref{thm:minimax_lower}), whereas RobustRAG's certificates are for a fixed retrieval result rather than the ingestion boundary.
 
 \paragraph{Game-theoretic security and adaptive evaluation.}
 \citet{tramer2020adaptive} establish the gold standard for adaptive attack evaluation.
@@ -786,6 +786,73 @@ where $H_{\cD}$ is the Hessian of the cosine similarity on the sphere. Under L2-
 \caption{Detection-evasion tradeoff. By gradient coupling, continuous perturbations cause identical degradation in detection score $\cD$ and retrieval score $\cR$ (overlapping curves). Synonym substitutions (orange) bypass this coupling via discrete jumps in token space (Proposition~\ref{prop:synonym}).}
 \label{fig:tradeoff_curves}
 \end{figure}
+
+\subsection{Online regret bound visualization}
+\label{app:regret_viz}
+
+Figure~\ref{fig:regret_surface} illustrates the bias-variance tradeoff in Theorem~\ref{thm:regret} as a function of window size $m_{\max}$.
+
+\begin{figure}[h]
+\centering
+\begin{tikzpicture}[scale=0.85]
+  \draw[-{Stealth[length=5pt]}, thick] (0,0) -- (9,0) node[right, font=\small] {$m_{\max}$};
+  \draw[-{Stealth[length=5pt]}, thick] (0,0) -- (0,5) node[above, font=\small] {per-step regret};
+
+  % estimation error (decreasing)
+  \draw[blue!70!black, thick] plot[smooth, domain=0.5:8.5, samples=50]
+    (\x, {3.5/sqrt(\x)});
+  \node[blue!70!black, right, font=\scriptsize] at (8.6, 1.2) {$\sigma/\sqrt{m}$};
+
+  % drift error (increasing)
+  \draw[red!70!black, thick] plot[smooth, domain=0.5:8.5, samples=50]
+    (\x, {0.15*\x});
+  \node[red!70!black, right, font=\scriptsize] at (8.6, 1.45) {$m\Delta$};
+
+  % total (sum)
+  \draw[purple!80!black, thick, dashed] plot[smooth, domain=0.5:8.5, samples=50]
+    (\x, {3.5/sqrt(\x) + 0.15*\x});
+  \node[purple!80!black, above right, font=\scriptsize] at (7.5, 2.7) {total};
+
+  % optimal point
+  \filldraw[green!50!black] (3.2, {3.5/sqrt(3.2) + 0.15*3.2}) circle (3pt);
+  \draw[green!50!black, dashed] (3.2, 0) -- (3.2, {3.5/sqrt(3.2) + 0.15*3.2});
+  \node[green!50!black, below, font=\scriptsize] at (3.2, 0) {$m^*$};
+  \node[green!50!black, right, font=\scriptsize] at (3.4, {3.5/sqrt(3.2) + 0.15*3.2 + 0.2}) {$O(\sigma^{2/3}\Delta^{1/3})$};
+
+  % annotations
+  \node[font=\tiny, align=center, draw, rounded corners=2pt, fill=blue!5] at (2, 4.2) {estimation\\(Thm.~\ref{thm:calibration_bound})};
+  \node[font=\tiny, align=center, draw, rounded corners=2pt, fill=red!5] at (7, 4.2) {drift\\(non-stationarity)};
+\end{tikzpicture}
+\vspace{-4pt}
+\caption{Online calibration regret decomposition (Theorem~\ref{thm:regret}). Small windows suffer high estimation error; large windows accumulate drift. The optimal $m^* = \Theta((\sigma/\Delta)^{2/3})$ balances both.}
+\label{fig:regret_surface}
+\end{figure}
+
+\subsection{Stackelberg equilibrium existence}
+\label{app:equilibrium}
+
+\begin{proposition}[Equilibrium existence]
+\label{prop:equilibrium}
+The Stackelberg game $\cG$ (Definition~\ref{def:stackelberg}) admits a subgame-perfect equilibrium $(\pi_{\cD}^*, \cP^*)$ when $\Pi$ is restricted to threshold detectors with $\kappa \in [\kappa_{\min}, \kappa_{\max}]$.
+\end{proposition}
+
+\begin{proof}
+The defender's strategy space $\Pi_\kappa = \{\pi_\kappa : \kappa \in [\kappa_{\min}, \kappa_{\max}]\}$ is compact. For fixed $\pi_\kappa$, the adversary's best-response set $\cB(\pi_\kappa) = \argmax_{\cP} \asrr(\cP \setminus \{p : s(p; \cH) > \hat{\mu} + \kappa\hat{\sigma}\}, \cQ_v)$ is nonempty (the empty set is always feasible) and upper hemicontinuous in $\kappa$ since $s(p; \cH)$ is continuous and the threshold $\hat{\mu} + \kappa\hat{\sigma}$ is linear in $\kappa$. The defender's objective $\max_{\cP \in \cB(\pi_\kappa)} \asrr(\cP, \cQ_v)$ is upper semicontinuous by the Berge maximum theorem. By the extreme value theorem, $\pi_{\cD}^* = \argmin_{\kappa \in [\kappa_{\min}, \kappa_{\max}]} \max_{\cP \in \cB(\pi_\kappa)} \asrr$ exists.
+\end{proof}
+
+In practice, the composite portfolio $(\pi_{\text{wm}} \lor \pi_{\text{SAD}} \lor \pi_{\text{pro}})$ achieves $\asrr^* = 0$ against all three attacks (Table~\ref{tab:defense_tpr_fpr}), representing the defender's ideal equilibrium where the adversary's best response yields zero utility.
+
+\subsection{Finite-sample FPR concentration}
+\label{app:fpr_concentration}
+
+\begin{proposition}[FPR concentration]
+\label{prop:fpr_concentration}
+Let $c_1, \ldots, c_n$ be $n$ i.i.d.\ benign candidates with scores $s_i = s(c_i; \cH)$. Let $\hat{\text{FPR}}_n = n^{-1}\sum_{i=1}^n \mathbf{1}[s_i > \hat{\mu} + \kappa\hat{\sigma}]$. Under sub-Gaussian scores with parameter $\sigma^2$:
+\begin{equation}
+  \PP\!\left[|\hat{\text{FPR}}_n - \text{FPR}| > \epsilon\right] \leq 2\exp\!\left(-\frac{n\epsilon^2}{2\text{FPR}(1-\text{FPR})}\right) + 2\exp\!\left(-\frac{n\epsilon^2}{8}\right).
+\end{equation}
+The first term is the Bernstein bound on the empirical FPR; the second accounts for threshold estimation error (from Theorem~\ref{thm:calibration_bound}). For $\kappa = 2.0$ and $n = 1000$: $\PP[|\hat{\text{FPR}} - 0| > 0.01] < 0.006$, consistent with the Clopper-Pearson CI $[0.000, 0.004]$ (Table~\ref{tab:fpr_validation}).
+\end{proposition}
 
 \section{Additional defense details}
 \label{app:defenses}
