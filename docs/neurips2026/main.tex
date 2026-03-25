@@ -123,6 +123,7 @@ Existing RAG defenses~\citep{zou2024poisonedrag, chaudhari2024phantom} assume co
 \citet{injecmem2026} achieve single-interaction injection via retriever-agnostic anchors.
 \citet{memorygraft2025} demonstrate experience-grafting attacks exploiting union retrieval over lexical and embedding similarity.
 Concurrent work on tool-use manipulation~\citep{yang2024watch} shows that similar poisoning strategies transfer to agent tool selection.
+On the defense side, ReliabilityRAG~\citep{reliabilityrag2025} provides provable robustness via graph-theoretic maximum independent set algorithms, while SeCon-RAG~\citep{seconrag2025} uses entity-intent-relation extraction for semantic filtering; both target RAG corpora rather than agent memory streams.
 
 \paragraph{RAG corpus poisoning.}
 \citet{zou2024poisonedrag} optimize adversarial documents via HotFlip~\citep{ebrahimi2018hotflip} ($> 90\%$ ASR at million-scale knowledge bases).
