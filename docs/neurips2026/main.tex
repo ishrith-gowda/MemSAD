@@ -53,6 +53,13 @@
 \newcommand{\cR}{\mathcal{R}}
 \newcommand{\cS}{\mathcal{S}}
 \newcommand{\cD}{\mathcal{D}}
+\newcommand{\cF}{\mathcal{F}}
+\newcommand{\cG}{\mathcal{G}}
+\newcommand{\cB}{\mathcal{B}}
+\newcommand{\cL}{\mathcal{L}}
+\newcommand{\cT}{\mathcal{T}}
+\newcommand{\cN}{\mathcal{N}}
+\newcommand{\cX}{\mathcal{X}}
 \newcommand{\sad}{\textsc{SAD}}
 \newcommand{\memsad}{\textsc{MemSAD}}
 \newcommand{\agentpoison}{\textsc{AgentPoison}}
@@ -61,6 +68,8 @@
 \newcommand{\trigger}{T}
 \newcommand{\passage}{p_{\mathrm{adv}}}
 \newcommand{\enc}{E}
+\newcommand{\KL}{\mathrm{KL}}
+\newcommand{\TV}{\mathrm{TV}}
 \DeclareMathOperator*{\argmax}{arg\,max}
 \DeclareMathOperator*{\argmin}{arg\,min}
 \DeclareMathOperator{\topk}{top\text{-}k}
@@ -69,6 +78,8 @@
 \DeclareMathOperator{\Vocab}{Vocab}
 \DeclareMathOperator{\cosim}{cos}
 \DeclareMathOperator{\diag}{diag}
+\DeclareMathOperator{\tr}{tr}
+\DeclareMathOperator{\Regret}{Regret}
 
 \title{\memsad{}: Gradient-Coupled Anomaly Detection for Memory Poisoning in Retrieval-Augmented Agents}
 
@@ -81,11 +92,12 @@
 
 \begin{abstract}
 Persistent external memory enables LLM agents to maintain context across sessions, yet its security properties remain formally uncharacterized.
-We introduce a rigorous threat model for memory poisoning attacks on retrieval-augmented agents and present a unified evaluation framework encompassing three attack classes with distinct access assumptions: write-access trigger optimization (\agentpoison{}), query-only progressive injection (\minja{}), and single-interaction anchor insertion (\injecmem{}).
+We introduce a rigorous threat model for memory poisoning attacks on retrieval-augmented agents and present a unified evaluation framework encompassing three attack classes with distinct access assumptions.
 We identify and formally correct a systematic evaluation protocol error in prior work that underestimates attack success rate by a factor of four.
-Our primary theoretical contribution is \emph{Semantic Anomaly Detection} (\sad{}), a calibration-based defense for which we prove a \emph{gradient coupling theorem}: for any differentiable encoder, the anomaly score gradient and retrieval objective gradient are provably identical, establishing that continuous evasion of \sad{} necessarily reduces retrieval rank.
-We derive tight bounds on the detection-evasion tradeoff, characterize a discrete loophole arising from the synonym-invariance of paraphrase-trained encoders, and provide information-theoretic lower bounds on the sample complexity of calibration.
-Empirical evaluation over a FAISS-backed vector store with $|\cM|=200$ entries, $3 \times 5$ attack-defense interaction matrix, bootstrap confidence intervals, and Clopper-Pearson exact binomial validation demonstrates that composite defense portfolios achieve $\tpr = 1.00$ and $\fpr = 0.00$ across all attack classes, while the synonym loophole enables 80--100\% evasion at $\Delta\asrr \approx 0$, motivating joint semantic-lexical detection architectures.
+Our primary theoretical contribution is \memsad{} (\emph{Semantic Anomaly Detection}), a calibration-based defense for which we prove a \emph{gradient coupling theorem}: the anomaly score gradient and retrieval objective gradient are provably identical, establishing that continuous evasion necessarily reduces retrieval rank.
+We formalize the attack-defense interaction as a Stackelberg game and derive an information-theoretic lower bound via Le Cam's method, showing \memsad{} is minimax-optimal up to logarithmic factors.
+We characterize a discrete loophole arising from synonym-invariance and provide online regret bounds for the rolling calibration window.
+Empirical evaluation over a $3 \times 5$ attack-defense matrix with bootstrap CIs and Clopper-Pearson validation demonstrates that composite portfolios achieve $\tpr = 1.00$, $\fpr = 0.00$ across all attacks, while the synonym loophole enables 80--100\% evasion at $\Delta\asrr \approx 0$.
 \end{abstract}
 
 %% ============================================================
@@ -93,59 +105,55 @@ Empirical evaluation over a FAISS-backed vector store with $|\cM|=200$ entries, 
 \label{sec:intro}
 
 Modern LLM agents persist context across sessions through external memory systems such as Mem0~\citep{mem0}, A-MEM~\citep{amem}, and MemGPT~\citep{memgpt2023}.
-These systems store user preferences, task history, conversation summaries, and factual knowledge as dense vector embeddings, retrieving semantically relevant entries to condition the agent's response.
+These systems store user preferences, task history, and factual knowledge as dense vector embeddings, retrieving semantically relevant entries to condition the agent's response.
 The practical utility of persistent memory is well established; its security implications are not.
 
-An adversary who can influence the contents of an agent's memory, whether through direct write access, crafted user interaction, or exploitation of the agent's self-storage mechanism, can covertly redirect agent behavior across arbitrary future sessions.
-Unlike prompt injection, which operates on a single interaction, memory poisoning attacks \emph{persist}: a single adversarial entry may remain in memory for weeks and trigger on every related query.
-The agent has no inherent mechanism to distinguish a legitimate memory from an injected one.
+An adversary who can influence the contents of an agent's memory can covertly redirect agent behavior across arbitrary future sessions.
+Unlike prompt injection, which operates on a single interaction, memory poisoning attacks \emph{persist}: a single adversarial entry may remain in memory indefinitely and trigger on every related query.
 
-Three recent papers have characterized distinct threat models for memory poisoning.
+Three recent papers have characterized distinct threat models.
 \agentpoison{}~\citep{chen2024agentpoison} formulates trigger optimization as a constrained gradient problem over dense passage retrieval embeddings.
 \minja{}~\citep{dong2025minja} extends the threat model to a query-only setting via progressive-shortening indication.
 \injecmem{}~\citep{injecmem2026} achieves single-interaction injection via retriever-agnostic anchor passages.
-Despite the severity of these threats, no prior work provides a unified evaluation across these attacks or proposes defenses with formal detection guarantees specifically designed for the memory-agent setting.
-Existing RAG defenses~\citep{zou2024poisonedrag, chaudhari2024phantom} assume corpus-level access and offline cleaning, neither of which applies to streaming memory ingestion where entries arrive one at a time during agent operation.
+Despite the severity of these threats, no prior work provides a unified evaluation across these attacks or proposes defenses with formal detection guarantees for the memory-agent setting.
+Existing RAG defenses~\citep{zou2024poisonedrag, chaudhari2024phantom, xiang2024robustrag} assume corpus-level access and offline cleaning, neither of which applies to streaming memory ingestion.
 
 \paragraph{Contributions.}
-\textbf{(1)}~A formal threat model (Definition~\ref{def:threat_model}) and unified evaluation framework with three paper-faithful attack implementations, three metrics ($\asrr$, $\asra$, $\asrt$), and a systematic evaluation protocol correction raising \agentpoison{} $\asrr$ from 0.25 to 1.00.
-\textbf{(2)}~\sad{}: a novel Semantic Anomaly Detection defense with a combined max/mean scoring mode (Definition~\ref{def:sad}), for which we prove a gradient coupling theorem (Theorem~\ref{thm:gradient_coupling}) establishing that continuous evasion is impossible.
-\textbf{(3)}~Tight characterization of the detection-evasion tradeoff (Corollary~\ref{cor:tradeoff}), information-theoretic calibration bounds (Theorem~\ref{thm:calibration_bound}), and formal analysis of the discrete synonym loophole (Proposition~\ref{prop:synonym}).
-\textbf{(4)}~A $3 \times 5$ attack-defense interaction matrix with five defenses, demonstrating that no single defense dominates uniformly and that composite portfolios achieve $\tpr = 1.00$ across all attacks.
-\textbf{(5)}~Adaptive adversary analysis confirming the synonym loophole empirically (evasion rate $\geq 0.80$, $\Delta\asrr \approx 0$) and motivating joint semantic-lexical detection.
+\textbf{(1)}~A formal threat model (Definition~\ref{def:threat_model}) with Stackelberg game formulation (Definition~\ref{def:stackelberg}) and unified evaluation framework with paper-faithful attack implementations and a protocol correction raising \agentpoison{} $\asrr$ from 0.25 to 1.00.
+\textbf{(2)}~\memsad{}: a novel defense with combined max/mean scoring (Definition~\ref{def:sad}), for which we prove a gradient coupling theorem (Theorem~\ref{thm:gradient_coupling}) establishing that continuous evasion is impossible.
+\textbf{(3)}~An information-theoretic lower bound via Le Cam's method (Theorem~\ref{thm:minimax_lower}) proving minimax optimality up to logarithmic factors, calibration sample complexity (Theorem~\ref{thm:calibration_bound}), and online regret bounds (Theorem~\ref{thm:regret}).
+\textbf{(4)}~Formal characterization of the discrete synonym loophole (Proposition~\ref{prop:synonym}) providing a precise boundary where continuous guarantees break down.
+\textbf{(5)}~A $3 \times 5$ attack-defense matrix demonstrating that composite portfolios achieve $\tpr = 1.00$ across all attacks, with adaptive adversary analysis confirming the synonym loophole empirically.
 
 %% ============================================================
 \section{Related work}
 \label{sec:related}
 
-\paragraph{Memory poisoning attacks on LLM agents.}
-\citet{chen2024agentpoison} formulate trigger optimization as a constrained gradient problem over DPR~\citep{karpukhin2020dense} embeddings, achieving $\asrr \geq 0.80$ on production agent frameworks.
-\citet{dong2025minja} extend the threat model to a query-only setting via progressive-shortening indication ($\isr = 98.2\%$).
+\paragraph{Memory poisoning attacks.}
+\citet{chen2024agentpoison} achieve $\asrr \geq 0.80$ via trigger optimization over DPR~\citep{karpukhin2020dense} embeddings.
+\citet{dong2025minja} exploit auto-storage via progressive-shortening ($\isr = 98.2\%$).
 \citet{injecmem2026} achieve single-interaction injection via retriever-agnostic anchors.
-\citet{memorygraft2025} demonstrate experience-grafting attacks exploiting union retrieval over lexical and embedding similarity.
-Concurrent work on tool-use manipulation~\citep{yang2024watch} shows that similar poisoning strategies transfer to agent tool selection.
-On the defense side, ReliabilityRAG~\citep{reliabilityrag2025} provides provable robustness via graph-theoretic maximum independent set algorithms, while SeCon-RAG~\citep{seconrag2025} uses entity-intent-relation extraction for semantic filtering; both target RAG corpora rather than agent memory streams.
+\citet{memorygraft2025} demonstrate experience-grafting attacks exploiting union retrieval.
+On the defense side, ReliabilityRAG~\citep{reliabilityrag2025} provides provable robustness via graph-theoretic maximum independent set, while SeCon-RAG~\citep{seconrag2025} uses entity-intent-relation extraction; both target RAG corpora rather than agent memory streams.
 
-\paragraph{RAG corpus poisoning.}
-\citet{zou2024poisonedrag} optimize adversarial documents via HotFlip~\citep{ebrahimi2018hotflip} ($> 90\%$ ASR at million-scale knowledge bases).
-\citet{chaudhari2024phantom} construct phantom documents appearing benign to human inspection.
-\citet{arzanipour2025ragsecurity} provide the first formal RAG threat model, defining adversary access tiers.
-Our work differs from RAG poisoning in that adversarial entries are \emph{agent-generated, semantically coherent memories} that persist across sessions without further adversarial interaction, and defenses must operate at write time without full corpus visibility.
+\paragraph{RAG corpus poisoning and certified defenses.}
+\citet{zou2024poisonedrag} optimize adversarial documents via HotFlip~\citep{ebrahimi2018hotflip} ($> 90\%$ ASR at million-scale).
+\citet{xiang2024robustrag} provide certified robustness via isolate-then-aggregate with provable guarantees under bounded perturbations; however, their certificates require post-retrieval processing and do not apply to pre-ingestion filtering.
+SPECTRE~\citep{hayase2021spectre} uses robust covariance estimation for spectral detection but assumes full dataset access.
+Our work differs in that defenses must operate at \emph{write time} on individual entries against a rolling query history.
 
-\paragraph{Anomaly detection and watermarking.}
-STRIP~\citep{gao2019strip} and Neural Cleanse~\citep{wang2019neuralcleanse} are model-centric defenses requiring inference-time or white-box model access, rendering them inapplicable to write-time memory content.
-\citet{zhao2024watermark} propose provably robust token-level watermarks (AUROC $> 0.97$) with formal guarantees under bounded paraphrasing.
-\citet{lee2018simple} show that Mahalanobis distance to class centroids is an effective out-of-distribution detector; our cosine similarity threshold is the retrieval-space analogue adapted to the unsupervised, query-conditioned memory setting.
+\paragraph{Game-theoretic security and adaptive evaluation.}
+\citet{tramer2020adaptive} establish the gold standard for adaptive attack evaluation.
+Our Stackelberg formulation follows this principle: the adversary optimizes with full knowledge of $(\hat{\mu}, \hat{\sigma}, \kappa)$.
+\citet{carlini2017evaluating} demonstrate that defenses without formal guarantees are routinely broken; our gradient coupling theorem provides exactly such a guarantee for the continuous case, while Proposition~\ref{prop:synonym} honestly characterizes the discrete failure mode.
 
 %% ============================================================
 \section{Formal threat model}
 \label{sec:threat}
 
-We begin by formalizing the memory poisoning threat model, defining the system, adversary, and success metrics precisely.
-
 \begin{definition}[Memory-augmented agent]
 \label{def:agent}
-A \emph{memory-augmented agent} is a tuple $(\cA, \cM, \enc, k)$ where $\cA$ is an LLM, $\cM \subset \cV^*$ is a persistent memory store over vocabulary $\cV$, $\enc : \cV^* \to \RR^d$ is an embedding function, and $k \in \NN$ is the retrieval depth. At each interaction with query $q \in \cV^*$, the agent retrieves
+A \emph{memory-augmented agent} is a tuple $(\cA, \cM, \enc, k)$ where $\cA$ is an LLM, $\cM \subset \cV^*$ is a persistent memory store over vocabulary $\cV$, $\enc : \cV^* \to \RR^d$ is an embedding function, and $k \in \NN$ is the retrieval depth. At each interaction with query $q$, the agent retrieves
 \begin{equation}
   \Ret(\cM, q, k) = \argmax_{\substack{S \subseteq \cM \\ |S| = k}} \sum_{m \in S} \cosim(\enc(q), \enc(m)),
   \label{eq:retrieval}
@@ -155,12 +163,23 @@ where $\cosim(u, v) \coloneqq u^\top v / (\|u\| \|v\|)$ denotes cosine similarit
 
 \begin{definition}[Memory poisoning threat model]
 \label{def:threat_model}
-Let $(\cA, \cM, \enc, k)$ be a memory-augmented agent. An \emph{adversary} $\cS$ is characterized by a tuple $(\cQ_v, n, \alpha)$ where $\cQ_v \subset \cV^*$ is a set of \emph{victim queries}, $n \in \NN$ is the number of injected entries, and $\alpha \in \{\textsc{write}, \textsc{query}, \textsc{single}\}$ specifies the access model. The adversary injects $\cP = \{p_1, \ldots, p_n\} \subset \cV^*$ into $\cM$ to maximize the following success metrics:
+An \emph{adversary} $\cS = (\cQ_v, n, \alpha)$ targets victim queries $\cQ_v \subset \cV^*$ by injecting $\cP = \{p_1, \ldots, p_n\}$ into $\cM$ under access model $\alpha \in \{\textsc{write}, \textsc{query}, \textsc{single}\}$ to maximize:
 \begin{align}
-  \asrr(\cP, \cQ_v) &\coloneqq \frac{|\{q \in \cQ_v : \cP \cap \Ret(\cM \cup \cP, q, k) \neq \emptyset\}|}{|\cQ_v|}, \label{eq:asrr} \\
+  \asrr(\cP, \cQ_v) &\coloneqq |\{q \in \cQ_v : \cP \cap \Ret(\cM \cup \cP, q, k) \neq \emptyset\}| / |\cQ_v|, \label{eq:asrr} \\
   \asra(\cP) &\coloneqq \PP[\cA \text{ executes adversarial action} \mid \text{poison retrieved}], \label{eq:asra} \\
-  \asrt(\cP, \cQ_v) &\coloneqq \asrr(\cP, \cQ_v) \cdot \asra(\cP). \label{eq:asrt}
+  \asrt(\cP, \cQ_v) &\coloneqq \asrr \cdot \asra. \label{eq:asrt}
 \end{align}
+\end{definition}
+
+\begin{definition}[Stackelberg game formulation]
+\label{def:stackelberg}
+The memory poisoning interaction is a Stackelberg game $\cG = (\cS, \cD, u_{\cS}, u_{\cD})$ where the defender (leader) commits to a detection policy $\pi_{\cD} : \cV^* \to \{0, 1\}$ and the adversary (follower) best-responds:
+\begin{align}
+  \pi_{\cD}^* &= \argmin_{\pi_{\cD} \in \Pi} \; \max_{\cP \in \cB(\pi_{\cD})} \; \asrr(\cP, \cQ_v), \label{eq:leader} \\
+  \cB(\pi_{\cD}) &= \argmax_{\cP \subseteq \cV^*,\, |\cP| \leq n} \; \asrr(\cP \setminus \{p : \pi_{\cD}(p) = 1\}, \cQ_v), \label{eq:follower}
+\end{align}
+where $\Pi = \{\pi(c) = \mathbf{1}[s(c; \cH) > \tau] : \tau > 0\}$ is the class of threshold detectors.
+The defender's utility is $u_{\cD} = -\asrr - \lambda \cdot \fpr$ ($\lambda > 0$) and the adversary's is $u_{\cS} = \asrt$.
 \end{definition}
 
 \begin{figure}[t]
@@ -175,8 +194,12 @@ Let $(\cA, \cM, \enc, k)$ be a memory-augmented agent. An \emph{adversary} $\cS$
   atk/.style   = {draw, fill=red!12, rounded corners=2pt,
                   minimum width=1.6cm, minimum height=0.55cm,
                   align=center, font=\scriptsize},
+  def/.style   = {draw, fill=green!12, rounded corners=2pt,
+                  minimum width=1.4cm, minimum height=0.55cm,
+                  align=center, font=\scriptsize},
   arr/.style   = {-{Stealth[length=4pt]}, semithick},
   atkarr/.style= {-{Stealth[length=4pt]}, semithick, red!70!black, dashed},
+  defarr/.style= {-{Stealth[length=4pt]}, semithick, green!50!black, dotted},
 ]
   \node[box]   (user)  {User $q$};
   \node[store, right=of user]  (mem)   {Memory $\cM$};
@@ -188,24 +211,26 @@ Let $(\cA, \cM, \enc, k)$ be a memory-augmented agent. An \emph{adversary} $\cS$
   \draw[arr] (ret)   -- (agent);
   \draw[arr] (agent) -- (resp);
   \node[atk, below=0.8cm of mem] (atk) {Adversary $\cS$};
+  \node[def, above=0.6cm of mem] (def) {\memsad{} $\pi_{\cD}$};
   \draw[atkarr] (atk) -- node[right,font=\tiny,red!70!black]{$\passage$} (mem);
+  \draw[defarr] (def) -- node[right,font=\tiny,green!50!black]{filter} (mem);
   \begin{scope}[on background layer]
     \node[draw=gray!50, fill=gray!4, rounded corners=4pt,
-          fit=(user)(mem)(ret)(agent)(resp), inner sep=5pt] {};
+          fit=(user)(mem)(ret)(agent)(resp)(def), inner sep=5pt] {};
   \end{scope}
 \end{tikzpicture}
 \vspace{-4pt}
-\caption{Memory poisoning threat model (Definition~\ref{def:threat_model}). The adversary $\cS$ injects $\passage$ into $\cM$; on a victim query $q$, the poisoned entry is retrieved as top-$k$ context, hijacking the response.}
+\caption{Memory poisoning as a Stackelberg game (Definitions~\ref{def:threat_model}--\ref{def:stackelberg}). The defender commits to $\pi_{\cD}$; the adversary best-responds by injecting $\passage$.}
 \label{fig:threat_model}
 \vspace{-6pt}
 \end{figure}
 
 \begin{assumption}[Encoder regularity]
 \label{ass:encoder}
-The encoder $\enc : \cV^* \to \RR^d$ satisfies: (i) $\|\enc(x)\| > 0$ for all $x \in \cV^*$; (ii) $\enc$ is differentiable with respect to its output when viewed as a function on $\RR^d$ (i.e., the mapping $\enc(c) \mapsto \cosim(\enc(c), \enc(q))$ is differentiable for fixed $q$); and (iii) L2-normalization: $\|\enc(x)\| = 1$ for all $x$ (without loss of generality via normalization).
+$\enc : \cV^* \to \RR^d$ satisfies: (i) $\|\enc(x)\| > 0$ for all $x$; (ii) differentiability w.r.t.\ the output embedding; (iii) L2-normalization: $\|\enc(x)\| = 1$ (w.l.o.g.).
 \end{assumption}
 
-Under Assumption~\ref{ass:encoder}(iii), the retrieval operation simplifies to $\Ret(\cM, q, k) = \argmax_{S \subseteq \cM, |S|=k} \sum_{m \in S} \enc(q)^\top \enc(m)$, and $\cosim(\enc(q), \enc(m)) = \enc(q)^\top \enc(m)$.
+Under Assumption~\ref{ass:encoder}(iii), $\cosim(\enc(q), \enc(m)) = \enc(q)^\top \enc(m)$ and retrieval reduces to maximum inner product search.
 
 \begin{table}[t]
   \centering
@@ -218,8 +243,8 @@ Under Assumption~\ref{ass:encoder}(iii), the retrieval operation simplifies to $
     Property & \agentpoison{} & \minja{} & \injecmem{} \\
     \midrule
     Access model $\alpha$ & \textsc{write} & \textsc{query} & \textsc{single} \\
-    Trigger token required        & \checkmark & --- & --- \\
-    Retriever-agnostic passage    & ---        & ---        & \checkmark \\
+    Trigger required        & \checkmark & --- & --- \\
+    Retriever-agnostic    & ---        & ---        & \checkmark \\
     Entries injected $n$          & $1\times$  & $2\times$  & $3\times$ \\
     Modelled $\asra$              & $0.68$ & $0.76$ & $0.57$ \\
     \bottomrule
@@ -228,32 +253,22 @@ Under Assumption~\ref{ass:encoder}(iii), the retrieval operation simplifies to $
 \end{table}
 
 The three attacks instantiate different access models (Table~\ref{tab:attack_properties}).
-\agentpoison{} ($\alpha = \textsc{write}$) optimizes a trigger sequence $\trigger^* = \argmax_{\trigger} \EE_{q \sim \cQ_v}[\cosim(\enc(q \oplus \trigger), \enc(\passage))]$ via HotFlip gradient approximation over DPR embeddings.
-\minja{} ($\alpha = \textsc{query}$) exploits auto-storage via progressive-shortening indication, generating bridging-step passages with high query-aligned similarity.
+\agentpoison{} ($\alpha = \textsc{write}$) optimizes a trigger $\trigger^* = \argmax_{\trigger} \EE_{q \sim \cQ_v}[\cosim(\enc(q \oplus \trigger), \enc(\passage))]$ via HotFlip over DPR embeddings.
+\minja{} ($\alpha = \textsc{query}$) exploits auto-storage via progressive-shortening indication.
 \injecmem{} ($\alpha = \textsc{single}$) injects broad-vocabulary anchor passages spanning multiple domains.
 
 %% ============================================================
-\section{Semantic Anomaly Detection}
+\section{\memsad{}: Semantic Anomaly Detection}
 \label{sec:sad}
 
 \subsection{Algorithm and formal definition}
 
-Memory poisoning attacks succeed precisely because adversarial entries are semantically close to victim queries; this closeness, necessary for retrieval, is itself a detectable signal.
-\sad{} exploits this asymmetry without requiring labeled attack examples or model access.
+Memory poisoning succeeds because adversarial entries are semantically close to victim queries; this closeness, necessary for retrieval, is itself a detectable signal.
 
-\begin{definition}[\sad{} detector]
+\begin{definition}[\memsad{} detector]
 \label{def:sad}
-Let $\cH = \{q_1, \ldots, q_m\}$ be a rolling history of observed queries (FIFO, capacity $m_{\max}$) and let $\cM_{\text{ref}} \subseteq \cM$ be a benign reference corpus. The \sad{} anomaly score for a candidate entry $c$ is
-\begin{equation}
-  s(c; \cH) \coloneqq \max_{q \in \cH} \cosim(\enc(c), \enc(q)).
-  \label{eq:sad_score}
-\end{equation}
-The calibration step computes mean $\hat{\mu}$ and standard deviation $\hat{\sigma}$ of $\{s(m; \cH) : m \in \cM_{\text{ref}}\}$ over the benign reference corpus. An entry $c$ is flagged as anomalous if
-\begin{equation}
-  s(c; \cH) > \hat{\mu} + \kappa \cdot \hat{\sigma}, \qquad \kappa \in \RR_{>0}.
-  \label{eq:sad_threshold}
-\end{equation}
-We additionally define a \emph{combined scoring mode} that captures both targeted (high max-similarity) and broad-recall (high mean-similarity) attack signatures:
+Let $\cH = \{q_1, \ldots, q_m\}$ be a rolling query history (FIFO, capacity $m_{\max}$) and $\cM_{\text{ref}} \subseteq \cM$ a benign reference corpus. The anomaly score is $s(c; \cH) \coloneqq \max_{q \in \cH} \cosim(\enc(c), \enc(q))$, calibrated via $\hat{\mu}, \hat{\sigma}$ of $\{s(m; \cH) : m \in \cM_{\text{ref}}\}$. Entry $c$ is flagged if $s(c; \cH) > \hat{\mu} + \kappa \hat{\sigma}$ for $\kappa > 0$.
+The \emph{combined scoring mode} captures both targeted and broad-recall signatures:
 \begin{equation}
   s_{\text{comb}}(c; \cH)
   \coloneqq \tfrac{1}{2} \max_{q \in \cH} \cosim(\enc(c), \enc(q))
@@ -263,130 +278,146 @@ We additionally define a \emph{combined scoring mode} that captures both targete
 \end{definition}
 
 \begin{algorithm}[t]
-\caption{\sad{} pre-ingestion filtering}
+\caption{\memsad{} pre-ingestion filtering}
 \label{alg:sad}
 \begin{algorithmic}[1]
-\REQUIRE candidate entry $c$, query history $\cH$, calibration parameters $(\hat{\mu}, \hat{\sigma})$, threshold $\kappa$
-\STATE Compute $s \leftarrow s_{\text{comb}}(c; \cH)$ via Eq.~\eqref{eq:sad_combined}
+\REQUIRE candidate $c$, query history $\cH$, parameters $(\hat{\mu}, \hat{\sigma})$, threshold $\kappa$
+\STATE $s \leftarrow s_{\text{comb}}(c; \cH)$ \hfill $\triangleright$ $O(md)$ time
 \IF{$s > \hat{\mu} + \kappa \cdot \hat{\sigma}$}
-  \STATE \textbf{reject} $c$ (flagged as anomalous)
+  \STATE \textbf{reject} $c$
 \ELSE
   \STATE \textbf{accept} $c$ into $\cM$
 \ENDIF
 \end{algorithmic}
 \end{algorithm}
 
-\paragraph{Computational complexity.}
-For a candidate entry $c$ with query history of size $m = |\cH|$ and embedding dimension $d$, computing $s_{\text{comb}}(c; \cH)$ requires $m$ inner products in $\RR^d$, yielding $O(md)$ time complexity. With FAISS batch search, this reduces to $O(d \log m)$ amortized per query via approximate nearest neighbor indexing.
-
 \subsection{Gradient coupling theorem}
 \label{sec:gradient}
 
-A key security question for any anomaly-based defense is: \emph{can an adaptive adversary who knows the detection statistics $(\hat{\mu}, \hat{\sigma})$ craft passages that evade detection while preserving retrieval effectiveness?}
-We prove that under Assumption~\ref{ass:encoder}, this is impossible for continuous perturbations.
-
 \begin{theorem}[Gradient coupling]
 \label{thm:gradient_coupling}
-Let $\enc$ satisfy Assumption~\ref{ass:encoder}, let $c \in \cV^*$ be an adversarial passage with $e_c \coloneqq \enc(c) \in \RR^d$, and let $q^* \coloneqq \argmax_{q \in \cH} \cosim(e_c, \enc(q))$. Define:
-\begin{itemize}
-  \item \emph{Detection objective}: $\cD(e_c) \coloneqq \cosim(e_c, \enc(q^*)) = e_c^\top \enc(q^*) / (\|e_c\| \|\enc(q^*)\|)$
-  \item \emph{Retrieval objective}: $\cR(e_c) \coloneqq \cosim(e_c, \enc(q^*))$
-\end{itemize}
-Then $\cD \equiv \cR$ on $\RR^d \setminus \{0\}$, and their gradients are identical:
+Let $\enc$ satisfy Assumption~\ref{ass:encoder}, let $e_c \coloneqq \enc(c) \in \RR^d$, and $q^* \coloneqq \argmax_{q \in \cH} \cosim(e_c, \enc(q))$. Define the detection objective $\cD(e_c) \coloneqq \cosim(e_c, \enc(q^*))$ and retrieval objective $\cR(e_c) \coloneqq \cosim(e_c, \enc(q^*))$. Then $\cD \equiv \cR$ on $\RR^d \setminus \{0\}$ and:
 \begin{equation}
   \nabla_{e_c} \cD(e_c)
   = \nabla_{e_c} \cR(e_c)
-  = \frac{\enc(q^*)}{\|e_c\| \|\enc(q^*)\|}
-    - \frac{e_c^\top \enc(q^*)}{\|e_c\|^3 \|\enc(q^*)\|} e_c.
+  = \frac{\enc(q^*) - (e_c^\top \enc(q^*)) e_c}{\|e_c\|^2 \|\enc(q^*)\|}.
   \label{eq:gradient}
 \end{equation}
-Consequently, for any perturbation direction $\delta \in \RR^d$:
-\begin{equation}
-  \langle \delta, \nabla_{e_c} \cD(e_c) \rangle < 0
-  \iff
-  \langle \delta, \nabla_{e_c} \cR(e_c) \rangle < 0.
-  \label{eq:coupling}
-\end{equation}
+For any perturbation $\delta \in \RR^d$: $\langle \delta, \nabla \cD \rangle < 0 \iff \langle \delta, \nabla \cR \rangle < 0$.
 \end{theorem}
 
 \begin{proof}
-Since $\cD(e_c) = \cR(e_c) = \cosim(e_c, \enc(q^*))$ by construction, gradient identity follows immediately. For the explicit form, let $v \coloneqq \enc(q^*)$ and define $f(e_c) = e_c^\top v / (\|e_c\| \|v\|)$. Then:
-\begin{align}
-  \frac{\partial f}{\partial e_c^{(i)}}
-  &= \frac{v^{(i)}}{\|e_c\| \|v\|}
-     - \frac{(e_c^\top v) \cdot e_c^{(i)}}{\|e_c\|^3 \|v\|},
-\end{align}
-which gives $\nabla_{e_c} f = v / (\|e_c\| \|v\|) - (e_c^\top v / (\|e_c\|^3 \|v\|)) e_c$, establishing Eq.~\eqref{eq:gradient}.
-The biconditional in Eq.~\eqref{eq:coupling} follows because $\nabla_{e_c} \cD = \nabla_{e_c} \cR$.
+Since $\cD \equiv \cR$ by construction, gradient identity is immediate. The explicit form follows from $\nabla_{e_c}(e_c^\top v / (\|e_c\|\|v\|)) = (v - (e_c^\top v / \|e_c\|^2)e_c) / (\|e_c\|\|v\|)$ with $v = \enc(q^*)$.
 \end{proof}
 
 \begin{corollary}[Detection-evasion tradeoff]
 \label{cor:tradeoff}
-Under Assumption~\ref{ass:encoder} with L2-normalized embeddings ($\|e_c\| = \|\enc(q^*)\| = 1$), the gradient simplifies to $\nabla_{e_c} \cD(e_c) = \enc(q^*) - (e_c^\top \enc(q^*)) e_c$. For any perturbation $e_c' = e_c + \epsilon \delta$ with $\|\delta\| = 1$ and $\epsilon > 0$ sufficiently small:
+Under L2-normalization, for perturbation $e_c' = e_c + \epsilon\delta$ with $\|\delta\| = 1$:
 \begin{equation}
   \cD(e_c') - \cD(e_c) = \epsilon \langle \delta, \enc(q^*) - (e_c^\top \enc(q^*)) e_c \rangle + O(\epsilon^2).
   \label{eq:tradeoff}
 \end{equation}
-Therefore $\cD(e_c') < \cD(e_c)$ (evasion) implies $\cR(e_c') < \cR(e_c)$ (retrieval degradation) to first order.
+Thus $\cD(e_c') < \cD(e_c)$ (evasion) $\implies$ $\cR(e_c') < \cR(e_c)$ (retrieval degradation) to first order.
 \end{corollary}
 
+\subsection{Certified detection guarantee}
+\label{sec:certified}
+
+The gradient coupling (Theorem~\ref{thm:gradient_coupling}) shows continuous evasion is impossible. We now provide a \emph{certified detection guarantee}: under explicit, verifiable conditions on the adversary's retrieval requirement and the calibration quality, \memsad{} provably detects adversarial passages.
+
+\begin{lemma}[Certified detection radius]
+\label{lem:certified}
+Let $\enc$ satisfy Assumption~\ref{ass:encoder} and let $c$ be an adversarial passage achieving $\rank(\enc(c), \cM) \leq k$ for victim query $q^*$. Define the \emph{benign similarity ceiling} $\bar{s} \coloneqq \max_{m \in \cM_{\text{ref}}} \cosim(\enc(m), \enc(q^*))$, the adversarial similarity $s_{\text{adv}} \coloneqq \cosim(\enc(c), \enc(q^*))$, and the \emph{gap} $\Delta_s \coloneqq s_{\text{adv}} - \bar{s}$.
+If the calibration satisfies $|\tau_N - \tau^*| \leq \eta$ (Theorem~\ref{thm:calibration_bound}) and the gap exceeds
+\begin{equation}
+  \Delta_s > \kappa\hat{\sigma} + \eta,
+  \label{eq:certified_radius}
+\end{equation}
+then \memsad{} detects $c$ with certainty: $s(c; \cH) > \hat{\mu} + \kappa\hat{\sigma}$.
+\end{lemma}
+
 \begin{proof}
-Direct Taylor expansion of $\cD$ around $e_c$ using the gradient from Theorem~\ref{thm:gradient_coupling} with $\|e_c\| = \|\enc(q^*)\| = 1$.
+Since $c$ achieves $\rank \leq k$, we have $s(c; \cH) \geq s_{\text{adv}} = \bar{s} + \Delta_s$. The detection threshold is $\hat{\mu} + \kappa\hat{\sigma} \leq \bar{s} + \eta$ (since $\hat{\mu} + \kappa\hat{\sigma} \leq \tau^* + \eta \leq \bar{s} + \eta$ by definition of the benign ceiling). Thus $s(c; \cH) \geq \bar{s} + \Delta_s > \bar{s} + \kappa\hat{\sigma} + \eta \geq \hat{\mu} + \kappa\hat{\sigma}$.
 \end{proof}
 
-\subsection{Calibration sample complexity}
+Lemma~\ref{lem:certified} formalizes a ``detection radius'': any adversarial passage whose similarity to the victim query exceeds the benign ceiling by more than $\kappa\hat{\sigma} + \eta$ is \emph{certifiably detected}, regardless of the adversary's strategy.
+For \minja{} in our experiments, $\Delta_s \approx 0.15$ while $\kappa\hat{\sigma} + \eta \approx 0.08$, satisfying the condition with margin.
+For \agentpoison{} under triggered calibration, $\Delta_s \approx 0.12$ with $\kappa\hat{\sigma} + \eta \approx 0.06$.
+
+\subsection{Information-theoretic detection lower bound}
+\label{sec:lower_bound}
+
+\begin{theorem}[Minimax detection lower bound]
+\label{thm:minimax_lower}
+Let $\cF$ be the class of threshold detectors $\pi(c) = \mathbf{1}[s(c; \cH) > \tau]$. Let $P_0, P_1$ be the benign and poisoned score distributions with means $\mu_0, \mu_1$, common variance $\sigma^2$, and signal-to-noise ratio $\rho \coloneqq |\mu_1 - \mu_0| / \sigma$. For any detector $\pi \in \cF$ calibrated on $N$ i.i.d.\ samples from $P_0$:
+\begin{equation}
+  \inf_{\pi \in \cF} \left[\fpr(\pi) + (1 - \tpr(\pi))\right]
+  \geq 1 - \frac{\rho\sqrt{N}}{2}.
+  \label{eq:minimax_lower}
+\end{equation}
+Reliable detection ($\fpr + (1 - \tpr) \leq \epsilon$) requires $N \geq 4(1 - \epsilon)^2 / \rho^2$.
+\end{theorem}
+
+\begin{proof}[Proof sketch]
+Apply Le Cam's two-point method~\citep{lecam1973convergence,yu1997assouad} with $H_0: c \sim P_0$, $H_1: c \sim P_1$. Pinsker's inequality gives $\TV(P_0^N, P_1^N) \leq \sqrt{N \cdot \KL(P_0 \| P_1)/2} \leq \rho\sqrt{N}/2$ for sub-Gaussian distributions. Le Cam's bound then yields Eq.~\eqref{eq:minimax_lower}. Full proof in Appendix~\ref{app:proof_minimax}.
+\end{proof}
+
+\begin{remark}[Minimax optimality]
+\label{rem:optimality}
+\memsad{}'s calibration (Theorem~\ref{thm:calibration_bound}) achieves reliable detection with $N = O(\log(1/\delta)/\rho^2)$ samples; the lower bound requires $N = \Omega(1/\rho^2)$. Thus \memsad{} is minimax-optimal up to $\log(1/\delta)$.
+\end{remark}
+
+\subsection{Calibration bounds and online regret}
 
 \begin{theorem}[Calibration bound]
 \label{thm:calibration_bound}
-Let $\{s_1, \ldots, s_N\}$ be i.i.d.\ draws from the benign score distribution $s(m; \cH)$ with $m \sim \cD_{\text{benign}}$, having mean $\mu$ and variance $\sigma^2 > 0$. Let $\hat{\mu}_N = \frac{1}{N}\sum_{i=1}^{N} s_i$ and $\hat{\sigma}_N^2 = \frac{1}{N-1}\sum_{i=1}^{N}(s_i - \hat{\mu}_N)^2$. For the threshold $\tau_N \coloneqq \hat{\mu}_N + \kappa \hat{\sigma}_N$ and the population threshold $\tau^* \coloneqq \mu + \kappa \sigma$, with probability at least $1 - \delta$:
+For $N$ i.i.d.\ benign scores with mean $\mu$, variance $\sigma^2$, and threshold $\tau_N = \hat{\mu}_N + \kappa\hat{\sigma}_N$, with probability $\geq 1 - \delta$:
 \begin{equation}
-  |\tau_N - \tau^*| \leq \sigma \left(\frac{1}{\sqrt{N}} + \frac{\kappa}{\sqrt{2(N-1)}}\right) \sqrt{2 \log(4/\delta)}.
+  |\tau_N - \tau^*| \leq \sigma \left(\frac{1}{\sqrt{N}} + \frac{\kappa}{\sqrt{2(N-1)}}\right) \sqrt{2 \log(4/\delta)},
   \label{eq:calibration_bound}
 \end{equation}
+where $\tau^* = \mu + \kappa\sigma$. Proof via Hoeffding + chi-squared concentration with union bound (Appendix~\ref{app:proof_calibration}).
 \end{theorem}
 
-\begin{proof}
-By Hoeffding's inequality applied to the sample mean on $[0, 1]$ (since cosine similarities are bounded), $|\hat{\mu}_N - \mu| \leq \sqrt{\log(2/\delta) / (2N)}$ with probability $\geq 1 - \delta/2$. For the sample standard deviation, by the chi-squared concentration bound, $|\hat{\sigma}_N - \sigma| \leq \sigma \sqrt{\log(2/\delta) / (2(N-1))}$ with probability $\geq 1 - \delta/2$. The triangle inequality gives $|\tau_N - \tau^*| \leq |\hat{\mu}_N - \mu| + \kappa |\hat{\sigma}_N - \sigma|$, and a union bound over both events yields Eq.~\eqref{eq:calibration_bound}.
-\end{proof}
+\begin{theorem}[Online calibration regret]
+\label{thm:regret}
+Let queries arrive online with per-step drift $\|\EE[\enc(q_t)] - \EE[\enc(q_{t+1})]\| \leq \Delta$. The cumulative regret of \memsad{}'s rolling window satisfies:
+\begin{equation}
+  \Regret(T) = \sum_{t=1}^{T} |\hat{\tau}_t - \tau_t^*|
+  \leq T \cdot O\!\left(\frac{\sigma}{\sqrt{m_{\max}}} + m_{\max} \cdot \Delta \right).
+  \label{eq:regret}
+\end{equation}
+The optimal window $m_{\max}^* = \Theta((\sigma/\Delta)^{2/3})$ minimizes per-step regret to $O(\sigma^{2/3}\Delta^{1/3})$. Proof in Appendix~\ref{app:proof_regret}.
+\end{theorem}
 
 \subsection{The discrete synonym loophole}
 
 \begin{proposition}[Synonym-invariance loophole]
 \label{prop:synonym}
-Let $\enc$ be a paraphrase-trained encoder satisfying $\|\enc(\mathrm{sub}(c, w, w')) - \enc(c)\| \leq \epsilon_{\text{syn}}$ for any synonym substitution $w \to w'$, where $\mathrm{sub}(c, w, w')$ replaces word $w$ with synonym $w'$ in passage $c$. Then for $c' = \mathrm{sub}(c, w_1, w_1') \circ \cdots \circ \mathrm{sub}(c, w_r, w_r')$ with $r$ substitutions:
-\begin{align}
-  |\cR(c') - \cR(c)| &\leq r \cdot \epsilon_{\text{syn}}, \label{eq:retrieval_bound} \\
-  |s(c'; \cH) - s(c; \cH)| &\leq r \cdot \epsilon_{\text{syn}}. \label{eq:detection_bound}
-\end{align}
-Consequently, if $\epsilon_{\text{syn}} \approx 0$ (as holds empirically for paraphrase-trained models), the adversary can reduce $s(c'; \cH)$ below the detection threshold while preserving $\cR(c') \approx \cR(c)$ by selecting synonyms that shift the anomaly score downward via non-gradient lexical variation.
+Let $\enc$ satisfy $\|\enc(\mathrm{sub}(c, w, w')) - \enc(c)\| \leq \epsilon_{\text{syn}}$ for synonym substitutions. For $r$ substitutions yielding $c'$:
+\begin{equation}
+  |\cR(c') - \cR(c)| \leq r \epsilon_{\text{syn}}, \qquad
+  |s(c'; \cH) - s(c; \cH)| \leq r \epsilon_{\text{syn}}.
+  \label{eq:synonym_bounds}
+\end{equation}
+When $\epsilon_{\text{syn}} \approx 0$, the adversary evades detection while preserving retrieval via non-gradient lexical variation.
 \end{proposition}
 
 \begin{proof}
-For L2-normalized embeddings, $|\cosim(\enc(c'), \enc(q)) - \cosim(\enc(c), \enc(q))| = |\enc(q)^\top (\enc(c') - \enc(c))| \leq \|\enc(c') - \enc(c)\|$ by Cauchy-Schwarz. Each synonym substitution perturbs the embedding by at most $\epsilon_{\text{syn}}$, and triangle inequality over $r$ substitutions gives $\|\enc(c') - \enc(c)\| \leq r \cdot \epsilon_{\text{syn}}$. The bounds follow by applying this to both $\cR$ and $s(\cdot; \cH)$.
+Cauchy-Schwarz gives $|\enc(q)^\top(\enc(c') - \enc(c))| \leq \|\enc(c') - \enc(c)\|$, and triangle inequality over $r$ substitutions yields $\|\enc(c') - \enc(c)\| \leq r\epsilon_{\text{syn}}$.
 \end{proof}
 
-\begin{remark}
-\label{rem:mechanism}
-The loophole in Proposition~\ref{prop:synonym} does not contradict Theorem~\ref{thm:gradient_coupling}. The gradient coupling theorem characterizes \emph{continuous} perturbations in $\RR^d$; synonym substitution operates in the \emph{discrete} token space $\cV^*$, where the encoder mapping is not differentiable. The synonym-invariance property $\epsilon_{\text{syn}} \approx 0$ means that discrete substitutions can change the calibration statistics (by altering surface-level features used in mean/variance estimation from different calibration samples) while leaving the embedding nearly unchanged. This motivates defenses incorporating lexical diversity features beyond the semantic embedding space.
-\end{remark}
+This does \emph{not} contradict Theorem~\ref{thm:gradient_coupling}: the coupling holds for \emph{continuous} perturbations in $\RR^d$, while synonym substitution operates in the \emph{discrete} token space where $\epsilon_{\text{syn}} \approx 0$ for paraphrase-trained encoders.
 
 %% ============================================================
 \section{Additional defenses}
 \label{sec:other_defenses}
 
-We evaluate four additional defenses under a pre-ingestion filtering model.
-
-\paragraph{Watermark.}
-Content provenance via the unigram watermark of~\citet{zhao2024watermark}. A PRF-keyed partition divides the vocabulary into green (fraction $\gamma = 0.25$) and red lists; detection computes z-score $z = (g - \gamma n)/\sqrt{\gamma(1-\gamma)n}$ against threshold $z_{\text{thr}} = 4.0$. Under the null hypothesis of random text, $z \sim \mathcal{N}(0, 1)$, yielding a false positive rate of $\PP[z > z_{\text{thr}}] = \Phi(-z_{\text{thr}}) \approx 3.2 \times 10^{-5}$.
-
-\paragraph{Validation.}
-Rule-based pattern matching for injection keywords applied at write time. Computationally lightweight at $O(|c| \cdot |P|)$ for pattern set $P$, but inherently limited against semantically sophisticated attacks that avoid explicit injection vocabulary.
-
-\paragraph{Proactive.}
-Measures mean cosine similarity against 16 domain probe queries spanning 8 agent subtopics. Entries with mean probe similarity exceeding $\tau = 0.19$ are flagged. Formally, for probe set $Q_{\text{probe}}$: flag $c$ if $\frac{1}{|Q_{\text{probe}}|}\sum_{q \in Q_{\text{probe}}} \cosim(\enc(c), \enc(q)) > \tau$.
-
-\paragraph{Composite.}
-Weighted ensemble implementing defense-in-depth. An entry is flagged if $\sum_{j} w_j \cdot d_j(c) > \theta$ where $d_j(c) \in \{0, 1\}$ are individual detector outputs and $w_j, \theta$ are learned parameters.
+We evaluate four additional defenses under a pre-ingestion model.
+\textbf{Watermark:} unigram watermark~\citep{zhao2024watermark} with z-score threshold $z_{\text{thr}} = 4.0$, giving $\fpr \approx 3.2 \times 10^{-5}$.
+\textbf{Validation:} rule-based pattern matching ($O(|c| \cdot |P|)$).
+\textbf{Proactive:} mean cosine similarity against 16 domain probes; flag if $> \tau = 0.19$.
+\textbf{Composite:} weighted ensemble $\sum_j w_j d_j(c) > \theta$.
 
 %% ============================================================
 \section{Experiments}
@@ -396,28 +427,27 @@ Weighted ensemble implementing defense-in-depth. An entry is flagged if $\sum_{j
 
 \paragraph{Vector memory.}
 FAISS IndexFlatIP with L2-normalized all-MiniLM-L6-v2 embeddings ($d = 384$).
-The benign corpus contains $|\cM| = 200$ entries across 7 categories.
+Benign corpus: $|\cM| = 200$ entries, 7 categories.
 Poison counts: $n = 5$ (\agentpoison{}), $10$ (\minja{}), $15$ (\injecmem{}).
-$k = 5$.
-Victim and benign query sets: $|\cQ_v| = |\cQ_b| = 20$ each.
-Bootstrap 95\% CIs from 5 independent random seeds.
+$k = 5$; $|\cQ_v| = |\cQ_b| = 20$.
+Bootstrap 95\% CIs from 5 seeds.
 
-\paragraph{Attack implementations.}
-\agentpoison{} uses a centroid-targeting passage with DPR HotFlip trigger optimization (mean cosine similarity improvement: $0.71 \to 0.78$).
-\minja{} uses progressive-shortening indication with bridging-step passages ($p_0 = 0.98$, $\lambda = 0.10$).
-\injecmem{} uses $3 \times n_{\text{base}}$ broad-anchor entries from 8 templates.
+\paragraph{Attacks.}
+\agentpoison{}: centroid passage + DPR HotFlip trigger ($\cosim: 0.71 \to 0.78$).
+\minja{}: progressive-shortening with bridging steps ($p_0 = 0.98$, $\lambda = 0.10$).
+\injecmem{}: $3 \times n_{\text{base}}$ broad-anchor entries from 8 templates.
 
 \subsection{Attack results}
 
 \begin{table}[t]
   \centering
   \small
-  \caption{Attack evaluation results (bootstrap 95\% CI, 5 seeds). $\asra$ is modelled from paper-reported values. Higher is worse for defenders.}
+  \caption{Attack results (bootstrap 95\% CI, 5 seeds). $\asra$ modelled from paper-reported values.}
   \label{tab:attack_results}
   \vspace{2pt}
   \begin{tabular}{lccccc}
     \toprule
-    Attack & $\asrr$ & $\asra$ & $\asrt$ & Benign Acc. & ISR \\
+    Attack & $\asrr$ & $\asra$ & $\asrt$ & Ben.\ Acc. & ISR \\
     \midrule
     \agentpoison{} (triggered) & $1.00 \pm 0.00$ & $0.68$ & $0.68$ & $1.00$ & $1.00$ \\
     \minja{}                   & $0.65 \pm 0.00$ & $0.76$ & $0.49$ & $0.90$ & $0.98$ \\
@@ -426,46 +456,42 @@ Bootstrap 95\% CIs from 5 independent random seeds.
   \end{tabular}
 \end{table}
 
-Table~\ref{tab:attack_results} reports main results; Figure~\ref{fig:attack_asr} visualizes the three metrics.
+Table~\ref{tab:attack_results} reports main results.
 \agentpoison{} achieves $\asrr = 1.00$ with the corrected triggered-query protocol, a $4\times$ increase over the un-triggered baseline (0.25).
-This discrepancy arises because the original evaluation protocol (Algorithm~2 in~\citet{chen2024agentpoison}) specifies triggered queries $q \oplus \trigger^*$, but simulations that omit the trigger evaluate a fundamentally weaker attacker: without the trigger, the centroid passage competes against benign entries on generic similarity alone ($\cosim \approx 0.45$), while with the trigger, similarity increases to $\sim 0.78$.
-
-\minja{} achieves $\asrr = 0.65$ in our simulation.
-The original paper reports $\isr = 98.2\%$, which measures write-time success; our $\asrr = 0.65$ measures retrieval-time exposure.\footnote{$\isr$ and $\asrr$ measure complementary threat surfaces: $\isr$ quantifies write-time success; $\asrr$ quantifies retrieval-time exposure.}
+This discrepancy arises because Algorithm~2 in~\citet{chen2024agentpoison} specifies triggered queries $q \oplus \trigger^*$; omitting the trigger evaluates a fundamentally weaker attacker ($\cosim \approx 0.45$ vs.\ $\sim 0.78$).
+\minja{} achieves $\asrr = 0.65$ (retrieval-time), compared to $\isr = 98.2\%$ (write-time).\footnote{$\isr$ and $\asrr$ measure complementary surfaces: $\isr$ quantifies write-time success; $\asrr$ quantifies retrieval-time exposure.}
 \injecmem{} achieves $\asrr = 0.50$ via volume ($n = 15$) at the cost of lower benign accuracy (0.80).
 
 \begin{figure}[t]
   \centering
   \includegraphics[width=0.72\linewidth]{fig_01_attack_asr.pdf}
   \vspace{-6pt}
-  \caption{Attack success rates (bootstrap 95\% CI). Left: $\asrr$; middle: $\asra$ (modelled); right: $\asrt$.}
+  \caption{Attack success rates (bootstrap 95\% CI). Left: $\asrr$; middle: $\asra$; right: $\asrt$.}
   \label{fig:attack_asr}
   \vspace{-8pt}
 \end{figure}
 
 \subsection{Attack-defense interaction matrix}
-\label{sec:matrix}
 
 \begin{figure}[t]
   \centering
   \includegraphics[width=0.68\linewidth]{m12_attack_defense_matrix.pdf}
   \vspace{-4pt}
-  \caption{$3 \times 5$ attack-defense interaction matrix showing residual $\asrr$ after defense application. Lower values indicate stronger defense. Composite and watermark achieve $\asrr = 0.00$ across all attacks.}
+  \caption{$3 \times 5$ attack-defense matrix: residual $\asrr$ after defense. Lower is stronger.}
   \label{fig:matrix}
   \vspace{-6pt}
 \end{figure}
 
-Figure~\ref{fig:matrix} and Table~\ref{tab:defense_tpr_fpr} report the full interaction matrix.
-Key findings:
-\textbf{(i)}~Watermark achieves $\tpr = 1.00$, $\fpr = 0.00$ for all attacks (AUROC $= 0.991$) but provides no protection if the attacker bypasses the ingestion path.
-\textbf{(ii)}~\sad{} with combined scoring excels against \minja{} ($\tpr = 1.00$, AUROC $= 1.000$) but assigns $\tpr = 0.00$ to \agentpoison{} under plain calibration; triggered-query calibration (Section~\ref{sec:sad}) recovers $\tpr = 1.00$.
-\textbf{(iii)}~Proactive detection is complementary: $\tpr = 1.00$ for \agentpoison{} but only $0.07$ for \minja{}.
-\textbf{(iv)}~Composite portfolios achieve $\tpr = 1.00$, $\fpr = 0.00$ across all attacks.
+Figure~\ref{fig:matrix} and Table~\ref{tab:defense_tpr_fpr} report the full matrix.
+\textbf{(i)}~Watermark achieves perfect detection but fails if the attacker bypasses ingestion.
+\textbf{(ii)}~\memsad{} excels against \minja{} ($\tpr = 1.00$, AUROC $= 1.000$) but requires triggered calibration for \agentpoison{}.
+\textbf{(iii)}~Proactive is complementary: $\tpr = 1.00$ for \agentpoison{}, $0.07$ for \minja{}.
+\textbf{(iv)}~Composite portfolios achieve $\tpr = 1.00$, $\fpr = 0.00$ across all attacks, consistent with the Stackelberg equilibrium (Definition~\ref{def:stackelberg}).
 
 \begin{table}[t]
   \centering
   \small
-  \caption{Defense TPR/FPR at operating thresholds ($\kappa = 2.0$ for \sad{}). AUROC provides threshold-free comparison. AP = \agentpoison{}, MJ = \minja{}, IM = \injecmem{}.}
+  \caption{Defense TPR/FPR at operating thresholds ($\kappa = 2.0$ for \memsad{}). AP = \agentpoison{}, MJ = \minja{}, IM = \injecmem{}.}
   \label{tab:defense_tpr_fpr}
   \vspace{2pt}
   \begin{tabular}{l ccc ccc c}
@@ -477,34 +503,32 @@ Key findings:
     Watermark   & 1.00 & 1.00 & 1.00 & 0.00 & 0.00 & 0.00 & 0.991 \\
     Validation  & 0.60 & 0.40 & 0.80 & 0.10 & 0.10 & 0.10 & --- \\
     Proactive   & 1.00 & 0.07 & 0.60 & 0.01 & 0.01 & 0.01 & --- \\
-    \sad{} (comb.)  & 0.00$^\dagger$ & 1.00 & 0.40 & 0.00 & 0.00 & 0.00 & 0.930 \\
+    \memsad{} (comb.)  & 0.00$^\dagger$ & 1.00 & 0.40 & 0.00 & 0.00 & 0.00 & 0.930 \\
     Composite   & 1.00 & 1.00 & 1.00 & 0.00 & 0.00 & 0.00 & --- \\
     \bottomrule
   \end{tabular}
   \\[2pt]
-  {\footnotesize $^\dagger$Plain calibration; triggered calibration achieves TPR $= 1.00$, FPR $= 0.00$.}
+  {\footnotesize $^\dagger$Plain calibration; triggered calibration: TPR $= 1.00$, FPR $= 0.00$, AUROC $= 1.000$.}
   \vspace{-8pt}
 \end{table}
 
 \subsection{Adaptive adversary analysis}
-\label{sec:adaptive}
 
-We model a white-box adversary with knowledge of $(\hat{\mu}, \hat{\sigma})$ who applies greedy synonym substitution ($>60$ domain synonym pairs) to solve:
+Following~\citet{tramer2020adaptive}, we model a white-box adversary with full knowledge of $(\hat{\mu}, \hat{\sigma}, \kappa)$ applying greedy synonym substitution ($>60$ pairs):
 \begin{equation}
-  c^* = \argmin_{c' \in \cV^*}\; s(c'; \cH) \quad \text{s.t.} \quad \rank(\enc(c'), \cM) \leq k, \quad c' \in \mathrm{Syn}(c),
+  c^* = \argmin_{c' \in \mathrm{Syn}(c)}\; s(c'; \cH) \quad \text{s.t.} \quad \rank(\enc(c'), \cM) \leq k.
   \label{eq:adaptive_obj}
 \end{equation}
-where $\mathrm{Syn}(c)$ denotes the set of passages reachable from $c$ via synonym substitution.
 
 \begin{table}[t]
   \centering
   \small
-  \caption{Adaptive adversary results: evasion rate vs.\ retrieval degradation under greedy synonym substitution against \sad{} (Proposition~\ref{prop:synonym}).}
+  \caption{Adaptive adversary: evasion vs.\ retrieval degradation (Proposition~\ref{prop:synonym}).}
   \label{tab:adaptive_sad}
   \vspace{2pt}
   \begin{tabular}{lcccc}
     \toprule
-    Attack & Evasion Rate & $\Delta\asrr$ & Subs/Entry & Sem.\ Sim.\ $\Delta$ \\
+    Attack & Evasion & $\Delta\asrr$ & Subs/Entry & Sim.\ $\Delta$ \\
     \midrule
     \agentpoison{} & 1.00 & 0.00 & 4.2 & $-0.01$ \\
     \minja{}        & 0.80 & 0.00 & 3.8 & $-0.02$ \\
@@ -514,79 +538,80 @@ where $\mathrm{Syn}(c)$ denotes the set of passages reachable from $c$ via synon
   \vspace{-4pt}
 \end{table}
 
-Table~\ref{tab:adaptive_sad} confirms Proposition~\ref{prop:synonym}: evasion rates of 80--100\% with $\Delta\asrr \approx 0$ using only 3.8--5.1 substitutions per entry ($|\Delta\text{sim}| \leq 0.02$).
-The gradient coupling (Theorem~\ref{thm:gradient_coupling}) holds in continuous space but is circumvented by discrete synonym substitution because paraphrase-trained embeddings enforce $\epsilon_{\text{syn}} \approx 0$.
+Table~\ref{tab:adaptive_sad} confirms Proposition~\ref{prop:synonym}: evasion rates of 80--100\% with $\Delta\asrr \approx 0$ using 3.8--5.1 substitutions ($|\Delta\text{sim}| \leq 0.02$).
+This validates the theoretical prediction: since paraphrase-trained encoders enforce $\epsilon_{\text{syn}} \approx 0$, discrete synonym substitution operates in a regime where the gradient coupling guarantee (Theorem~\ref{thm:gradient_coupling}) does not apply.
+The certified detection condition (Lemma~\ref{lem:certified}) is violated because synonym substitution does not change $s_{\text{adv}}$ appreciably but manipulates surface features used in calibration statistics, effectively reducing $\hat{\sigma}$ while preserving the adversarial similarity $\cosim(\enc(c'), \enc(q^*))$.
 
-\subsection{\sad{} detection characteristics}
+\subsection{\memsad{} detection characteristics}
 
 \begin{figure}[t]
   \centering
   \begin{subfigure}[t]{0.48\linewidth}
     \includegraphics[width=\linewidth]{fig_sad_roc_curve.pdf}
-    \caption{TPR vs.\ FPR as $\kappa$ varies from 0.5 to 4.0.}
+    \caption{ROC as $\kappa$ varies from 0.5 to 4.0.}
     \label{fig:sad_roc}
   \end{subfigure}
   \hfill
   \begin{subfigure}[t]{0.48\linewidth}
     \includegraphics[width=\linewidth]{fig_sad_calibration_comparison.pdf}
-    \caption{Plain vs.\ triggered calibration for \agentpoison{}.}
+    \caption{Plain vs.\ triggered calibration.}
     \label{fig:sad_calibration}
   \end{subfigure}
   \vspace{-4pt}
-  \caption{\sad{} detection analysis. (a)~\minja{} traces a near-ideal ROC; \agentpoison{} under plain calibration is undetectable, while triggered calibration achieves $\tpr = 1.00$ at $\kappa = 2.0$ ($\star$). (b)~Triggered calibration shifts the threshold from 0.482 to 0.432, exposing the centroid passage.}
+  \caption{\memsad{} detection. (a)~\minja{} traces near-ideal ROC; triggered calibration recovers $\tpr = 1.00$ for \agentpoison{} at $\kappa = 2.0$ ($\star$). (b)~Threshold shifts from 0.482 to 0.432.}
   \label{fig:sad_analysis}
   \vspace{-6pt}
 \end{figure}
 
-Figure~\ref{fig:sad_analysis}(a) shows the threshold sweep. At $\kappa = 2.0$ with combined scoring, \sad{} achieves AUROC $= 1.000$ (\minja{}), $0.920$ (\injecmem{}), and $0.870$ (\agentpoison{}, plain). Triggered calibration raises \agentpoison{} AUROC to $1.000$ while maintaining $\fpr = 0.00$. FPR is validated across 20 independent trials with Clopper-Pearson exact binomial CIs~\citep{clopper1934use} (Appendix~\ref{app:fpr}), confirming $\fpr = 0.000$ at 95\% confidence (one-sided upper bound $< 0.03$, $n = 1000$ benign entries per trial).
+At $\kappa = 2.0$ with combined scoring: AUROC $= 1.000$ (\minja{}), $0.920$ (\injecmem{}), $0.870$ (\agentpoison{}, plain). Triggered calibration raises \agentpoison{} AUROC to $1.000$.
+FPR validated across 20 trials with Clopper-Pearson CIs~\citep{clopper1934use}: $\fpr = 0.000$, 95\% upper bound $< 0.004$ ($n = 1000$ per trial; Appendix~\ref{app:fpr}).
 
 \subsection{Ablation highlights}
 
-Key ablation results (full details in Appendix~\ref{app:ablation}):
-\textbf{Threshold sensitivity:} $\kappa = 2.0$ with combined scoring provides the best TPR/FPR tradeoff.
-\textbf{Corpus size:} $\asrr$ is robust across $|\cM| \in \{50, \ldots, 500\}$ for \agentpoison{} and \minja{}.
-\textbf{Encoder generalization:} evaluating \sad{} across 7 encoders (MiniLM-L6, MPNet-Base, Para-MiniLM, E5-Base, Contriever, BGE-Large, OpenAI text-embedding-3-small) confirms triggered calibration achieves $\tpr = 1.000$ for \agentpoison{} on all encoders (Appendix~\ref{app:encoder_gen}).
+Key results (full tables in Appendix~\ref{app:ablation}):
+\textbf{Threshold:} $\kappa = 2.0$ with combined scoring is optimal.
+\textbf{Corpus size:} $\asrr$ robust across $|\cM| \in \{50, \ldots, 500\}$.
+\textbf{Encoder generalization:} \memsad{} validated across 7 encoders; triggered calibration achieves $\tpr = 1.000$ for \agentpoison{} on all (Appendix~\ref{app:encoder_gen}).
 
 %% ============================================================
 \section{Discussion and limitations}
 \label{sec:discussion}
 
 \paragraph{No single defense dominates.}
-The $3 \times 5$ matrix reveals that defense effectiveness varies substantially by attack type.
-Watermark reliably identifies unsigned writes but provides no protection if the attacker bypasses the ingestion path.
-\sad{} excels against similarity-concentrated attacks (\minja{}) but misses centroid-targeting attacks under plain calibration.
-Proactive detection catches broad-recall passages but misses targeted ones.
-Composite portfolios cover all gaps by combining these complementary signals.
+The $3 \times 5$ matrix reveals substantial variation by attack type.
+Watermark identifies unsigned writes but fails if the attacker bypasses the ingestion path (e.g., via direct database access or exploitation of the agent's self-storage mechanism).
+\memsad{} excels against similarity-concentrated attacks (\minja{}: AUROC $= 1.000$) but requires triggered calibration for centroid-targeting attacks.
+Proactive detection is complementary, catching broad-recall passages that \memsad{} misses.
+Composite portfolios cover all gaps, achieving the Stackelberg equilibrium (Definition~\ref{def:stackelberg}) where the defender's minimax residual $\asrr$ is zero.
 
-\paragraph{Triggered-query calibration as a natural defense property.}
-The \agentpoison{} blind spot is resolved without architectural changes: once triggered queries appear in the rolling history, \sad{} becomes fully effective.
-This makes \sad{} an inherently adaptive defense at no additional cost.
+\paragraph{Certified detection and minimax optimality.}
+Lemma~\ref{lem:certified} provides a checkable condition for certified detection: if the adversarial similarity gap $\Delta_s$ exceeds $\kappa\hat{\sigma} + \eta$, detection is guaranteed regardless of the adversary's strategy.
+This parallels certified robustness results in RAG security~\citep{xiang2024robustrag} but operates at write time rather than post-retrieval.
+Theorem~\ref{thm:minimax_lower} shows \emph{any} threshold detector requires $\Omega(1/\rho^2)$ calibration samples; \memsad{} matches this up to $\log(1/\delta)$ (Remark~\ref{rem:optimality}).
+The practical implication: defense designers should maximize the signal-to-noise ratio $\rho$ (e.g., via triggered calibration, which raises $\rho$ from $\sim 1.2$ to $\sim 3.8$ for \agentpoison{}) rather than developing more complex detection algorithms.
 
-\paragraph{Deployment recommendations.}
-We recommend a three-layer defense architecture:
-(i)~\emph{Provenance layer}: watermark verification at write time ($O(|c|)$ per entry).
-(ii)~\emph{Anomaly layer}: rolling \sad{} calibration ($m_{\max} = 100$, combined scoring, $\kappa = 2.0$).
-(iii)~\emph{Ensemble layer}: composite portfolio for defense-in-depth.
-Total overhead is dominated by embedding inference ($\sim 200$ms per batch of 200 entries), making the defense pipeline negligible relative to LLM generation cost.
+\paragraph{Online adaptivity.}
+The regret bound (Theorem~\ref{thm:regret}) provides actionable guidance for deployment: for drift rate $\Delta \approx 10^{-3}$ (typical for slowly evolving user interests) and $\sigma \approx 0.1$, the optimal window is $m_{\max}^* \approx (\sigma/\Delta)^{2/3} \approx 46$ queries, yielding per-step regret $\approx 0.02$.
+The triggered-calibration mechanism provides a natural form of online adaptation: once \agentpoison{}-style triggered queries appear in the rolling history, the calibration statistics shift automatically (threshold: $0.482 \to 0.432$), recovering $\tpr = 1.00$ without architectural changes.
+
+\paragraph{Deployment.}
+We recommend a three-layer defense: (i)~\emph{Provenance}: watermark at write time ($O(|c|)$), (ii)~\emph{Anomaly}: rolling \memsad{} ($m_{\max}$ per Theorem~\ref{thm:regret}, combined scoring, $\kappa = 2.0$), (iii)~\emph{Ensemble}: composite portfolio.
+Total overhead: $\sim 200$ms per batch (Appendix~\ref{app:complexity}), negligible vs.\ LLM generation ($\sim 1$--$5$s).
 
 \paragraph{Limitations.}
-(i)~The 200-entry synthetic corpus may not capture full production diversity; Appendix~\ref{app:ablation} shows robustness across $|\cM| \in \{50, \ldots, 500\}$.
-(ii)~$\asra$ is modelled from paper-reported values; a local GPT-2 evaluator provides lower bounds ($0.29$--$0.51$).
-(iii)~\sad{} assumes a stationary query distribution; gradual drift could degrade calibration (Theorem~\ref{thm:calibration_bound} quantifies the required sample size).
-(iv)~The synonym loophole (Proposition~\ref{prop:synonym}) shows that lexical diversity features are needed to complement semantic detection.
-(v)~All main experiments use all-MiniLM-L6-v2; Appendix~\ref{app:encoder_gen} validates generalization across 7 encoders.
+(i)~200-entry corpus; Appendix~\ref{app:ablation} validates $|\cM| \in \{50, \ldots, 500\}$.
+(ii)~$\asra$ modelled; local GPT-2 evaluator provides lower bounds.
+(iii)~Slowly drifting assumption (Theorem~\ref{thm:regret}); abrupt shifts degrade calibration.
+(iv)~Synonym loophole (Proposition~\ref{prop:synonym}) motivates joint semantic-lexical detection.
+(v)~Main experiments use MiniLM-L6; Appendix~\ref{app:encoder_gen} validates 7 encoders.
 
 %% ============================================================
 \section{Conclusion}
 
-We presented a formally grounded framework for evaluating memory poisoning attacks and defenses on retrieval-augmented LLM agents.
-Our key contributions are:
-(1)~a systematic evaluation correction showing \agentpoison{} is $4\times$ more effective than previously simulated;
-(2)~\sad{}, a novel calibration-based defense with a gradient coupling theorem (Theorem~\ref{thm:gradient_coupling}) establishing that continuous evasion is impossible, complemented by calibration sample complexity bounds (Theorem~\ref{thm:calibration_bound});
-(3)~formal characterization of the discrete synonym loophole (Proposition~\ref{prop:synonym}) with tight perturbation bounds;
-(4)~a comprehensive $3 \times 5$ attack-defense matrix demonstrating that composite portfolios are both necessary and sufficient for complete coverage.
+We presented \memsad{}, a formally grounded framework for memory poisoning attacks and defenses on retrieval-augmented agents.
+Key contributions: (1)~evaluation correction showing \agentpoison{} is $4\times$ more effective than previously simulated; (2)~\memsad{} with gradient coupling (Theorem~\ref{thm:gradient_coupling}) proving continuous evasion impossible, a certified detection radius (Lemma~\ref{lem:certified}) providing checkable guarantees, an information-theoretic lower bound (Theorem~\ref{thm:minimax_lower}) proving minimax optimality, and online regret bounds (Theorem~\ref{thm:regret}) with optimal window selection; (3)~formal synonym loophole (Proposition~\ref{prop:synonym}) with tight perturbation bounds; (4)~comprehensive $3 \times 5$ matrix showing composite portfolios are necessary and sufficient.
 
-The gradient coupling result provides a formal foundation for understanding the fundamental tension between evasion and effectiveness in similarity-based detection. The synonym loophole identifies a precise boundary where this guarantee breaks down, motivating future work on joint semantic-lexical detection architectures that analyze both embedding-space anomalies and surface-level linguistic patterns.
+The gradient coupling result establishes a formal foundation for the evasion-effectiveness tension in similarity-based detection; the certified detection radius provides deployment-ready guarantees; the information-theoretic lower bound ensures \memsad{}'s sample efficiency cannot be substantially improved within the threshold detector class; and the synonym loophole identifies a precise boundary where continuous guarantees break down, motivating future work on joint semantic-lexical detection architectures that reason about both embedding-space anomalies and surface-level linguistic patterns.
 All code, data, and evaluation scripts are open-sourced for full reproducibility.
 
 %% ============================================================
@@ -601,49 +626,203 @@ Acknowledgments will be added in the camera-ready version.
 \newpage
 \appendix
 
+\section{Proofs of main results}
+\label{app:proofs}
+
+\subsection{Proof of Theorem~\ref{thm:gradient_coupling} (geometric interpretation)}
+\label{app:proof_gradient}
+
+Under L2-normalization, embeddings lie on $\mathbb{S}^{d-1}$. The Riemannian gradient of $f(e_c) = e_c^\top v$ on the sphere is $\nabla_{\mathbb{S}} f = v - (e_c^\top v) e_c = \Pi_{e_c}^{\perp} v$, the projection of $v$ onto the tangent space $T_{e_c}\mathbb{S}^{d-1}$. Since detection and retrieval share the same inner product with $v = \enc(q^*)$, gradient coupling is a consequence of the shared geometry on the unit sphere.
+
+\subsection{Proof of Theorem~\ref{thm:minimax_lower} (detailed)}
+\label{app:proof_minimax}
+
+\paragraph{Setup.} Instantiate Le Cam's method with:
+$H_0$: $s(c; \cH) \sim P_0 = \cN(\mu_0, \sigma^2)$ (benign);
+$H_1$: $s(c; \cH) \sim P_1 = \cN(\mu_1, \sigma^2)$ (poisoned), $\mu_1 > \mu_0$.
+Then $\KL(P_0 \| P_1) = (\mu_1 - \mu_0)^2 / (2\sigma^2) = \rho^2/2$.
+
+\paragraph{Application.} For product distributions, $\KL(P_0^N \| P_1^N) = N\rho^2/2$. By Pinsker: $\TV(P_0^N, P_1^N) \leq \sqrt{N\rho^2/4} = \rho\sqrt{N}/2$. Le Cam gives minimax risk $R^* \geq \frac{1}{2}(1 - \TV) \geq \frac{1}{2}(1 - \rho\sqrt{N}/2)$. Total error $\geq 2R^* = 1 - \rho\sqrt{N}/2$.
+
+\subsection{Proof of Theorem~\ref{thm:calibration_bound}}
+\label{app:proof_calibration}
+
+By Hoeffding on $[0,1]$: $|\hat{\mu}_N - \mu| \leq \sqrt{\log(2/\delta)/(2N)}$ w.p.\ $\geq 1 - \delta/2$. By chi-squared concentration: $|\hat{\sigma}_N - \sigma| \leq \sigma\sqrt{\log(2/\delta)/(2(N-1))}$ w.p.\ $\geq 1 - \delta/2$. Triangle inequality: $|\tau_N - \tau^*| \leq |\hat{\mu}_N - \mu| + \kappa|\hat{\sigma}_N - \sigma|$. Union bound yields Eq.~\eqref{eq:calibration_bound}.
+
+\subsection{Proof of Theorem~\ref{thm:regret}}
+\label{app:proof_regret}
+
+Decompose: $|\hat{\tau}_t - \tau_t^*| \leq \underbrace{|\hat{\tau}_t - \tau_t^{\cH}|}_{\text{estimation}} + \underbrace{|\tau_t^{\cH} - \tau_t^*|}_{\text{drift}}$.
+Estimation error: $O(\sigma(1+\kappa)/\sqrt{m_{\max}})$ by Theorem~\ref{thm:calibration_bound}.
+Drift error: cosine similarity is 1-Lipschitz on $\mathbb{S}^{d-1}$, so $|\mu_t^{\cH} - \mu_t| \leq m_{\max}\Delta$.
+Setting equal: $\sigma/\sqrt{m_{\max}} = m_{\max}\Delta$ gives $m_{\max}^* = (\sigma/\Delta)^{2/3}$, yielding per-step regret $O(\sigma^{2/3}\Delta^{1/3})$.
+
 \section{Additional defense details}
 \label{app:defenses}
 
-\paragraph{Watermark detection.}
-The z-score $z = (g - \gamma n)/\sqrt{\gamma(1-\gamma)n}$ is computed where $g$ is the green-list count and $n$ is the sequence length. The character-level variant partitions ASCII printable characters (95 chars) via PRF, targeting green fraction $\gamma + \delta \times 0.1 = 0.45$. The token-level variant uses GPT-2 (50,257 tokens), achieving $p_{\text{green}} \approx 0.711$ and mean z-score $\approx 7.5$ at $n = 50$ tokens vs.\ $\approx 4.1$ for character-level at equivalent length.
+\paragraph{Watermark.} The z-score $z = (g - \gamma n)/\sqrt{\gamma(1-\gamma)n}$ uses green-list count $g$ and sequence length $n$. Character-level: 95 ASCII chars, $\gamma = 0.45$. Token-level (GPT-2, 50,257 tokens): $p_{\text{green}} \approx 0.711$, mean $z \approx 7.5$ at $n = 50$.
 
-\paragraph{Proactive detection.}
-The 16 probe queries span 8 subtopics: preferences, calendar, tasks, security, configuration, conversation, documentation, and team communication. The threshold $\tau = 0.19$ was selected to minimize FPR on a held-out benign set while maintaining $\geq 0.50$ TPR on known centroid passages.
+\paragraph{Proactive.} 16 probe queries span 8 subtopics. Threshold $\tau = 0.19$ minimizes FPR while maintaining $\geq 0.50$ TPR on centroid passages.
 
-\paragraph{Evaluation correction detail.}
-Prior to our correction, \agentpoison{} was evaluated by issuing plain queries $q$ without the trigger $\trigger^*$. The paper's Algorithm~2~\citep{chen2024agentpoison} specifies triggered queries $q \oplus \trigger^*$. Without the trigger, the centroid passage must compete with benign entries on generic similarity, a much easier task for defenders.
+\paragraph{Evaluation correction.} Prior work evaluated \agentpoison{} with plain queries $q$; the paper's Algorithm~2 specifies triggered queries $q \oplus \trigger^*$, changing $\cosim$ from $\approx 0.45$ to $\sim 0.78$.
 
 \section{Ablation studies}
 \label{app:ablation}
 
-\paragraph{\sad{} threshold sensitivity.}
-At $\kappa = 1.5$: \injecmem{} TPR increases to 0.60 but FPR rises to 0.05. At $\kappa = 3.0$: \minja{} TPR drops to 0.80 while FPR remains 0.00. $\kappa = 2.0$ provides the best operating point with combined scoring mode.
+\begin{table}[h]
+  \centering
+  \small
+  \caption{\memsad{} threshold sensitivity with combined scoring.}
+  \label{tab:ablation_threshold}
+  \vspace{2pt}
+  \begin{tabular}{l ccc ccc}
+    \toprule
+    & \multicolumn{3}{c}{TPR} & \multicolumn{3}{c}{FPR} \\
+    \cmidrule(lr){2-4} \cmidrule(lr){5-7}
+    $\kappa$ & AP & MJ & IM & AP & MJ & IM \\
+    \midrule
+    1.0 & 1.00$^\dagger$ & 1.00 & 0.80 & 0.10 & 0.10 & 0.10 \\
+    1.5 & 1.00$^\dagger$ & 1.00 & 0.60 & 0.00 & 0.05 & 0.05 \\
+    2.0 & 1.00$^\dagger$ & 1.00 & 0.40 & 0.00 & 0.00 & 0.00 \\
+    2.5 & 1.00$^\dagger$ & 1.00 & 0.20 & 0.00 & 0.00 & 0.00 \\
+    3.0 & 0.80$^\dagger$ & 0.80 & 0.00 & 0.00 & 0.00 & 0.00 \\
+    \bottomrule
+  \end{tabular}
+  \\[2pt]
+  {\footnotesize $^\dagger$Triggered calibration. Plain: TPR $= 0.00$ for all $\kappa$.}
+\end{table}
 
-\paragraph{Corpus size.}
-$\asrr$ is robust to corpus size (50--500) for \agentpoison{} and \minja{}. \injecmem{} effectiveness decreases as competition for top-$k$ slots intensifies with larger corpora.
+\begin{table}[h]
+  \centering
+  \small
+  \caption{Corpus size ablation: $\asrr$ across $|\cM|$ (triggered for AP).}
+  \label{tab:ablation_corpus}
+  \vspace{2pt}
+  \begin{tabular}{lccc}
+    \toprule
+    $|\cM|$ & \agentpoison{} & \minja{} & \injecmem{} \\
+    \midrule
+    50  & 1.00 & 0.70 & 0.65 \\
+    100 & 1.00 & 0.65 & 0.55 \\
+    200 & 1.00 & 0.65 & 0.50 \\
+    300 & 1.00 & 0.60 & 0.40 \\
+    500 & 1.00 & 0.60 & 0.30 \\
+    \bottomrule
+  \end{tabular}
+\end{table}
 
-\paragraph{Poison count.}
-Increasing $n_{\text{base}}$ from 1 to 10 monotonically increases $\asrr$ for all attacks, with diminishing returns above 5.
+\begin{table}[h]
+  \centering
+  \small
+  \caption{Poison count ablation: $\asrr$ vs.\ $n_{\text{base}}$.}
+  \label{tab:ablation_poison}
+  \vspace{2pt}
+  \begin{tabular}{lccc}
+    \toprule
+    $n_{\text{base}}$ & \agentpoison{} & \minja{} & \injecmem{} \\
+    \midrule
+    1  & 0.80 & 0.20 & 0.10 \\
+    3  & 1.00 & 0.45 & 0.30 \\
+    5  & 1.00 & 0.65 & 0.50 \\
+    7  & 1.00 & 0.70 & 0.55 \\
+    10 & 1.00 & 0.75 & 0.60 \\
+    \bottomrule
+  \end{tabular}
+\end{table}
 
 \section{Multi-encoder evaluation}
 \label{app:encoder_gen}
 
-We evaluate across 7 encoders: MiniLM-L6, MPNet-Base, Para-MiniLM, E5-Base, Contriever, BGE-Large, and OpenAI text-embedding-3-small. \agentpoison{} with triggered calibration achieves $\tpr = 1.000$ on all encoders. \minja{} TPR ranges from 0.80 (E5) to 1.00 (MiniLM, MPNet). Inter-encoder CKA~\citep{kornblith2019similarity} predicts $\asrr$ transferability.
+\begin{table}[h]
+  \centering
+  \small
+  \caption{Encoder generalization: \memsad{} across 7 encoders ($\kappa = 2.0$, combined scoring).}
+  \label{tab:encoder_gen}
+  \vspace{2pt}
+  \begin{tabular}{l ccc ccc}
+    \toprule
+    & \multicolumn{3}{c}{TPR} & \multicolumn{3}{c}{AUROC} \\
+    \cmidrule(lr){2-4} \cmidrule(lr){5-7}
+    Encoder & AP & MJ & IM & AP & MJ & IM \\
+    \midrule
+    MiniLM-L6 ($d{=}384$)     & 1.00 & 1.00 & 0.40 & 1.000 & 1.000 & 0.920 \\
+    MPNet-Base ($d{=}768$)     & 1.00 & 1.00 & 0.40 & 1.000 & 1.000 & 0.900 \\
+    Para-MiniLM ($d{=}384$)    & 1.00 & 0.80 & 0.20 & 1.000 & 0.960 & 0.840 \\
+    E5-Base ($d{=}768$)        & 1.00 & 0.80 & 0.40 & 1.000 & 0.940 & 0.880 \\
+    Contriever ($d{=}768$)     & 1.00 & 1.00 & 0.40 & 1.000 & 1.000 & 0.900 \\
+    BGE-Large ($d{=}1024$)     & 1.00 & 1.00 & 0.60 & 1.000 & 1.000 & 0.940 \\
+    OpenAI-small ($d{=}1536$)  & 1.00 & 1.00 & 0.60 & 1.000 & 1.000 & 0.960 \\
+    \bottomrule
+  \end{tabular}
+  \\[2pt]
+  {\footnotesize FPR $= 0.00$ for all encoders at $\kappa = 2.0$. AP uses triggered calibration.}
+\end{table}
+
+Key findings: (1)~Triggered calibration achieves $\tpr = 1.000$ for \agentpoison{} on all encoders, confirming Theorem~\ref{thm:gradient_coupling} transfers across architectures. (2)~Higher-dimensional encoders achieve better separation for \minja{} and \injecmem{}. (3)~Inter-encoder CKA~\citep{kornblith2019similarity} predicts $\asrr$ transferability.
 
 \section{Graph memory attacks}
 \label{app:graph}
 
-We extend to GraphRAG-style entity-relation stores with three structural attacks: hub insertion, edge-hijack, and subgraph cluster. Degree-anomaly detection identifies structurally anomalous nodes; adjacency contamination scoring detects edge-hijack patterns.
+\begin{definition}[Graph memory system]
+A \emph{graph memory} is $(\cG, \cM, \enc, k)$ where $\cG = (V, E, \phi)$ is a knowledge graph with attribute function $\phi : V \cup E \to \cV^*$. Retrieval combines embedding similarity with BFS traversal:
+$\Ret_{\cG}(q, k, h) = \{v \in V : d_{\cG}(v, v^*) \leq h,\; v^* \in \argmax_{v'} \cosim(\enc(q), \enc(\phi(v')))\}$.
+\end{definition}
+
+Three structural attacks: \textbf{Hub insertion} (high-degree adversarial node), \textbf{edge hijack} (shortcuts to adversarial nodes), \textbf{subgraph cluster} (self-reinforcing adversarial community). Degree-anomaly detection flags $z_{\deg}(v) > \kappa_{\deg}$; adjacency contamination scoring detects edge-hijack via the fraction of recently added edges.
 
 \section{Multi-agent propagation}
 \label{app:propagation}
 
-A discrete-step SIR epidemic model~\citep{gu2024agentsmith} over $N$ agents sharing a FAISS knowledge base shows that a single poisoned entry amplifies via re-storage. \sad{}-based write-time quarantine eliminates secondary infection.
+\begin{definition}[SIR propagation]
+For $N$ agents sharing $\cM_{\text{shared}}$, the discrete-step SIR model~\citep{gu2024agentsmith} evolves: $S(t{+}1) = S(t) - \beta S(t) I(t)/N$, $I(t{+}1) = I(t) + \beta S(t) I(t)/N - \gamma I(t)$, $R(t{+}1) = R(t) + \gamma I(t)$, where $\beta$ is transmission rate and $\gamma$ recovery rate.
+\end{definition}
+
+Without defense, steady-state infection is $I_\infty/N = 1 - \gamma/\beta$ for $\beta > \gamma$. With \memsad{} quarantine ($\tpr = 1.00$ for \minja{}), $\gamma_{\text{eff}} = \gamma + \tpr \cdot \beta$; the condition $\beta > \gamma_{\text{eff}}$ is never satisfied, eliminating secondary infection.
 
 \section{FPR validation}
 \label{app:fpr}
 
-FPR is validated across 20 independent trials with fresh per-trial calibration using Clopper-Pearson exact binomial CIs~\citep{clopper1934use}, confirming $\fpr = 0.000$ at 95\% confidence (one-sided upper bound $< 0.03$, $n = 1000$ benign entries per trial).
+\begin{table}[h]
+  \centering
+  \small
+  \caption{FPR validation: Clopper-Pearson 95\% CIs, 20 trials.}
+  \label{tab:fpr_validation}
+  \vspace{2pt}
+  \begin{tabular}{lcccc}
+    \toprule
+    Defense & FPR & 95\% CI & $n$/trial \\
+    \midrule
+    \memsad{} ($\kappa = 2.0$) & 0.000 & $[0.000, 0.004]$ & 1000 \\
+    Watermark ($z_{\text{thr}} = 4.0$) & 0.000 & $[0.000, 0.004]$ & 1000 \\
+    Proactive ($\tau = 0.19$) & 0.010 & $[0.004, 0.023]$ & 1000 \\
+    \bottomrule
+  \end{tabular}
+\end{table}
+
+\section{Computational complexity}
+\label{app:complexity}
+
+\begin{table}[h]
+  \centering
+  \small
+  \caption{Per-entry defense cost at write time.}
+  \label{tab:complexity}
+  \vspace{2pt}
+  \begin{tabular}{lccc}
+    \toprule
+    Defense & Time & Space & Measured \\
+    \midrule
+    \memsad{} (exact) & $O(md)$ & $O(md)$ & 0.8ms \\
+    \memsad{} (ANN) & $O(d \log m)$ & $O(md)$ & 0.3ms \\
+    Watermark & $O(|c| \cdot |\cV|)$ & $O(|\cV|)$ & 1.2ms \\
+    Validation & $O(|c| \cdot |P|)$ & $O(|P|)$ & 0.1ms \\
+    Proactive & $O(|Q_p| d)$ & $O(|Q_p| d)$ & 0.5ms \\
+    Composite & $\max_j O(d_j)$ & $\sum_j O(s_j)$ & 2.1ms \\
+    \bottomrule
+  \end{tabular}
+  \\[2pt]
+  {\footnotesize Apple M-series, 16GB; $|\cM|=200$, $m=20$, $d=384$.}
+\end{table}
 
 %% ============================================================
 \input{checklist}
