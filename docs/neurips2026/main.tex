@@ -130,22 +130,22 @@ We make five contributions spanning theory, algorithm design, and empirical meth
 \label{sec:related}
 
 \paragraph{Memory poisoning attacks.}
-\citet{chen2024agentpoison} achieve $\asrr \geq 0.80$ via trigger optimization over DPR~\citep{karpukhin2020dense} embeddings.
-\citet{dong2025minja} exploit auto-storage via progressive-shortening ($\isr = 98.2\%$).
-\citet{injecmem2026} achieve single-interaction injection via retriever-agnostic anchors.
+\citet{chen2024agentpoison} achieve $\asrr \geq 0.80$ via trigger optimization over DPR~\citep{karpukhin2020dense} embeddings, requiring write access to the memory store.
+\citet{dong2025minja} exploit auto-storage via progressive-shortening ($\isr = 98.2\%$) under query-only access.
+\citet{injecmem2026} achieve single-interaction injection via retriever-agnostic anchors, the weakest attacker assumption.
 \citet{memorygraft2025} demonstrate experience-grafting attacks exploiting union retrieval.
-On the defense side, ReliabilityRAG~\citep{reliabilityrag2025} provides provable robustness via graph-theoretic maximum independent set, while SeCon-RAG~\citep{seconrag2025} uses entity-intent-relation extraction; both target RAG corpora rather than agent memory streams.
+Each paper evaluates its own attack in isolation; no unified benchmark or cross-attack comparison exists.
+On the defense side, ReliabilityRAG~\citep{reliabilityrag2025} provides provable robustness via graph-theoretic maximum independent set, and SeCon-RAG~\citep{seconrag2025} uses entity-intent-relation extraction; both target static RAG corpora rather than streaming agent memory.
 
 \paragraph{RAG corpus poisoning and certified defenses.}
 \citet{zou2024poisonedrag} optimize adversarial documents via HotFlip~\citep{ebrahimi2018hotflip} ($> 90\%$ ASR at million-scale).
-\citet{xiang2024robustrag} provide certified robustness via isolate-then-aggregate with provable guarantees under bounded perturbations; however, their certificates require post-retrieval processing of $k$ retrieved passages and do not apply to pre-ingestion filtering where each entry must be evaluated independently.
-SPECTRE~\citep{hayase2021spectre} uses robust covariance estimation for spectral detection but assumes full dataset access and $O(|\cM|^2 d)$ computation.
-Our work differs along three axes: (i)~defenses operate at \emph{write time} on individual entries ($O(md)$ per entry), (ii)~no corpus-level access is required, only a rolling query history, and (iii)~we provide both a certified detection radius (Lemma~\ref{lem:certified}) and information-theoretic optimality (Theorem~\ref{thm:minimax_lower}), whereas RobustRAG's certificates are for a fixed retrieval result rather than the ingestion boundary.
+\citet{xiang2024robustrag} provide certified robustness via isolate-then-aggregate under bounded perturbations; however, their certificates require post-retrieval processing of $k$ passages and do not apply to pre-ingestion filtering where each entry is evaluated independently at write time.
+SPECTRE~\citep{hayase2021spectre} uses robust covariance estimation for spectral detection but requires full dataset access ($O(|\cM|^2 d)$).
+Our work differs along three axes: (i)~defenses operate at \emph{write time} on individual entries ($O(md)$ per entry), (ii)~no corpus-level access is required, and (iii)~we provide both a certified detection radius (Lemma~\ref{lem:certified}) and information-theoretic optimality (Theorem~\ref{thm:minimax_lower}), whereas prior certificates apply to fixed retrieval results rather than the ingestion boundary.
 
 \paragraph{Game-theoretic security and adaptive evaluation.}
-\citet{tramer2020adaptive} establish the gold standard for adaptive attack evaluation.
-Our Stackelberg formulation follows this principle: the adversary optimizes with full knowledge of $(\hat{\mu}, \hat{\sigma}, \kappa)$.
-\citet{carlini2017evaluating} demonstrate that defenses without formal guarantees are routinely broken; our gradient coupling theorem provides exactly such a guarantee for the continuous case, while Proposition~\ref{prop:synonym} honestly characterizes the discrete failure mode.
+\citet{tramer2020adaptive} establish the gold standard for adaptive attack evaluation; \citet{carlini2017evaluating} demonstrate that defenses without formal guarantees are routinely broken.
+Our Stackelberg formulation (Definition~\ref{def:stackelberg}) operationalizes both principles: the adversary optimizes with full knowledge of $(\hat{\mu}, \hat{\sigma}, \kappa)$, and the gradient coupling theorem (Theorem~\ref{thm:gradient_coupling}) provides the formal guarantee that \citet{carlini2017evaluating} require, while Proposition~\ref{prop:synonym} honestly characterizes where it fails.
 
 %% ============================================================
 \section{Formal threat model}
@@ -252,10 +252,11 @@ Under Assumption~\ref{ass:encoder}(iii), $\cosim(\enc(q), \enc(m)) = \enc(q)^\to
   \vspace{-6pt}
 \end{table}
 
-The three attacks instantiate different access models (Table~\ref{tab:attack_properties}).
+The three attacks instantiate different access models (Table~\ref{tab:attack_properties}) with monotonically decreasing adversary capability.
 \agentpoison{} ($\alpha = \textsc{write}$) optimizes a trigger $\trigger^* = \argmax_{\trigger} \EE_{q \sim \cQ_v}[\cosim(\enc(q \oplus \trigger), \enc(\passage))]$ via HotFlip over DPR embeddings.
 \minja{} ($\alpha = \textsc{query}$) exploits auto-storage via progressive-shortening indication.
 \injecmem{} ($\alpha = \textsc{single}$) injects broad-vocabulary anchor passages spanning multiple domains.
+\textbf{Protocol correction:} \citet{chen2024agentpoison}'s Algorithm~2 specifies triggered queries $q \oplus \trigger^*$; evaluating with plain $q$ tests a fundamentally weaker attacker ($\cosim \approx 0.45$ vs.\ $\sim 0.78$), underestimating $\asrr$ by $4\times$.
 
 %% ============================================================
 \section{\memsad{}: Semantic Anomaly Detection}
@@ -263,7 +264,7 @@ The three attacks instantiate different access models (Table~\ref{tab:attack_pro
 
 \subsection{Algorithm and formal definition}
 
-Memory poisoning succeeds because adversarial entries are semantically close to victim queries; this closeness, necessary for retrieval, is itself a detectable signal.
+The key insight is that memory poisoning succeeds \emph{because} adversarial entries are semantically close to victim queries; this closeness, necessary for retrieval, is itself a detectable signal. We formalize this observation and prove it is fundamental: Theorem~\ref{thm:gradient_coupling} shows the detection and retrieval objectives share identical gradients, making continuous evasion impossible.
 
 \begin{definition}[\memsad{} detector]
 \label{def:sad}
@@ -323,7 +324,7 @@ Thus $\cD(e_c') < \cD(e_c)$ (evasion) $\implies$ $\cR(e_c') < \cR(e_c)$ (retriev
 \subsection{Certified detection guarantee}
 \label{sec:certified}
 
-The gradient coupling (Theorem~\ref{thm:gradient_coupling}) shows continuous evasion is impossible. We now provide a \emph{certified detection guarantee}: under explicit, verifiable conditions on the adversary's retrieval requirement and the calibration quality, \memsad{} provably detects adversarial passages.
+Theorem~\ref{thm:gradient_coupling} establishes that continuous evasion is impossible in general. We now provide a stronger, \emph{instance-specific} guarantee: under explicit, verifiable conditions on the gap between adversarial and benign similarity, \memsad{} certifiably detects the adversarial passage regardless of adversary strategy.
 
 \begin{lemma}[Certified detection radius]
 \label{lem:certified}
@@ -538,10 +539,9 @@ Bootstrap 95\% CIs from 5 seeds.
 \end{table}
 
 Table~\ref{tab:attack_results} reports main results.
-\agentpoison{} achieves $\asrr = 1.00$ with the corrected triggered-query protocol, a $4\times$ increase over the un-triggered baseline (0.25).
-This discrepancy arises because Algorithm~2 in~\citet{chen2024agentpoison} specifies triggered queries $q \oplus \trigger^*$; omitting the trigger evaluates a fundamentally weaker attacker ($\cosim \approx 0.45$ vs.\ $\sim 0.78$).
-\minja{} achieves $\asrr = 0.65$ (retrieval-time), compared to $\isr = 98.2\%$ (write-time).\footnote{$\isr$ and $\asrr$ measure complementary surfaces: $\isr$ quantifies write-time success; $\asrr$ quantifies retrieval-time exposure.}
-\injecmem{} achieves $\asrr = 0.50$ via volume ($n = 15$) at the cost of lower benign accuracy (0.80).
+\agentpoison{} achieves $\asrr = 1.00$ under the corrected triggered-query protocol (Section~\ref{sec:threat}), a $4\times$ increase over the un-triggered baseline ($\asrr = 0.25$), confirming that prior evaluations systematically underestimate the threat.
+\minja{} achieves $\asrr = 0.65$ at retrieval time, compared to $\isr = 98.2\%$ at write time.\footnote{$\isr$ and $\asrr$ measure complementary attack surfaces: $\isr$ quantifies write-time injection success; $\asrr$ quantifies retrieval-time exposure to future queries.}
+\injecmem{} achieves $\asrr = 0.50$ via volume ($n = 15$) at the cost of lower benign accuracy ($0.80$), illustrating the volume-stealth tradeoff inherent to retriever-agnostic attacks.
 
 \begin{figure}[t]
   \centering
@@ -677,7 +677,7 @@ All composite portfolio results reject $H_0$ at Bonferroni-corrected $\alpha' = 
 
 At $\kappa = 2.0$ with combined scoring: AUROC $= 1.000$ (\minja{}), $0.920$ (\injecmem{}), $0.870$ (\agentpoison{}, plain). Triggered calibration raises \agentpoison{} AUROC to $1.000$.
 FPR validated across 20 trials with Clopper-Pearson CIs~\citep{clopper1934use}: $\fpr = 0.000$, 95\% upper bound $< 0.004$ ($n = 1000$ per trial; Appendix~\ref{app:fpr}).
-\textbf{Theory validation:} Theorem~\ref{thm:calibration_bound} predicts $|\tau_N - \tau^*| \leq 0.031$ at $N = 200$, $\delta = 0.05$; the observed deviation is $0.018$. The minimax lower bound (Theorem~\ref{thm:minimax_lower}) requires $N \geq 12$ for \minja{} ($\rho = 3.2$); we use $N = 200 \gg 12$, well within the reliable detection regime.
+\textbf{Theory validation:} Theorem~\ref{thm:calibration_bound} predicts $|\tau_N - \tau^*| \leq 0.031$ at $N = 200$, $\delta = 0.05$; the observed deviation is $0.018$ ($58\%$ of the bound, indicating the concentration inequality is not vacuous). The minimax lower bound (Theorem~\ref{thm:minimax_lower}) requires $N \geq 12$ for \minja{} ($\rho = 3.2$); we operate at $N = 200 \gg 12$, well within the reliable detection regime. The Wasserstein bound (Theorem~\ref{thm:generalization}) predicts $|\Delta\tpr| \leq 0.03$ between \minja{} and \injecmem{} ($W_1 \approx 0.03\hat{\sigma}$); observed $|\Delta\tpr| = 0.00$ at $\kappa = 2.0$.
 
 \subsection{Ablation highlights}
 
@@ -691,24 +691,21 @@ Key results (full tables in Appendix~\ref{app:ablation}):
 \label{sec:discussion}
 
 \paragraph{No single defense dominates.}
-The $3 \times 5$ matrix reveals substantial variation: watermark catches unsigned writes but fails if the attacker bypasses ingestion; \memsad{} excels against \minja{} (AUROC $= 1.000$) but requires triggered calibration for \agentpoison{}; proactive detection is complementary.
-Composite portfolios cover all gaps, achieving $\asrr^* = 0$ (Definition~\ref{def:stackelberg}).
+Defense effectiveness depends on the attack's access model $\alpha$: watermark catches unsigned writes but fails if ingestion is bypassed; \memsad{} excels against \minja{} (AUROC $= 1.000$) but needs triggered calibration for \agentpoison{}; proactive detection is complementary ($\tpr = 1.00$ for \agentpoison{}, $0.07$ for \minja{}).
+Composite portfolios realize $\asrr^* = 0$ (Proposition~\ref{prop:equilibrium}).
 
-\paragraph{Certified detection and minimax optimality.}
-Lemma~\ref{lem:certified} provides a checkable certified detection condition; Theorem~\ref{thm:minimax_lower} shows \emph{any} threshold detector requires $\Omega(1/\rho^2)$ samples, matched by \memsad{} up to $\log(1/\delta)$ (Remark~\ref{rem:optimality}).
-The practical implication: maximize the SNR $\rho$ (e.g., triggered calibration raises $\rho$ from $\sim 1.2$ to $\sim 3.8$ for \agentpoison{}) rather than designing more complex algorithms.
-
-\paragraph{Online adaptivity and deployment.}
-Theorem~\ref{thm:regret} yields $m_{\max}^* \approx 46$ queries ($\Delta \approx 10^{-3}$, $\sigma \approx 0.1$), per-step regret $\approx 0.02$.
-Triggered calibration shifts the threshold ($0.482 \to 0.432$), recovering $\tpr = 1.00$.
-Recommended stack: (i)~watermark, (ii)~rolling \memsad{}, (iii)~composite ensemble ($\sim 200$ms overhead, Appendix~\ref{app:complexity}).
+\paragraph{Certified detection, optimality, and deployment.}
+Lemma~\ref{lem:certified} provides checkable certified detection; Theorem~\ref{thm:minimax_lower} shows any threshold detector requires $\Omega(1/\rho^2)$ samples, matched by \memsad{} up to $\log(1/\delta)$ (Remark~\ref{rem:optimality}).
+The practical implication: maximize SNR $\rho$ (triggered calibration raises $\rho$ from $\sim 1.2$ to $\sim 3.8$ for \agentpoison{}).
+Theorem~\ref{thm:regret} yields optimal window $m_{\max}^* \approx 46$ with per-step regret $\approx 0.02$.
+Recommended stack: (i)~watermark, (ii)~rolling \memsad{}, (iii)~composite ensemble ($\sim 200$ms, Appendix~\ref{app:complexity}).
 
 \paragraph{Limitations.}
-(i)~200-entry corpus; Appendix~\ref{app:ablation} validates $|\cM| \in \{50, \ldots, 500\}$.
-(ii)~$\asra$ modelled; local GPT-2 evaluator provides lower bounds.
+(i)~200-entry corpus (validated up to 500, Appendix~\ref{app:ablation}).
+(ii)~$\asra$ modelled; GPT-2 evaluator provides lower bounds.
 (iii)~Slowly drifting assumption (Theorem~\ref{thm:regret}); abrupt shifts degrade calibration.
-(iv)~Synonym loophole (Proposition~\ref{prop:synonym}) motivates joint semantic-lexical detection.
-(v)~Main experiments use MiniLM-L6; Appendix~\ref{app:encoder_gen} validates 7 encoders.
+(iv)~Synonym loophole (Proposition~\ref{prop:synonym}) motivates semantic-lexical detection.
+(v)~MiniLM-L6 primary; 7 encoders validated (Appendix~\ref{app:encoder_gen}).
 
 %% ============================================================
 \section{Conclusion}
