@@ -107,23 +107,23 @@ Empirical evaluation over a $3 \times 5$ attack-defense matrix with bootstrap CI
 Modern LLM agents persist context across sessions through external memory systems such as Mem0~\citep{mem0}, A-MEM~\citep{amem}, and MemGPT~\citep{memgpt2023}.
 These systems store user preferences, task history, and factual knowledge as dense vector embeddings, retrieving semantically relevant entries to condition the agent's response.
 The practical utility of persistent memory is well established; its security implications are not.
+A single adversarial entry injected into an agent's memory may remain indefinitely, triggering on every semantically related query across arbitrary future sessions.
+Unlike prompt injection, which requires per-interaction access, memory poisoning \emph{persists and scales}: the adversary acts once, and the attack surface compounds with each new query.
 
-An adversary who can influence the contents of an agent's memory can covertly redirect agent behavior across arbitrary future sessions.
-Unlike prompt injection, which operates on a single interaction, memory poisoning attacks \emph{persist}: a single adversarial entry may remain in memory indefinitely and trigger on every related query.
-
-Three recent papers have characterized distinct threat models.
-\agentpoison{}~\citep{chen2024agentpoison} formulates trigger optimization as a constrained gradient problem over dense passage retrieval embeddings.
-\minja{}~\citep{dong2025minja} extends the threat model to a query-only setting via progressive-shortening indication.
-\injecmem{}~\citep{injecmem2026} achieves single-interaction injection via retriever-agnostic anchor passages.
-Despite the severity of these threats, no prior work provides a unified evaluation across these attacks or proposes defenses with formal detection guarantees for the memory-agent setting.
-Existing RAG defenses~\citep{zou2024poisonedrag, chaudhari2024phantom, xiang2024robustrag} assume corpus-level access and offline cleaning, neither of which applies to streaming memory ingestion.
+Three recent papers characterize distinct threat models with escalating access requirements.
+\agentpoison{}~\citep{chen2024agentpoison} formulates trigger optimization as a constrained gradient problem over DPR~\citep{karpukhin2020dense} embeddings ($\alpha = \textsc{write}$).
+\minja{}~\citep{dong2025minja} extends the setting to query-only access via progressive-shortening indication ($\alpha = \textsc{query}$).
+\injecmem{}~\citep{injecmem2026} achieves single-interaction injection via retriever-agnostic anchors ($\alpha = \textsc{single}$).
+Despite the severity of these threats, no prior work provides a unified evaluation across attack classes or proposes defenses with formal detection guarantees for the memory-agent setting.
+Existing RAG defenses~\citep{zou2024poisonedrag, chaudhari2024phantom, xiang2024robustrag} assume corpus-level access and offline cleaning, neither of which applies to the streaming ingestion model of agent memory.
 
 \paragraph{Contributions.}
-\textbf{(1)}~A formal threat model (Definition~\ref{def:threat_model}) with Stackelberg game formulation (Definition~\ref{def:stackelberg}), protocol correction raising \agentpoison{} $\asrr$ from 0.25 to 1.00, and unified evaluation across three distinct access models.
-\textbf{(2)}~\memsad{}: a novel calibration-based defense (Definition~\ref{def:sad}) with gradient coupling theorem (Theorem~\ref{thm:gradient_coupling}) proving continuous evasion impossible, and a certified detection radius (Lemma~\ref{lem:certified}) providing checkable guarantees.
-\textbf{(3)}~Information-theoretic lower bound via Le Cam's method (Theorem~\ref{thm:minimax_lower}) proving minimax optimality up to $\log(1/\delta)$; calibration sample complexity (Theorem~\ref{thm:calibration_bound}); online regret bounds (Theorem~\ref{thm:regret}) with optimal window at rate $O(\sigma^{2/3}\Delta^{1/3})$; and a Wasserstein generalization bound (Theorem~\ref{thm:generalization}) for unseen attack transferability.
-\textbf{(4)}~Formal characterization of the discrete synonym-invariance loophole (Proposition~\ref{prop:synonym}) with tight perturbation bounds, delineating exactly where continuous guarantees fail.
-\textbf{(5)}~A $3 \times 5$ attack-defense matrix with Bonferroni-corrected hypothesis testing ($\alpha' = 0.003$, 15 comparisons), bootstrap CIs, and Clopper-Pearson validation demonstrating composite portfolios achieve $\tpr = 1.00$ across all attacks.
+We make five contributions spanning theory, algorithm design, and empirical methodology.
+\textbf{(1)}~\emph{Formal threat model.} Stackelberg game formulation (Definitions~\ref{def:threat_model}--\ref{def:stackelberg}) with equilibrium existence (Proposition~\ref{prop:equilibrium}), and a protocol correction that raises \agentpoison{} $\asrr$ from 0.25 to 1.00 ($4\times$), resolving a systematic underestimation in prior evaluation.
+\textbf{(2)}~\emph{\memsad{} defense.} A calibration-based detector (Definition~\ref{def:sad}) with gradient coupling theorem (Theorem~\ref{thm:gradient_coupling}) proving continuous evasion impossible, and a certified detection radius (Lemma~\ref{lem:certified}) providing checkable, per-entry guarantees.
+\textbf{(3)}~\emph{Theoretical foundations.} Information-theoretic lower bound via Le Cam's method (Theorem~\ref{thm:minimax_lower}) proving minimax optimality up to $\log(1/\delta)$; finite-sample calibration bounds (Theorem~\ref{thm:calibration_bound}); online regret bounds (Theorem~\ref{thm:regret}) with optimal window at rate $O(\sigma^{2/3}\Delta^{1/3})$; and a Wasserstein generalization bound (Theorem~\ref{thm:generalization}) for transfer to unseen attacks.
+\textbf{(4)}~\emph{Impossibility characterization.} Formal analysis of the discrete synonym-invariance loophole (Proposition~\ref{prop:synonym}) with tight perturbation bounds, delineating exactly where continuous guarantees fail.
+\textbf{(5)}~\emph{Rigorous evaluation.} A $3 \times 5$ attack-defense matrix with Bonferroni-corrected hypothesis testing ($\alpha' = 0.003$, 15 comparisons), bootstrap CIs, and Clopper-Pearson validation (20 trials, $n = 1000$) demonstrating composite portfolios achieve $\tpr = 1.00$, $\fpr = 0.00$ across all attacks.
 
 %% ============================================================
 \section{Related work}
