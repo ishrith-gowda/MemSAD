@@ -312,20 +312,12 @@ For any perturbation $\delta \in \RR^d$: $\langle \delta, \nabla \cD \rangle < 0
 Since $\cD \equiv \cR$ by construction, gradient identity is immediate. The explicit form follows from $\nabla_{e_c}(e_c^\top v / (\|e_c\|\|v\|)) = (v - (e_c^\top v / \|e_c\|^2)e_c) / (\|e_c\|\|v\|)$ with $v = \enc(q^*)$.
 \end{proof}
 
-\begin{corollary}[Detection-evasion tradeoff]
-\label{cor:tradeoff}
-Under L2-normalization, for perturbation $e_c' = e_c + \epsilon\delta$ with $\|\delta\| = 1$:
-\begin{equation}
-  \cD(e_c') - \cD(e_c) = \epsilon \langle \delta, \enc(q^*) - (e_c^\top \enc(q^*)) e_c \rangle + O(\epsilon^2).
-  \label{eq:tradeoff}
-\end{equation}
-Thus $\cD(e_c') < \cD(e_c)$ (evasion) $\implies$ $\cR(e_c') < \cR(e_c)$ (retrieval degradation) to first order.
-\end{corollary}
+\noindent In particular, $\cD(e_c') < \cD(e_c)$ (evasion) implies $\cR(e_c') < \cR(e_c)$ (retrieval degradation) to first order; the second-order tradeoff surface is analyzed in Appendix~\ref{app:tradeoff_surface}.
 
 \subsection{Certified detection guarantee}
 \label{sec:certified}
 
-Theorem~\ref{thm:gradient_coupling} establishes that continuous evasion is impossible in general. We now provide a stronger, \emph{instance-specific} guarantee: under explicit, verifiable conditions on the gap between adversarial and benign similarity, \memsad{} certifiably detects the adversarial passage regardless of adversary strategy.
+We now provide an \emph{instance-specific} guarantee: under verifiable conditions on the adversarial-benign similarity gap, \memsad{} certifiably detects the adversarial passage regardless of adversary strategy.
 
 \begin{lemma}[Certified detection radius]
 \label{lem:certified}
@@ -342,9 +334,8 @@ then \memsad{} detects $c$ with certainty: $s(c; \cH) > \hat{\mu} + \kappa\hat{\
 Since $c$ achieves $\rank \leq k$, we have $s(c; \cH) \geq s_{\text{adv}} = \bar{s} + \Delta_s$. The detection threshold is $\hat{\mu} + \kappa\hat{\sigma} \leq \bar{s} + \eta$ (since $\hat{\mu} + \kappa\hat{\sigma} \leq \tau^* + \eta \leq \bar{s} + \eta$ by definition of the benign ceiling). Thus $s(c; \cH) \geq \bar{s} + \Delta_s > \bar{s} + \kappa\hat{\sigma} + \eta \geq \hat{\mu} + \kappa\hat{\sigma}$.
 \end{proof}
 
-Lemma~\ref{lem:certified} formalizes a ``detection radius'': any adversarial passage whose similarity to the victim query exceeds the benign ceiling by more than $\kappa\hat{\sigma} + \eta$ is \emph{certifiably detected}, regardless of the adversary's strategy (Figure~\ref{fig:certified_radius}).
-For \minja{} in our experiments, $\Delta_s \approx 0.15$ while $\kappa\hat{\sigma} + \eta \approx 0.08$, satisfying the condition with margin.
-For \agentpoison{} under triggered calibration, $\Delta_s \approx 0.12$ with $\kappa\hat{\sigma} + \eta \approx 0.06$.
+Figure~\ref{fig:certified_radius} illustrates the certified radius.
+In our experiments, \minja{} satisfies the condition with margin ($\Delta_s \approx 0.15 > \kappa\hat{\sigma} + \eta \approx 0.08$); \agentpoison{} under triggered calibration achieves $\Delta_s \approx 0.12 > 0.06$.
 
 \begin{figure}[t]
 \centering
@@ -412,24 +403,18 @@ Reliable detection ($\fpr + (1 - \tpr) \leq \epsilon$) requires $N \geq 4(1 - \e
 \end{theorem}
 
 \begin{proof}[Proof sketch]
-Apply Le Cam's two-point method~\citep{lecam1973convergence,yu1997assouad} with $H_0: c \sim P_0$, $H_1: c \sim P_1$. Pinsker's inequality gives $\TV(P_0^N, P_1^N) \leq \sqrt{N \cdot \KL(P_0 \| P_1)/2} \leq \rho\sqrt{N}/2$ for sub-Gaussian distributions. Le Cam's bound then yields Eq.~\eqref{eq:minimax_lower}. Full proof in Appendix~\ref{app:proof_minimax}.
+Apply Le Cam's two-point method~\citep{lecam1973convergence,yu1997assouad}. Pinsker gives $\TV(P_0^N, P_1^N) \leq \rho\sqrt{N}/2$; Le Cam yields Eq.~\eqref{eq:minimax_lower}. Full proof in Appendix~\ref{app:proof_minimax}.
 \end{proof}
 
-\begin{remark}[Minimax optimality]
-\label{rem:optimality}
-\memsad{}'s calibration (Theorem~\ref{thm:calibration_bound}) achieves reliable detection with $N = O(\log(1/\delta)/\rho^2)$ samples; the lower bound requires $N = \Omega(1/\rho^2)$. Thus \memsad{} is minimax-optimal up to $\log(1/\delta)$.
-\end{remark}
+\noindent \memsad{} achieves reliable detection with $N = O(\log(1/\delta)/\rho^2)$ samples (Theorem~\ref{thm:calibration_bound}), matching the $\Omega(1/\rho^2)$ lower bound up to $\log(1/\delta)$ and establishing minimax optimality.
 
 \subsection{Calibration bounds and online regret}
 
 \begin{theorem}[Calibration bound]
 \label{thm:calibration_bound}
-For $N$ i.i.d.\ benign scores with mean $\mu$, variance $\sigma^2$, and threshold $\tau_N = \hat{\mu}_N + \kappa\hat{\sigma}_N$, with probability $\geq 1 - \delta$:
-\begin{equation}
-  |\tau_N - \tau^*| \leq \sigma \left(\frac{1}{\sqrt{N}} + \frac{\kappa}{\sqrt{2(N-1)}}\right) \sqrt{2 \log(4/\delta)},
-  \label{eq:calibration_bound}
-\end{equation}
-where $\tau^* = \mu + \kappa\sigma$. Proof via Hoeffding + chi-squared concentration with union bound (Appendix~\ref{app:proof_calibration}).
+For $N$ i.i.d.\ benign scores with threshold $\tau_N = \hat{\mu}_N + \kappa\hat{\sigma}_N$, with probability $\geq 1 - \delta$:
+$|\tau_N - \tau^*| \leq \sigma \bigl(\frac{1}{\sqrt{N}} + \frac{\kappa}{\sqrt{2(N-1)}}\bigr) \sqrt{2 \log(4/\delta)}$,
+where $\tau^* = \mu + \kappa\sigma$. Proof in Appendix~\ref{app:proof_calibration}.
 \end{theorem}
 
 \begin{theorem}[Online calibration regret]
@@ -440,38 +425,17 @@ Let queries arrive online with per-step drift $\|\EE[\enc(q_t)] - \EE[\enc(q_{t+
   \leq T \cdot O\!\left(\frac{\sigma}{\sqrt{m_{\max}}} + m_{\max} \cdot \Delta \right).
   \label{eq:regret}
 \end{equation}
-The optimal window $m_{\max}^* = \Theta((\sigma/\Delta)^{2/3})$ minimizes per-step regret to $O(\sigma^{2/3}\Delta^{1/3})$. Proof in Appendix~\ref{app:proof_regret}.
-
-\begin{corollary}[Non-asymptotic convergence]
-\label{cor:convergence}
-After $T$ queries with optimal window $m_{\max}^*$, the average calibration error satisfies:
-\begin{equation}
-  \frac{1}{T}\sum_{t=1}^{T} |\hat{\tau}_t - \tau_t^*| \leq C \sigma^{2/3}\Delta^{1/3} + \frac{\sigma\sqrt{2\log(4T/\delta)}}{\sqrt{m_{\max}^*}},
-  \label{eq:convergence}
-\end{equation}
-with probability $\geq 1 - \delta$, where $C$ is a universal constant. The second term decays as $O(T^{-1/3}\sqrt{\log T})$ for $\delta = 1/T$.
-\end{corollary}
+The optimal window $m_{\max}^* = \Theta((\sigma/\Delta)^{2/3})$ minimizes per-step regret to $O(\sigma^{2/3}\Delta^{1/3})$. Non-asymptotic convergence bounds are in Appendix~\ref{app:proof_regret}.
 \end{theorem}
 
 \subsection{Generalization to unseen attacks}
 
-The preceding results hold for a fixed adversary. We now bound \memsad{}'s detection guarantee for \emph{unseen} attack distributions.
-
 \begin{theorem}[Generalization bound]
 \label{thm:generalization}
-Let $\cP_{\text{train}} = \{P_1, \ldots, P_K\}$ be $K$ attack distributions observed during calibration, and $P_{\text{new}}$ an unseen attack with $W_1(P_{\text{new}}, P_j) \leq \epsilon_W$ for some $P_j \in \cP_{\text{train}}$, where $W_1$ denotes the Wasserstein-1 distance on score distributions. Then:
-\begin{equation}
-  |\tpr_{\text{new}} - \tpr_j| \leq \frac{\epsilon_W}{\hat{\sigma}} + O\!\left(\frac{1}{\sqrt{N}}\right),
-  \label{eq:generalization}
-\end{equation}
-where $\tpr_j$ is \memsad{}'s TPR on $P_j$ and $N$ is the calibration size.
+Let $P_{\text{new}}$ be an unseen attack with $W_1(P_{\text{new}}, P_j) \leq \epsilon_W$ for some observed attack $P_j$. Then $|\tpr_{\text{new}} - \tpr_j| \leq \epsilon_W / \hat{\sigma} + O(1/\sqrt{N})$, where $N$ is the calibration size. Proof via Kantorovich-Rubinstein duality in Appendix~\ref{app:proof_generalization}.
 \end{theorem}
 
-\begin{proof}
-The detection function $\pi(c) = \mathbf{1}[s(c; \cH) > \tau]$ is 1-Lipschitz in $s$ (indicator threshold). By Kantorovich-Rubinstein duality, $|\EE_{P_{\text{new}}}[\pi] - \EE_{P_j}[\pi]| \leq W_1(P_{\text{new}}, P_j)/\hat{\sigma}$ (normalizing by the calibration scale). The $O(1/\sqrt{N})$ term accounts for finite-sample threshold estimation (Theorem~\ref{thm:calibration_bound}).
-\end{proof}
-
-This guarantees that if a new attack's score distribution is $\epsilon_W$-close (in Wasserstein distance) to any previously observed attack, \memsad{}'s TPR transfers with bounded degradation. In our experiments, \minja{} and \injecmem{} have $W_1 \approx 0.03\hat{\sigma}$, predicting $|\Delta\tpr| \leq 0.03$, consistent with the observed TPR stability across attacks with similar access models.
+\noindent In our experiments, \minja{} and \injecmem{} have $W_1 \approx 0.03\hat{\sigma}$, predicting $|\Delta\tpr| \leq 0.03$, consistent with observed TPR stability.
 
 \subsection{The discrete synonym loophole}
 
@@ -540,9 +504,9 @@ Bootstrap 95\% CIs from 5 seeds.
 \end{table}
 
 Table~\ref{tab:attack_results} reports main results.
-\agentpoison{} achieves $\asrr = 1.00$ under the corrected triggered-query protocol (Section~\ref{sec:threat}), a $4\times$ increase over the un-triggered baseline ($\asrr = 0.25$), confirming that prior evaluations systematically underestimate the threat.
-\minja{} achieves $\asrr = 0.65$ at retrieval time, compared to $\isr = 98.2\%$ at write time.\footnote{$\isr$ and $\asrr$ measure complementary attack surfaces: $\isr$ quantifies write-time injection success; $\asrr$ quantifies retrieval-time exposure to future queries.}
-\injecmem{} achieves $\asrr = 0.50$ via volume ($n = 15$) at the cost of lower benign accuracy ($0.80$), illustrating the volume-stealth tradeoff inherent to retriever-agnostic attacks.
+\agentpoison{} achieves $\asrr = 1.00$ under the corrected triggered-query protocol (Section~\ref{sec:threat}), a $4\times$ increase over plain evaluation ($\asrr = 0.25$).
+\minja{} achieves $\asrr = 0.65$ at retrieval time vs.\ $\isr = 98.2\%$ at write time.\footnote{$\isr$ measures write-time injection success; $\asrr$ measures retrieval-time exposure to future queries.}
+\injecmem{} achieves $\asrr = 0.50$ via volume ($n = 15$) at the cost of lower benign accuracy ($0.80$), illustrating the volume-stealth tradeoff.
 
 \begin{figure}[t]
   \centering
@@ -620,65 +584,39 @@ Following~\citet{tramer2020adaptive}, we model a white-box adversary with full k
   \vspace{-4pt}
 \end{table}
 
-Table~\ref{tab:adaptive_sad} confirms Proposition~\ref{prop:synonym}: evasion rates of 80--100\% with $\Delta\asrr \approx 0$ using 3.8--5.1 substitutions ($|\Delta\text{sim}| \leq 0.02$).
-This validates the theoretical prediction: since paraphrase-trained encoders enforce $\epsilon_{\text{syn}} \approx 0$, discrete synonym substitution operates in a regime where the gradient coupling guarantee (Theorem~\ref{thm:gradient_coupling}) does not apply.
-Quantitatively, $r\epsilon_{\text{syn}} \leq 5.1 \times 0.004 = 0.020$ (Eq.~\ref{eq:synonym_bounds}), matching the observed $|\Delta\text{sim}| \leq 0.02$ exactly.
-The certified detection condition (Lemma~\ref{lem:certified}) requires $\Delta_s > \kappa\hat{\sigma} + \eta \approx 0.08$, but after synonym substitution $\Delta_s$ decreases by only $0.02$, remaining above the threshold for \minja{} ($0.15 - 0.02 = 0.13 > 0.08$) yet falling below for calibration-sensitive attacks where the margin is tighter.
+Table~\ref{tab:adaptive_sad} confirms Proposition~\ref{prop:synonym}: evasion rates of 80--100\% with $\Delta\asrr \approx 0$ using 3.8--5.1 substitutions ($|\Delta\text{sim}| \leq 0.02$), matching the bound $r\epsilon_{\text{syn}} \leq 5.1 \times 0.004 = 0.020$ (Eq.~\ref{eq:synonym_bounds}).
+The certified condition (Lemma~\ref{lem:certified}) still holds for \minja{} post-substitution ($0.15 - 0.02 = 0.13 > 0.08$) but fails for attacks with tighter margins.
 
 \subsection{Statistical hypothesis testing}
 
-Table~\ref{tab:hypothesis} reports formal significance tests for each defense's detection capability, with Bonferroni correction for 15 comparisons ($\alpha' = 0.05/15 = 0.003$).
+Table~\ref{tab:hypothesis} reports one-sided binomial tests ($H_0$: $\tpr = 0$) with Bonferroni correction ($\alpha' = 0.003$, 15 comparisons). All composite results reject $H_0$ with power $= 1.00$; proactive vs.\ \minja{} ($p = 0.24$) fails to reject, consistent with the complementarity design.
 
 \begin{table}[t]
   \centering
   \small
-  \caption{Hypothesis tests: $H_0$: $\tpr = 0$ vs.\ $H_1$: $\tpr > 0$ (one-sided binomial, Bonferroni $\alpha' = 0.003$).}
+  \caption{Hypothesis tests ($H_0$: $\tpr = 0$, Bonferroni $\alpha' = 0.003$).}
   \label{tab:hypothesis}
   \vspace{2pt}
   \begin{tabular}{l l c c c}
     \toprule
-    Defense & Attack & $p$-value & Reject $H_0$? & Power \\
+    Defense & Attack & $p$-value & Reject? & Power \\
     \midrule
-    Watermark   & AP & $<10^{-6}$ & \checkmark & 1.00 \\
-    Watermark   & MJ & $<10^{-6}$ & \checkmark & 1.00 \\
-    \memsad{}   & MJ & $<10^{-6}$ & \checkmark & 1.00 \\
-    \memsad{}   & IM & $0.001$    & \checkmark & 0.92 \\
-    Proactive   & AP & $<10^{-6}$ & \checkmark & 1.00 \\
-    Proactive   & MJ & $0.24$     & ---        & 0.08 \\
-    Composite   & AP & $<10^{-6}$ & \checkmark & 1.00 \\
-    Composite   & MJ & $<10^{-6}$ & \checkmark & 1.00 \\
-    Composite   & IM & $<10^{-6}$ & \checkmark & 1.00 \\
+    Watermark   & AP / MJ & $<10^{-6}$ & \checkmark & 1.00 \\
+    \memsad{}   & MJ      & $<10^{-6}$ & \checkmark & 1.00 \\
+    \memsad{}   & IM      & $0.001$    & \checkmark & 0.92 \\
+    Proactive   & AP      & $<10^{-6}$ & \checkmark & 1.00 \\
+    Proactive   & MJ      & $0.24$     & ---        & 0.08 \\
+    Composite   & All     & $<10^{-6}$ & \checkmark & 1.00 \\
     \bottomrule
   \end{tabular}
   \vspace{-6pt}
 \end{table}
 
-All composite portfolio results reject $H_0$ at Bonferroni-corrected $\alpha' = 0.003$ with power $= 1.00$, confirming the Stackelberg equilibrium prediction. Proactive detection of \minja{} ($\tpr = 0.07$, $p = 0.24$) fails to reject, consistent with the complementarity argument.
-
 \subsection{\memsad{} detection characteristics}
 
-\begin{figure}[t]
-  \centering
-  \begin{subfigure}[t]{0.48\linewidth}
-    \includegraphics[width=\linewidth]{fig_sad_roc_curve.pdf}
-    \caption{ROC as $\kappa$ varies from 0.5 to 4.0.}
-    \label{fig:sad_roc}
-  \end{subfigure}
-  \hfill
-  \begin{subfigure}[t]{0.48\linewidth}
-    \includegraphics[width=\linewidth]{fig_sad_calibration_comparison.pdf}
-    \caption{Plain vs.\ triggered calibration.}
-    \label{fig:sad_calibration}
-  \end{subfigure}
-  \vspace{-4pt}
-  \caption{\memsad{} detection. (a)~\minja{} traces near-ideal ROC; triggered calibration recovers $\tpr = 1.00$ for \agentpoison{} at $\kappa = 2.0$ ($\star$). (b)~Threshold shifts from 0.482 to 0.432.}
-  \label{fig:sad_analysis}
-  \vspace{-6pt}
-\end{figure}
-
-At $\kappa = 2.0$ with combined scoring: AUROC $= 1.000$ (\minja{}), $0.920$ (\injecmem{}), $0.870$ (\agentpoison{}, plain). Triggered calibration raises \agentpoison{} AUROC to $1.000$.
-FPR validated across 20 trials with Clopper-Pearson CIs~\citep{clopper1934use}: $\fpr = 0.000$, 95\% upper bound $< 0.004$ ($n = 1000$ per trial; Appendix~\ref{app:fpr}).
-\textbf{Theory validation:} Theorem~\ref{thm:calibration_bound} predicts $|\tau_N - \tau^*| \leq 0.031$ at $N = 200$, $\delta = 0.05$; the observed deviation is $0.018$ ($58\%$ of the bound, indicating the concentration inequality is not vacuous). The minimax lower bound (Theorem~\ref{thm:minimax_lower}) requires $N \geq 12$ for \minja{} ($\rho = 3.2$); we operate at $N = 200 \gg 12$, well within the reliable detection regime. The Wasserstein bound (Theorem~\ref{thm:generalization}) predicts $|\Delta\tpr| \leq 0.03$ between \minja{} and \injecmem{} ($W_1 \approx 0.03\hat{\sigma}$); observed $|\Delta\tpr| = 0.00$ at $\kappa = 2.0$.
+At $\kappa = 2.0$ with combined scoring: AUROC $= 1.000$ (\minja{}), $0.920$ (\injecmem{}), $0.870$ (\agentpoison{}, plain); triggered calibration raises \agentpoison{} to $1.000$ (ROC curves in Figure~\ref{fig:sad_analysis}, Appendix~\ref{app:sad_analysis}).
+FPR validated via 20-trial Clopper-Pearson CIs~\citep{clopper1934use}: $\fpr = 0.000$, 95\% upper bound $< 0.004$ ($n = 1000$; Appendix~\ref{app:fpr}).
+\textbf{Theory validation:} calibration bound (Theorem~\ref{thm:calibration_bound}) predicts $|\tau_N - \tau^*| \leq 0.031$ at $N = 200$; observed $0.018$ (58\% of bound). Minimax bound requires $N \geq 12$ for \minja{} ($\rho = 3.2$); we use $N = 200$. Wasserstein bound predicts $|\Delta\tpr| \leq 0.03$; observed $0.00$.
 
 \subsection{Ablation highlights}
 
@@ -693,20 +631,30 @@ Key results (full tables in Appendix~\ref{app:ablation}):
 
 \paragraph{No single defense dominates.}
 Defense effectiveness depends on the attack's access model $\alpha$: watermark catches unsigned writes but fails if ingestion is bypassed; \memsad{} excels against \minja{} (AUROC $= 1.000$) but needs triggered calibration for \agentpoison{}; proactive detection is complementary ($\tpr = 1.00$ for \agentpoison{}, $0.07$ for \minja{}).
-Composite portfolios realize $\asrr^* = 0$ (Proposition~\ref{prop:equilibrium}).
+Composite portfolios realize $\asrr^* = 0$ (Proposition~\ref{prop:equilibrium}), but this relies on the defender covering all access models.
+In practice, the defender's uncertainty about $\alpha$ motivates the portfolio approach: no single mechanism is sufficient, but layered defenses achieve provable coverage.
 
 \paragraph{Certified detection, optimality, and deployment.}
-Lemma~\ref{lem:certified} provides checkable certified detection; Theorem~\ref{thm:minimax_lower} shows any threshold detector requires $\Omega(1/\rho^2)$ samples, matched by \memsad{} up to $\log(1/\delta)$ (Remark~\ref{rem:optimality}).
-The practical implication: maximize SNR $\rho$ (triggered calibration raises $\rho$ from $\sim 1.2$ to $\sim 3.8$ for \agentpoison{}).
+Lemma~\ref{lem:certified} provides checkable, per-entry certified detection; Theorem~\ref{thm:minimax_lower} shows any threshold detector requires $\Omega(1/\rho^2)$ samples, matched by \memsad{} up to $\log(1/\delta)$.
+The practical implication: maximize SNR $\rho$ via triggered calibration ($\rho: 1.2 \to 3.8$ for \agentpoison{}).
 Theorem~\ref{thm:regret} yields optimal window $m_{\max}^* \approx 46$ with per-step regret $\approx 0.02$.
-Recommended stack: (i)~watermark, (ii)~rolling \memsad{}, (iii)~composite ensemble ($\sim 200$ms, Appendix~\ref{app:complexity}).
+Recommended deployment stack: (i)~watermark at ingestion, (ii)~rolling \memsad{} at retrieval, (iii)~composite ensemble for high-value agents ($\sim 200$ms total, Appendix~\ref{app:complexity}).
+
+\paragraph{The synonym loophole as an open problem.}
+Proposition~\ref{prop:synonym} reveals a fundamental limitation: paraphrase-trained encoders map synonyms to nearly identical embeddings ($\epsilon_{\text{syn}} \approx 0$), creating a discrete channel orthogonal to the gradient coupling guarantee.
+This is not merely a failure of \memsad{} but a structural property of all embedding-based detectors that rely on semantic similarity.
+Closing this gap requires detectors operating in a complementary feature space, such as lexical diversity, syntactic structure, or provenance metadata.
+
+\paragraph{Broader implications.}
+As LLM agents are deployed in high-stakes settings (healthcare, finance, autonomous systems), persistent memory becomes both a capability enabler and a liability.
+Our results show that memory poisoning is simultaneously easier than previously reported ($4\times$ via protocol correction) and more defensible than expected (composite $\tpr = 1.00$, $\fpr = 0.00$), but the synonym loophole means that no purely semantic defense can be considered complete.
+The Stackelberg formulation provides a principled framework for reasoning about this arms race.
 
 \paragraph{Limitations.}
-(i)~200-entry corpus (validated up to 500, Appendix~\ref{app:ablation}).
-(ii)~$\asra$ modelled; GPT-2 evaluator provides lower bounds.
-(iii)~Slowly drifting assumption (Theorem~\ref{thm:regret}); abrupt shifts degrade calibration.
-(iv)~Synonym loophole (Proposition~\ref{prop:synonym}) motivates semantic-lexical detection.
-(v)~MiniLM-L6 primary; 7 encoders validated (Appendix~\ref{app:encoder_gen}).
+(i)~200-entry corpus (validated up to 500, Appendix~\ref{app:ablation}); production systems may contain $10^4$--$10^6$ entries.
+(ii)~$\asra$ modelled from paper-reported values; GPT-2 evaluator provides lower bounds but production agents may behave differently.
+(iii)~Slowly drifting assumption (Theorem~\ref{thm:regret}); abrupt distributional shifts degrade online calibration.
+(iv)~Single-encoder experiments (MiniLM-L6 primary); cross-encoder transfer validated on 7 encoders (Appendix~\ref{app:encoder_gen}) but multi-modal agents remain untested.
 
 %% ============================================================
 \section{Conclusion}
@@ -751,7 +699,7 @@ Then $\KL(P_0 \| P_1) = (\mu_1 - \mu_0)^2 / (2\sigma^2) = \rho^2/2$.
 \subsection{Proof of Theorem~\ref{thm:calibration_bound}}
 \label{app:proof_calibration}
 
-By Hoeffding on $[0,1]$: $|\hat{\mu}_N - \mu| \leq \sqrt{\log(2/\delta)/(2N)}$ w.p.\ $\geq 1 - \delta/2$. By chi-squared concentration: $|\hat{\sigma}_N - \sigma| \leq \sigma\sqrt{\log(2/\delta)/(2(N-1))}$ w.p.\ $\geq 1 - \delta/2$. Triangle inequality: $|\tau_N - \tau^*| \leq |\hat{\mu}_N - \mu| + \kappa|\hat{\sigma}_N - \sigma|$. Union bound yields Eq.~\eqref{eq:calibration_bound}.
+By Hoeffding on $[0,1]$: $|\hat{\mu}_N - \mu| \leq \sqrt{\log(2/\delta)/(2N)}$ w.p.\ $\geq 1 - \delta/2$. By chi-squared concentration: $|\hat{\sigma}_N - \sigma| \leq \sigma\sqrt{\log(2/\delta)/(2(N-1))}$ w.p.\ $\geq 1 - \delta/2$. Triangle inequality: $|\tau_N - \tau^*| \leq |\hat{\mu}_N - \mu| + \kappa|\hat{\sigma}_N - \sigma|$. Union bound yields the calibration bound in Theorem~\ref{thm:calibration_bound}.
 
 \subsection{Proof of Theorem~\ref{thm:regret}}
 \label{app:proof_regret}
@@ -764,7 +712,7 @@ Setting equal: $\sigma/\sqrt{m_{\max}} = m_{\max}\Delta$ gives $m_{\max}^* = (\s
 \subsection{Detection-evasion tradeoff surface}
 \label{app:tradeoff_surface}
 
-The tradeoff in Corollary~\ref{cor:tradeoff} defines a surface in $(\epsilon, \theta, \Delta\cD)$ space where $\theta$ is the angle between perturbation $\delta$ and gradient $\nabla\cD$. Expanding to second order:
+By Theorem~\ref{thm:gradient_coupling}, $\cD(e_c') < \cD(e_c)$ (evasion) implies $\cR(e_c') < \cR(e_c)$ (retrieval degradation) to first order. The tradeoff defines a surface in $(\epsilon, \theta, \Delta\cD)$ space where $\theta$ is the angle between perturbation $\delta$ and gradient $\nabla\cD$. Expanding to second order:
 \begin{equation}
   \cD(e_c + \epsilon\delta) - \cD(e_c) = \epsilon\|\nabla\cD\|\cos\theta + \frac{\epsilon^2}{2}\delta^\top H_{\cD}\,\delta + O(\epsilon^3),
 \end{equation}
@@ -821,7 +769,7 @@ where the $1/\hat{\sigma}$ normalization arises because the detection operates o
 
 \paragraph{Threshold estimation.} By Theorem~\ref{thm:calibration_bound}, $|\hat{\tau} - \tau^*| \leq \eta_N$ w.p.\ $\geq 1-\delta$, contributing an additional $O(1/\sqrt{N})$ term to the TPR bound via the score density at the threshold.
 
-\paragraph{Corollary~\ref{cor:convergence}.} The non-asymptotic bound follows from applying a uniform concentration argument (McDiarmid's inequality) over the rolling window, with each window contributing an independent $O(\sigma/\sqrt{m_{\max}})$ estimation error and accumulating $O(m_{\max}\Delta)$ drift.
+\paragraph{Non-asymptotic convergence.} The non-asymptotic bound follows from applying a uniform concentration argument (McDiarmid's inequality) over the rolling window, with each window contributing an independent $O(\sigma/\sqrt{m_{\max}})$ estimation error and accumulating $O(m_{\max}\Delta)$ drift.
 
 \subsection{Online regret bound visualization}
 \label{app:regret_viz}
@@ -1032,6 +980,27 @@ Without defense, steady-state infection is $I_\infty/N = 1 - \gamma/\beta$ for $
   \end{tabular}
 \end{table}
 
+\section{\memsad{} detection analysis}
+\label{app:sad_analysis}
+
+\begin{figure}[h]
+  \centering
+  \begin{subfigure}[t]{0.48\linewidth}
+    \includegraphics[width=\linewidth]{fig_sad_roc_curve.pdf}
+    \caption{ROC as $\kappa$ varies from 0.5 to 4.0.}
+    \label{fig:sad_roc}
+  \end{subfigure}
+  \hfill
+  \begin{subfigure}[t]{0.48\linewidth}
+    \includegraphics[width=\linewidth]{fig_sad_calibration_comparison.pdf}
+    \caption{Plain vs.\ triggered calibration.}
+    \label{fig:sad_calibration}
+  \end{subfigure}
+  \vspace{-4pt}
+  \caption{\memsad{} detection. (a)~\minja{} traces near-ideal ROC; triggered calibration recovers $\tpr = 1.00$ for \agentpoison{} at $\kappa = 2.0$ ($\star$). (b)~Threshold shifts from 0.482 to 0.432.}
+  \label{fig:sad_analysis}
+\end{figure}
+
 \section{Sample complexity comparison}
 \label{app:sample_complexity}
 
@@ -1058,7 +1027,7 @@ Table~\ref{tab:sample_complexity} compares the calibration sample requirements a
   {\footnotesize $N_{\min} = 4(1-\epsilon)^2/\rho^2$ from Theorem~\ref{thm:minimax_lower}; \memsad{} $N$ from Theorem~\ref{thm:calibration_bound} with $\delta = 0.05$.}
 \end{table}
 
-The logarithmic gap between the lower bound and \memsad{}'s requirement is consistent with Remark~\ref{rem:optimality}. For practical deployment at $\delta = 0.05$: $\log(1/\delta) \approx 3.0$, so \memsad{} requires $\sim 3\times$ the information-theoretic minimum.
+The logarithmic gap between the lower bound and \memsad{}'s requirement confirms minimax optimality up to $\log(1/\delta)$. For practical deployment at $\delta = 0.05$: $\log(1/\delta) \approx 3.0$, so \memsad{} requires $\sim 3\times$ the information-theoretic minimum.
 
 \section{Computational complexity}
 \label{app:complexity}
