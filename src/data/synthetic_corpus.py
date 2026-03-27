@@ -21,6 +21,18 @@ from __future__ import annotations
 import random
 from typing import Any
 
+from src.data.corpus_extended import (
+    BENIGN_QUERIES_EXT,
+    CALENDAR_EXT,
+    CONFIGURATION_EXT,
+    CONVERSATION_EXT,
+    DOCUMENTS_EXT,
+    KNOWLEDGE_EXT,
+    PREFERENCES_EXT,
+    TASK_HISTORY_EXT,
+    VICTIM_QUERIES_EXT,
+)
+
 # ---------------------------------------------------------------------------
 # corpus entry templates  (category → list of content strings)
 # ---------------------------------------------------------------------------
@@ -404,8 +416,19 @@ class SyntheticCorpus:
         benign_qs = corpus.get_benign_queries()
     """
 
-    # all category pools
+    # all category pools (base + extended for 1000+ entry support)
     _POOL: dict[str, list[str]] = {
+        "preference": _PREFERENCES + PREFERENCES_EXT,
+        "task": _TASK_HISTORY + TASK_HISTORY_EXT,
+        "calendar": _CALENDAR_EVENTS + CALENDAR_EXT,
+        "knowledge": _KNOWLEDGE_FACTS + KNOWLEDGE_EXT,
+        "conversation": _CONVERSATION_HISTORY + CONVERSATION_EXT,
+        "document": _DOCUMENTS_NOTES + DOCUMENTS_EXT,
+        "configuration": _CONFIGURATION + CONFIGURATION_EXT,
+    }
+
+    # original pools (for backward compatibility at 200-entry scale)
+    _POOL_BASE: dict[str, list[str]] = {
         "preference": _PREFERENCES,
         "task": _TASK_HISTORY,
         "calendar": _CALENDAR_EVENTS,
@@ -520,12 +543,53 @@ class SyntheticCorpus:
         """
         return BENIGN_QUERIES[:]
 
-    def get_all_query_strings(self) -> tuple[list[str], list[str]]:
+    def get_victim_queries_extended(self, n: int = 100) -> list[dict[str, str]]:
+        """
+        return extended victim query set (up to 100 queries).
+
+        combines base 20 queries with 80 extended queries for large-scale
+        evaluation at neurips-standard query counts.
+
+        args:
+            n: number of queries to return (max 100)
+
+        returns:
+            list of dicts with keys: query, topic, category
+        """
+        combined = VICTIM_QUERIES + VICTIM_QUERIES_EXT
+        return combined[: min(n, len(combined))]
+
+    def get_benign_queries_extended(self, n: int = 100) -> list[dict[str, str]]:
+        """
+        return extended benign query set (up to 100 queries).
+
+        combines base 20 queries with 80 extended queries for large-scale
+        false-positive evaluation.
+
+        args:
+            n: number of queries to return (max 100)
+
+        returns:
+            list of dicts with keys: query, topic
+        """
+        combined = BENIGN_QUERIES + BENIGN_QUERIES_EXT
+        return combined[: min(n, len(combined))]
+
+    def get_all_query_strings(
+        self, extended: bool = False
+    ) -> tuple[list[str], list[str]]:
         """
         return (victim_query_strings, benign_query_strings).
 
         convenience method returning plain string lists.
+
+        args:
+            extended: if true, return 100 queries each instead of 20
         """
-        victim = [q["query"] for q in VICTIM_QUERIES]
-        benign = [q["query"] for q in BENIGN_QUERIES]
+        if extended:
+            victim = [q["query"] for q in self.get_victim_queries_extended()]
+            benign = [q["query"] for q in self.get_benign_queries_extended()]
+        else:
+            victim = [q["query"] for q in VICTIM_QUERIES]
+            benign = [q["query"] for q in BENIGN_QUERIES]
         return victim, benign
