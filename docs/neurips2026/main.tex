@@ -133,7 +133,8 @@ Our five contributions span theory, algorithm design, and empirical methodology.
 \citet{dong2025minja} exploit auto-storage via progressive-shortening indication ($\isr = 98.2\%$) under query-only access.
 \citet{injecmem2026} achieve single-interaction injection via retriever-agnostic anchors, the weakest attacker assumption.
 \citet{memorygraft2025} demonstrate experience-grafting attacks exploiting union retrieval.
-Concurrent work includes TrojanRAG~\citep{trojanrag2024} (joint backdoor), CorruptRAG~\citep{corruptrag2025} (single-text poisoning), and jamming attacks~\citep{shafran2025blocker} (denial-of-service). Each evaluates its own attack in isolation; no unified cross-attack benchmark exists.
+Concurrent work includes TrojanRAG~\citep{trojanrag2024} (joint backdoor), CorruptRAG~\citep{corruptrag2025} (single-text poisoning), BadRAG~\citep{xue2024badrag} (retrieval vulnerability analysis), Phantom~\citep{chaudhari2024phantom} (general trigger attacks), and jamming attacks~\citep{shafran2025blocker} (denial-of-service). Each evaluates its own attack in isolation; no unified cross-attack benchmark exists.
+Unlike training-time backdoor attacks that embed triggers via parameter poisoning~\citep{wu2024badagent}, memory poisoning targets the retrieval index directly at inference time, requiring no access to model weights and persisting across sessions.
 On the defense side, A-MemGuard~\citep{amemguard2025} proposes proactive defenses via query rewriting, RevPRAG~\citep{tan2025revprag} detects poisoning through LLM activation analysis, ReliabilityRAG~\citep{reliabilityrag2025} provides provable robustness via graph-theoretic MIS, and SeCon-RAG~\citep{seconrag2025} uses entity-intent extraction. None provides formal detection guarantees for streaming agent memory.
 
 \paragraph{RAG corpus poisoning and certified defenses.}
@@ -298,7 +299,7 @@ Can the defender design a detection objective that decouples from retrieval, all
 
 \begin{theorem}[Gradient coupling]
 \label{thm:gradient_coupling}
-Let $\enc$ satisfy Assumption~\ref{ass:encoder}, let $e_c \coloneqq \enc(c) \in \RR^d$, and $q^* \coloneqq \argmax_{q \in \cH} \cosim(e_c, \enc(q))$. Define the retrieval objective $\cR(e_c) \coloneqq \cosim(e_c, \enc(q^*))$ and let $\cD : \RR^d \to \RR$ be any differentiable detection function satisfying $\cD = g \circ \cR$ for monotone increasing $g$. Then:
+Let $\enc$ satisfy Assumption~\ref{ass:encoder}, let $e_c \coloneqq \enc(c) \in \RR^d$, and $q^* \coloneqq \argmax_{q \in \cH} \cosim(e_c, \enc(q))$. Define the retrieval objective $\cR(e_c) \coloneqq \cosim(e_c, \enc(q^*))$ and let $\cD : \RR^d \to \RR$ be any differentiable detection function satisfying $\cD = g \circ \cR$ for differentiable, monotone increasing $g$ with $g' > 0$. Then:
 \begin{equation}
   \nabla_{e_c} \cD(e_c)
   = g'(\cR(e_c)) \cdot \nabla_{e_c} \cR(e_c)
@@ -461,7 +462,7 @@ This does \emph{not} contradict Theorem~\ref{thm:gradient_coupling}: the couplin
 \section{Additional defenses}
 \label{sec:other_defenses}
 
-We evaluate four additional defenses, all operating at pre-ingestion time.
+We evaluate four additional defenses spanning orthogonal strategies, all operating at pre-ingestion time.
 \textbf{Watermark:} the defender watermarks all legitimate entries at write time via a unigram scheme~\citep{zhao2024watermark} ($z_{\text{thr}} = 4.0$, $\fpr \approx 3.2 \times 10^{-5}$), rejecting unwatermarked entries; this requires control of the ingestion pipeline.
 \textbf{Validation:} rule-based pattern matching ($O(|c| \cdot |P|)$).
 \textbf{Proactive:} computes mean cosine similarity against 16 domain probes, flagging entries exceeding $\tau = 0.19$.
@@ -475,10 +476,10 @@ We evaluate four additional defenses, all operating at pre-ingestion time.
 
 \paragraph{Vector memory.}
 FAISS IndexFlatIP with L2-normalized all-MiniLM-L6-v2 embeddings ($d = 384$).
-Benign corpus: $|\cM| = 200$ synthetic entries across 7 categories, sized to match per-user memory stores in deployed systems (Mem0, MemGPT); corpus-size ablation (Appendix~\ref{app:ablation}) confirms that $\asrr$ and defense metrics remain stable up to $|\cM| = 500$.
+Benign corpus: $|\cM| = 200$ synthetic entries across 7 categories, matching the per-user memory scale of deployed systems where active memory stores typically contain $10^2$--$10^3$ entries~\citep{chen2024agentpoison,dong2025minja}; corpus-size ablation (Appendix~\ref{app:ablation}) confirms that $\asrr$ and defense metrics remain stable across $|\cM| \in \{50, \ldots, 500\}$.
 Poison counts: $n = 5$ (\agentpoison{}), $10$ (\minja{}), $15$ (\injecmem{}).
 $k = 5$; $|\cQ_v| = |\cQ_b| = 20$.
-Bootstrap 95\% CIs from 5 seeds.
+Bootstrap 95\% CIs from 5 independent seeds (each seed generates a distinct corpus permutation and query sample); attack outcomes are deterministic given a fixed corpus, so CI widths reflect corpus-composition variance.
 
 \paragraph{Attacks.}
 \agentpoison{}: centroid passage + DPR HotFlip trigger ($\cosim: 0.71 \to 0.78$).
@@ -490,7 +491,7 @@ Bootstrap 95\% CIs from 5 seeds.
 \begin{table}[t]
   \centering
   \small
-  \caption{Attack results (5 seeds, bootstrap 95\% CI). CI widths are zero because attacks are deterministic given a fixed corpus and trigger. $^\dagger$Projected: $\asra$ from original papers; $\asrt = \asrr \cdot \asra$.}
+  \caption{Attack results (5 seeds, bootstrap 95\% CI). CI widths are negligible because attack outcomes are deterministic given a fixed corpus and trigger. $^\dagger$Projected: $\asra$ from original papers; $\asrt = \asrr \cdot \asra$.}
   \label{tab:attack_results}
   \vspace{2pt}
   \begin{tabular}{lccccc}
@@ -524,7 +525,7 @@ Table~\ref{tab:attack_results} reports the main results.
   \centering
   \includegraphics[width=0.68\linewidth]{m12_attack_defense_matrix.pdf}
   \vspace{-4pt}
-  \caption{$3 \times 5$ attack-defense matrix: residual $\asrr$ after defense. Lower is stronger.}
+  \caption{$3 \times 5$ attack-defense matrix: residual $\asrr$ after defense (rows: attacks; columns: defenses). Lower is stronger.}
   \label{fig:matrix}
   \vspace{-6pt}
 \end{figure}
