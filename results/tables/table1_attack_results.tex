@@ -2,18 +2,17 @@
 \centering
 \small
 \caption{Attack evaluation results on synthetic memory corpus
-  ($N=200$, $k=5$, seed-averaged over 5 trials).
-  ASR-A$^*$ is modelled from paper-reported values.
-  95\% CI via percentile bootstrap (2000 replicates).}
+  ($|\mathcal{M}|=1000$, $k=5$, 100 victim queries, seed-averaged over 5 trials).
+  \asra{} columns: modelled (from prior work), GPT-2 lower bound, GPT-4o-mini.
+  95\% CI via percentile bootstrap.}
 \label{tab:attack_results}
-\begin{tabular}{lcccc}
+\begin{tabular}{lcccccc}
 \toprule
-Attack & ASR-R & ASR-A$^*$ & ASR-T & Benign Acc \\
+Attack & $\asrr$ & $\asra^{\text{mod}}$ & $\asra^{\text{GPT-2}}$ & $\asra^{\text{4o-mini}}$ & $\asrt$ & Ben.\ Acc. \\
 \midrule
-AgentPoison \citep{chen2024agentpoison} & 1.000$_{[1.000,1.000]}$ & 0.68 & 0.900 & 0.850 \\
-MINJA \citep{dong2025minja} & 0.650$_{[0.650,0.650]}$ & 0.76 & 0.550 & 0.800 \\
-InjecMEM \citep{injecmem2026} & 0.750$_{[0.750,0.750]}$ & 0.57 & 0.550 & 0.550 \\
-PoisonedRAG \citep{zou2024poisonedrag} & 0.400$_{[0.400,0.400]}$ & 0.82 & 0.400 & 1.000 \\
+\agentpoison{} \citep{chen2024agentpoison} & $1.000_{[1.000,1.000]}$ & $0.68$ & $0.90$ & $0.20$ & $0.680$ & $1.000$ \\
+\minja{} \citep{dong2025minja} & $0.142_{[0.130,0.150]}$ & $0.76$ & $0.17$ & $0.00$ & $0.108$ & $1.000$ \\
+\injecmem{} \citep{injecmem2026} & $0.066_{[0.060,0.070]}$ & $0.57$ & $0.00$ & $0.00$ & $0.038$ & $0.980$ \\
 \bottomrule
 \end{tabular}
 \end{table}

@@ -20,7 +20,7 @@
     \item {\bf Experimental result reproducibility}
     \item[] Question: Does the paper fully disclose all the information needed to reproduce the main experimental results of the paper to the extent that it affects the main claims and/or conclusions of the paper (regardless of whether the code and data are provided or not)?
     \item[] Answer: \answerYes{}
-    \item[] Justification: Section~\ref{sec:experiments} specifies the embedding model (all-MiniLM-L6-v2, 384-dim), index type (FAISS IndexFlatIP), corpus size (200), poison counts, top-$k$, and number of seeds (5). The full pipeline is reproducible via a single script.
+    \item[] Justification: Section~\ref{sec:experiments} specifies the embedding model (all-MiniLM-L6-v2, 384-dim), index type (FAISS IndexFlatIP), corpus size (1000), poison counts, top-$k$, number of seeds (5), and measured ASR-A via GPT-2 and GPT-4o-mini. The full pipeline is reproducible via a single script.
 
 \item {\bf Open access to data and code}
     \item[] Question: Does the paper provide open access to the data and code, with sufficient instructions to faithfully reproduce the main experimental results, as described in supplemental material?
@@ -30,7 +30,7 @@
 \item {\bf Experimental setting/details}
     \item[] Question: Does the paper specify all the training and test details (e.g., data splits, hyperparameters, how they were chosen, type of optimizer) necessary to understand the results?
     \item[] Answer: \answerYes{}
-    \item[] Justification: Section~\ref{sec:experiments} and Appendix~\ref{app:ablation} specify all hyperparameters: $\kappa=2.0$ for \memsad{}, $z_{\mathrm{thr}}=4.0$ for watermark, $\tau=0.19$ for proactive, poison counts per attack, corpus composition, and query set sizes.
+    \item[] Justification: Section~\ref{sec:experiments} and Appendix~\ref{app:ablation} specify all hyperparameters: $\kappa=2.0$ for \memsad{}, $z_{\mathrm{thr}}=4.0$ for watermark, $\tau=0.19$ for proactive, poison counts per attack, corpus composition ($|\mathcal{M}|=1{,}000$), and query set sizes ($|\mathcal{Q}_v|=|\mathcal{Q}_b|=100$).
 
 \item {\bf Experiment statistical significance}
     \item[] Question: Does the paper report error bars suitably and correctly defined or other appropriate information about the statistical significance of the experiments?

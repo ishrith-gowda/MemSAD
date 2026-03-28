@@ -21,7 +21,7 @@ from __future__ import annotations
 import random
 from typing import Any
 
-from src.data.corpus_extended import (
+from data.corpus_extended import (
     BENIGN_QUERIES_EXT,
     CALENDAR_EXT,
     CONFIGURATION_EXT,

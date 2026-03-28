@@ -376,7 +376,11 @@ class LocalAgentEvaluator:
     def _retrieve(self, memory_system, query: str, top_k: int) -> list[str]:
         """retrieve top-k entries from memory system for a query."""
         try:
-            results = memory_system.retrieve(query, top_k=top_k)
+            # vectormemorysystem uses search() for similarity retrieval
+            if hasattr(memory_system, "search"):
+                results = memory_system.search(query, top_k=top_k)
+            else:
+                results = memory_system.retrieve(query, top_k=top_k)
             return [r["content"] if isinstance(r, dict) else str(r) for r in results]
         except Exception:
             return []

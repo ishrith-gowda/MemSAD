@@ -537,8 +537,21 @@ class RetrievalSimulator:
         # pre-generate benign corpus once (reused across attack evaluations)
         self._corpus = SyntheticCorpus(seed=seed)
         self._benign_entries = self._corpus.generate_benign_entries(corpus_size)
-        self._victim_queries = [q["query"] for q in self._corpus.get_victim_queries()]
-        self._benign_queries = [q["query"] for q in self._corpus.get_benign_queries()]
+        # use extended queries for large-scale evaluation (100 each when corpus > 200)
+        if corpus_size > 200:
+            self._victim_queries = [
+                q["query"] for q in self._corpus.get_victim_queries_extended(100)
+            ]
+            self._benign_queries = [
+                q["query"] for q in self._corpus.get_benign_queries_extended(100)
+            ]
+        else:
+            self._victim_queries = [
+                q["query"] for q in self._corpus.get_victim_queries()
+            ]
+            self._benign_queries = [
+                q["query"] for q in self._corpus.get_benign_queries()
+            ]
 
         self.logger.logger.info(
             f"retrieval simulator initialised: {corpus_size} benign entries, "

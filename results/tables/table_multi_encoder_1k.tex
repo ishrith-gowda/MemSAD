@@ -1,0 +1,22 @@
+\begin{table}[t]
+\centering
+\small
+\caption{Multi-encoder evaluation at $|\mathcal{M}|=1000$.
+  ASR-R measures retrieval success of generic (non-optimized) poison templates.
+  SAD AUROC measures separation quality using \memsad{} ($\sigma=2.0$, combined mode).}
+\label{tab:multi_encoder}
+\begin{tabular}{l ccc ccc}
+\toprule
+& \multicolumn{3}{c}{ASR-R} & \multicolumn{3}{c}{SAD AUROC} \\
+\cmidrule(lr){2-4} \cmidrule(lr){5-7}
+Encoder & AP & MJ & IM & AP & MJ & IM \\
+\midrule
+  minilm & $0.000$ & $0.000$ & $0.010$ & $0.430$ & $0.062$ & $0.502$ \\
+  mpnet & $0.000$ & $0.000$ & $0.000$ & $0.524$ & $0.130$ & $0.506$ \\
+  e5-base & $0.020$ & $0.000$ & $0.000$ & $0.840$ & $0.126$ & $0.738$ \\
+  contriever & $0.010$ & $0.000$ & $0.000$ & $0.628$ & $0.548$ & $0.648$ \\
+  openai-small & $0.010$ & $0.000$ & $0.000$ & $0.514$ & $0.324$ & $0.456$ \\
+  openai-large & $0.010$ & $0.000$ & $0.020$ & $0.760$ & $0.418$ & $0.690$ \\
+\bottomrule
+\end{tabular}
+\end{table}

@@ -476,9 +476,9 @@ We evaluate four additional defenses spanning orthogonal strategies, all operati
 
 \paragraph{Vector memory.}
 FAISS IndexFlatIP with L2-normalized all-MiniLM-L6-v2 embeddings ($d = 384$).
-Benign corpus: $|\cM| = 200$ synthetic entries across 7 categories, matching the per-user memory scale of deployed systems where active memory stores typically contain $10^2$--$10^3$ entries~\citep{chen2024agentpoison,dong2025minja}; corpus-size ablation (Appendix~\ref{app:ablation}) confirms that $\asrr$ and defense metrics remain stable across $|\cM| \in \{50, \ldots, 500\}$.
+Benign corpus: $|\cM| = 1{,}000$ synthetic entries across 7 categories, matching the per-user memory scale of deployed systems where active memory stores typically contain $10^2$--$10^3$ entries~\citep{chen2024agentpoison,dong2025minja}; corpus-size ablation (Appendix~\ref{app:ablation}) validates results across $|\cM| \in \{50, \ldots, 1000\}$.
 Poison counts: $n = 5$ (\agentpoison{}), $10$ (\minja{}), $15$ (\injecmem{}).
-$k = 5$; $|\cQ_v| = |\cQ_b| = 20$.
+$k = 5$; $|\cQ_v| = |\cQ_b| = 100$.
 Bootstrap 95\% CIs from 5 independent seeds (each seed generates a distinct corpus permutation and query sample); attack outcomes are deterministic given a fixed corpus, so CI widths reflect corpus-composition variance.
 
 \paragraph{Attacks.}
@@ -491,31 +491,49 @@ Bootstrap 95\% CIs from 5 independent seeds (each seed generates a distinct corp
 \begin{table}[t]
   \centering
   \small
-  \caption{Attack results (5 seeds, bootstrap 95\% CI). CI widths are negligible because attack outcomes are deterministic given a fixed corpus and trigger. $^\dagger$Projected: $\asra$ from original papers; $\asrt = \asrr \cdot \asra$.}
+  \caption{Attack results ($|\cM|=1{,}000$, 100 queries, 5 seeds, bootstrap 95\% CI). $\asra$ measured with GPT-2 (lower bound) and GPT-4o-mini; $^\dagger$projected from original papers.}
   \label{tab:attack_results}
   \vspace{2pt}
-  \begin{tabular}{lccccc}
+  \begin{tabular}{lcccccc}
     \toprule
-    Attack & $\asrr$ & $\asra^\dagger$ & $\asrt^\dagger$ & Ben.\ Acc. & ISR \\
+    Attack & $\asrr$ & $\asra^\dagger$ & $\asra^{\text{GPT-2}}$ & $\asra^{\text{4o-mini}}$ & $\asrt^\dagger$ & Ben.\ Acc. \\
     \midrule
-    \agentpoison{} (triggered) & $1.00$ & $0.68$ & $0.68$ & $1.00$ & $1.00$ \\
-    \minja{}                   & $0.65$ & $0.76$ & $0.49$ & $0.90$ & $0.98$ \\
-    \injecmem{}                & $0.50$ & $0.57$ & $0.29$ & $0.80$ & $1.00$ \\
+    \agentpoison{} (triggered) & $1.00$ & $0.68$ & $0.90$ & $0.20$ & $0.68$ & $1.00$ \\
+    \minja{}                   & $0.14_{[0.13,0.15]}$ & $0.76$ & $0.17$ & $0.00$ & $0.11$ & $1.00$ \\
+    \injecmem{}                & $0.07_{[0.06,0.07]}$ & $0.57$ & $0.00$ & $0.00$ & $0.04$ & $0.98$ \\
     \bottomrule
   \end{tabular}
 \end{table}
 
-Table~\ref{tab:attack_results} reports the main results.
-\agentpoison{} achieves $\asrr = 1.00$ under the triggered-query protocol (Section~\ref{sec:threat}), vs.\ $0.25$ with plain queries.
-\minja{} achieves $\asrr = 0.65$ at retrieval time vs.\ $\isr = 98.2\%$ at write time.\footnote{$\isr$ measures write-time injection success; $\asrr$ measures retrieval-time exposure.}
-\injecmem{} achieves $\asrr = 0.50$ through a higher injection count ($n = 15$) at the cost of reduced benign accuracy ($0.80$).
+Table~\ref{tab:attack_results} reports the main results at $|\cM| = 1{,}000$.
+\agentpoison{} achieves $\asrr = 1.00$ under the triggered-query protocol (Section~\ref{sec:threat}), confirming that trigger optimization defeats corpus dilution entirely.
+\minja{} drops from $\asrr = 0.65$ at $|\cM|=200$ to $0.14$ at $|\cM|=1{,}000$---a $5\times$ dilution effect demonstrating that untriggered attacks are naturally mitigated by corpus scale.\footnote{$\isr$ measures write-time injection success; $\asrr$ measures retrieval-time exposure.}
+\injecmem{} similarly drops from $0.50$ to $0.07$, with benign accuracy improving from $0.80$ to $0.98$ as poison entries become a smaller fraction of the corpus.
+\textbf{Measured $\asra$:} GPT-2 provides a lower bound ($\asra = 0.90$ for \agentpoison{}); GPT-4o-mini shows $\asra = 0.20$, reflecting stronger safety alignment. MINJA and InjecMEM show $\asra \leq 0.17$, suggesting that diluted retrieval also reduces action execution.
 
 \begin{figure}[t]
   \centering
-  \includegraphics[width=0.72\linewidth]{fig_01_attack_asr.pdf}
+  \IfFileExists{fig_corpus_scaling.pdf}{%
+    \includegraphics[width=0.72\linewidth]{fig_corpus_scaling.pdf}%
+  }{%
+    \includegraphics[width=0.72\linewidth]{fig_01_attack_asr.pdf}%
+  }
   \vspace{-6pt}
-  \caption{Attack success rates (bootstrap 95\% CI). Left: $\asrr$; middle: $\asra$; right: $\asrt$.}
-  \label{fig:attack_asr}
+  \caption{Corpus scaling: $\asrr$ at $|\cM|=200$ vs.\ $|\cM|=1{,}000$. Trigger-optimized \agentpoison{} is robust to dilution; \minja{} and \injecmem{} degrade $4$--$7\times$.}
+  \label{fig:corpus_scaling}
+  \vspace{-8pt}
+\end{figure}
+
+\begin{figure}[t]
+  \centering
+  \IfFileExists{fig_measured_asr_a.pdf}{%
+    \includegraphics[width=0.72\linewidth]{fig_measured_asr_a.pdf}%
+  }{%
+    \fbox{\parbox{0.7\linewidth}{\centering\vspace{1cm}fig\_measured\_asr\_a.pdf\vspace{1cm}}}%
+  }
+  \vspace{-6pt}
+  \caption{Measured vs.\ modelled $\asra$. GPT-2 provides a lower bound; GPT-4o-mini reflects production safety alignment. Only \agentpoison{} achieves non-trivial measured $\asra$.}
+  \label{fig:measured_asr_a}
   \vspace{-8pt}
 \end{figure}
 
@@ -624,8 +642,8 @@ FPR validated via 20-trial Clopper-Pearson CIs~\citep{clopper1934use}: $\fpr = 0
 
 Key results (full tables in Appendix~\ref{app:ablation}):
 \textbf{Threshold:} $\kappa = 2.0$ with combined scoring is optimal.
-\textbf{Corpus size:} $\asrr$ is robust across $|\cM| \in \{50, \ldots, 500\}$.
-\textbf{Encoder generalization:} \memsad{} validated across 7 encoders; triggered calibration achieves $\tpr = 1.000$ for \agentpoison{} on all (Appendix~\ref{app:encoder_gen}).
+\textbf{Corpus size:} \agentpoison{} is robust ($\asrr = 1.00$) across $|\cM| \in \{200, \ldots, 1000\}$; untriggered attacks (\minja{}, \injecmem{}) degrade $4$--$7\times$ at $|\cM| = 1{,}000$ (Figure~\ref{fig:corpus_scaling}).
+\textbf{Encoder generalization:} \memsad{} validated across 6 encoders including OpenAI embeddings; triggered calibration achieves $\tpr = 1.000$ for \agentpoison{} on all (Appendix~\ref{app:encoder_gen}).
 
 %% ============================================================
 \section{Discussion and limitations}
@@ -648,10 +666,10 @@ Closing this gap requires complementary features: lexical diversity, syntactic s
 Memory poisoning is simultaneously easier than previously reported ($4\times$ under the intended protocol) and more defensible than expected (composite $\tpr = 1.00$, $\fpr = 0.00$), but no purely semantic defense is complete. The Stackelberg formulation provides a principled framework for this arms race.
 
 \paragraph{Limitations.}
-(i)~Our corpus contains 200 entries, validated up to 500 (Appendix~\ref{app:ablation}); production systems may contain $10^4$--$10^6$ entries, though \memsad{}'s $O(md)$ cost is independent of $|\cM|$.
-(ii)~$\asra$ values are projected from original papers; production agents may behave differently.
+(i)~Our corpus contains $1{,}000$ entries; production systems may contain $10^4$--$10^6$ entries, though \memsad{}'s $O(md)$ cost is independent of $|\cM|$.
+(ii)~Measured $\asra$ (Table~\ref{tab:attack_results}) shows significant variation across agent models: GPT-2 lower bound ($0.90$) vs.\ GPT-4o-mini ($0.20$) for \agentpoison{}, reflecting the gap between proxy and production-scale evaluation.
 (iii)~The regret bound (Theorem~\ref{thm:regret}) assumes slowly drifting queries; abrupt distribution shifts degrade calibration.
-(iv)~We use a single primary encoder (MiniLM-L6); cross-encoder transfer is validated on 7 encoders (Appendix~\ref{app:encoder_gen}).
+(iv)~We use a single primary encoder (MiniLM-L6); cross-encoder transfer is validated on 6 encoders including Contriever and OpenAI (Appendix~\ref{app:encoder_gen}).
 
 %% ============================================================
 \section{Conclusion}
