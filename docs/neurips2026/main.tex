@@ -609,28 +609,7 @@ The certified condition (Lemma~\ref{lem:certified}) still holds for \minja{} pos
 
 \subsection{Statistical hypothesis testing}
 
-Table~\ref{tab:hypothesis} reports one-sided binomial tests ($H_0$: $\tpr = 0$) with Bonferroni correction ($\alpha' = 0.003$, 15 comparisons). All composite results reject $H_0$ with power $= 1.00$; proactive vs.\ \minja{} ($p = 0.24$) fails to reject, consistent with the complementarity design.
-
-\begin{table}[t]
-  \centering
-  \small
-  \caption{Hypothesis tests ($H_0$: $\tpr = 0$, Bonferroni $\alpha' = 0.003$).}
-  \label{tab:hypothesis}
-  \vspace{2pt}
-  \begin{tabular}{l l c c c}
-    \toprule
-    Defense & Attack & $p$-value & Reject? & Power \\
-    \midrule
-    Watermark   & AP / MJ & $<10^{-6}$ & \checkmark & 1.00 \\
-    \memsad{}   & MJ      & $<10^{-6}$ & \checkmark & 1.00 \\
-    \memsad{}   & IM      & $0.001$    & \checkmark & 0.92 \\
-    Proactive   & AP      & $<10^{-6}$ & \checkmark & 1.00 \\
-    Proactive   & MJ      & $0.24$     & ---        & 0.08 \\
-    Composite   & All     & $<10^{-6}$ & \checkmark & 1.00 \\
-    \bottomrule
-  \end{tabular}
-  \vspace{-6pt}
-\end{table}
+One-sided binomial tests ($H_0$: $\tpr = 0$) with Bonferroni correction ($\alpha' = 0.003$, 15 comparisons): all composite results reject $H_0$ with power $= 1.00$; proactive vs.\ \minja{} ($p = 0.24$) fails to reject, consistent with the complementarity design. Full table in Appendix~\ref{app:hypothesis}.
 
 \subsection{\memsad{} detection characteristics}
 
@@ -977,6 +956,29 @@ For $N$ agents sharing $\cM_{\text{shared}}$, the discrete-step SIR model~\citep
 \end{definition}
 
 Without defense, steady-state infection is $I_\infty/N = 1 - \gamma/\beta$ for $\beta > \gamma$. With \memsad{} quarantine ($\tpr = 1.00$ for \minja{}), $\gamma_{\text{eff}} = \gamma + \tpr \cdot \beta$; the condition $\beta > \gamma_{\text{eff}}$ is never satisfied, eliminating secondary infection.
+
+\section{Statistical hypothesis tests}
+\label{app:hypothesis}
+
+\begin{table}[h]
+  \centering
+  \small
+  \caption{Hypothesis tests ($H_0$: $\tpr = 0$, Bonferroni $\alpha' = 0.003$).}
+  \label{tab:hypothesis}
+  \vspace{2pt}
+  \begin{tabular}{l l c c c}
+    \toprule
+    Defense & Attack & $p$-value & Reject? & Power \\
+    \midrule
+    Watermark   & AP / MJ & $<10^{-6}$ & \checkmark & 1.00 \\
+    \memsad{}   & MJ      & $<10^{-6}$ & \checkmark & 1.00 \\
+    \memsad{}   & IM      & $0.001$    & \checkmark & 0.92 \\
+    Proactive   & AP      & $<10^{-6}$ & \checkmark & 1.00 \\
+    Proactive   & MJ      & $0.24$     & ---        & 0.08 \\
+    Composite   & All     & $<10^{-6}$ & \checkmark & 1.00 \\
+    \bottomrule
+  \end{tabular}
+\end{table}
 
 \section{FPR validation}
 \label{app:fpr}
