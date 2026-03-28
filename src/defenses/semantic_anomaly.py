@@ -96,23 +96,33 @@ def _compute_auroc(scores: list[float], labels: list[int]) -> float:
     """
     compute auroc from raw scores and binary labels (1=positive/poison).
 
-    uses the trapezoidal rule via sorting — O(n log n).
-    returns 0.5 if all labels are the same class.
+    uses the wilcoxon-mann-whitney statistic with proper tie handling.
+    returns 0.5 if all labels are the same class or all scores are tied.
     """
+    import random as _rng
+
     n_pos = sum(labels)
     n_neg = len(labels) - n_pos
     if n_pos == 0 or n_neg == 0:
         return 0.5
 
-    # sort by descending score
-    paired = sorted(zip(scores, labels), reverse=True)
+    # check for degenerate case: all scores identical
+    if len(set(scores)) == 1:
+        return 0.5
+
+    # sort by descending score with randomized tie-breaking to avoid
+    # order-dependent auroc when scores are tied.
+    rng = _rng.Random(42)
+    paired = sorted(
+        zip(scores, labels, [rng.random() for _ in scores]),
+        key=lambda x: (-x[0], -x[2]),
+    )
     tp = 0
     auc = 0.0
-    for _, label in paired:
+    for _, label, _ in paired:
         if label == 1:
             tp += 1
         else:
-            # each new negative: area += tp (rectangles under ROC curve)
             auc += tp
     return auc / (n_pos * n_neg)
 
@@ -319,6 +329,10 @@ class SemanticAnomalyDetector:
         self.calibration_mean = float(np.mean(cal_scores))
         self.calibration_std = float(np.std(cal_scores)) + 1e-8
         self.is_calibrated = True
+
+        # store query embeddings so detect()/detect_batch() can score entries.
+        # without this, score_entry() returns (0.0, 0.0) for all entries.
+        self._query_embeddings = list(q_embs)
 
         threshold = self.calibration_mean + self.threshold_sigma * self.calibration_std
 
