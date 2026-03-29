@@ -17,6 +17,7 @@ neo4j
 openai
 anthropic
 transformers
+sentence-transformers
 torch
 scipy
 numpy
