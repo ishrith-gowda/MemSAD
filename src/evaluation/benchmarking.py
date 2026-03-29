@@ -612,7 +612,7 @@ class BenchmarkRunner:
             self.results.append(result)
 
             self.logger.logger.info(f"completed benchmark experiment: {experiment_id}")
-            return result  # type: ignore[no-any-return]
+            return result
 
         except Exception as e:
             self.logger.log_error(

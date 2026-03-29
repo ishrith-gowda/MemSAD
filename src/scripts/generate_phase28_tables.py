@@ -27,7 +27,7 @@ def load_results() -> dict:
     """load phase 28 results json."""
     path = Path("results/phase28/phase28_results.json")
     with open(path) as f:
-        return json.load(f)
+        return dict(json.load(f))
 
 
 def generate_table1(results: dict) -> None:

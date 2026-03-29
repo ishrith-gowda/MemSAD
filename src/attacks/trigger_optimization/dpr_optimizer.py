@@ -411,7 +411,7 @@ class DPRTriggerOptimizer:
         # return gradient at trigger position (clipped to valid range)
         seq_len = grad.shape[1]
         trig_seq_pos = min(trigger_pos_in_seq, seq_len - 1)
-        return grad[0, trig_seq_pos, :].detach()  # type: ignore[no-any-return]  # [d]
+        return torch.Tensor(grad[0, trig_seq_pos, :].detach())  # [d]
 
     # -----------------------------------------------------------------------
     # evaluation helpers

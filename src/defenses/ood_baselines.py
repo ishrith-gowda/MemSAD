@@ -17,6 +17,7 @@ all comments are lowercase.
 from __future__ import annotations
 
 from dataclasses import dataclass
+from typing import Any
 
 import numpy as np
 
@@ -75,7 +76,7 @@ class EnergyScoreDetector:
         self.temperature = temperature
         self.threshold_sigma = threshold_sigma
         self.model_name = model_name
-        self._encoder = None
+        self._encoder: Any = None
         self._query_embeddings: list[np.ndarray] = []
         self._cal_mean = 0.0
         self._cal_std = 1.0
@@ -95,7 +96,7 @@ class EnergyScoreDetector:
         embs = enc.encode(texts, show_progress_bar=False, convert_to_numpy=True)
         norms = np.linalg.norm(embs, axis=1, keepdims=True)
         norms = np.maximum(norms, 1e-10)
-        return embs / norms
+        return np.asarray(embs / norms)
 
     def _energy_score(self, entry_emb: np.ndarray) -> float:
         """compute energy score for a single entry embedding."""
@@ -163,7 +164,7 @@ class MahalanobisDetector:
     ):
         self.threshold_sigma = threshold_sigma
         self.model_name = model_name
-        self._encoder = None
+        self._encoder: Any = None
         self._mean: np.ndarray | None = None
         self._inv_cov: np.ndarray | None = None
         self._cal_mean = 0.0
@@ -184,7 +185,7 @@ class MahalanobisDetector:
         embs = enc.encode(texts, show_progress_bar=False, convert_to_numpy=True)
         norms = np.linalg.norm(embs, axis=1, keepdims=True)
         norms = np.maximum(norms, 1e-10)
-        return embs / norms
+        return np.asarray(embs / norms)
 
     def _mahalanobis_score(self, entry_emb: np.ndarray) -> float:
         """compute mahalanobis distance for a single entry."""
@@ -253,7 +254,7 @@ class KNNDetector:
         self.k = k
         self.threshold_sigma = threshold_sigma
         self.model_name = model_name
-        self._encoder = None
+        self._encoder: Any = None
         self._benign_embs: np.ndarray | None = None
         self._cal_mean = 0.0
         self._cal_std = 1.0
@@ -273,7 +274,7 @@ class KNNDetector:
         embs = enc.encode(texts, show_progress_bar=False, convert_to_numpy=True)
         norms = np.linalg.norm(embs, axis=1, keepdims=True)
         norms = np.maximum(norms, 1e-10)
-        return embs / norms
+        return np.asarray(embs / norms)
 
     def _knn_score(self, entry_emb: np.ndarray) -> float:
         """compute negative mean knn similarity (higher = more anomalous)."""

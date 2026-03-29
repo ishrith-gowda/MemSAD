@@ -557,7 +557,7 @@ class SyntheticCorpus:
             list of dicts with keys: query, topic, category
         """
         combined = VICTIM_QUERIES + VICTIM_QUERIES_EXT
-        return combined[: min(n, len(combined))]
+        return list(combined[: min(n, len(combined))])
 
     def get_benign_queries_extended(self, n: int = 100) -> list[dict[str, str]]:
         """
@@ -573,7 +573,7 @@ class SyntheticCorpus:
             list of dicts with keys: query, topic
         """
         combined = BENIGN_QUERIES + BENIGN_QUERIES_EXT
-        return combined[: min(n, len(combined))]
+        return list(combined[: min(n, len(combined))])
 
     def get_all_query_strings(
         self, extended: bool = False

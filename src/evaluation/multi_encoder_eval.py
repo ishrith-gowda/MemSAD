@@ -142,7 +142,7 @@ class OpenAIEncoder(EncoderBase):
         # l2-normalise (openai returns unit-norm embeddings, but defensive)
         norms = np.linalg.norm(arr, axis=1, keepdims=True)
         norms = np.where(norms < 1e-9, 1.0, norms)
-        return arr / norms  # type: ignore[no-any-return]
+        return np.asarray(arr / norms)
 
 
 # ---------------------------------------------------------------------------

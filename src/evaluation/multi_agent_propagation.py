@@ -154,8 +154,8 @@ class SharedKnowledgeBase:
 
     def _encode(self, texts: list[str]) -> np.ndarray:
         """encode to normalised float32 vectors."""
-        return self._st.encode(
-            texts, normalize_embeddings=True, show_progress_bar=False
+        return np.asarray(
+            self._st.encode(texts, normalize_embeddings=True, show_progress_bar=False)
         ).astype(np.float32)
 
     def insert_batch(

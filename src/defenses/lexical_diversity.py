@@ -575,7 +575,7 @@ class SADWithLexicalGate:
         returns:
             dict with tpr, fpr, auroc for combined detector
         """
-        verdict_levels = {"pass": 0, "soft_flag": 1, "hard_block": 2}
+        verdict_levels = {"pass": 0, "soft_flag": 1, "hard_block": 2}  # nosec B105
         min_level = verdict_levels[verdict_threshold]
 
         all_entries = poison_entries + benign_entries

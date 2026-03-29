@@ -63,7 +63,7 @@ class configmanager:
                 self._validate_config(config_path, config)
 
             self._loaded_configs[config_path] = config
-            return config  # type: ignore[no-any-return]
+            return DictConfig(config)
 
         except yaml.YAMLError as e:
             raise ValueError(f"invalid yaml in {config_path}: {e}")
