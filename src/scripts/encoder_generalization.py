@@ -2,10 +2,8 @@
 encoder generalization experiment for sad (semantic anomaly detection).
 
 evaluates whether sad's detection performance is robust to the choice of
-sentence-transformer encoder.  three encoders are compared:
-  - all-MiniLM-L6-v2    (384-dim, default / production retriever)
-  - all-mpnet-base-v2   (768-dim, higher capacity)
-  - paraphrase-MiniLM-L6-v2  (384-dim, paraphrase-optimized)
+sentence-transformer encoder.  seven encoders are compared spanning different
+architectures, dimensions, and training objectives.
 
 for each encoder and each attack (minja, injecmem, agentpoison-triggered),
 we calibrate sad on that encoder's embedding space and measure tpr / fpr
@@ -14,7 +12,7 @@ at k=2.0.  the experiment tests the hypothesis that sad's detection signal
 to encoder capacity and training objective.
 
 usage (from repo root):
-    python3 -m src.scripts.encoder_generalization
+    python3 -m src.scripts.encoder_generalization [--corpus-size 1000]
 
 outputs:
     docs/paper/figures/fig_encoder_generalization.pdf/.png
@@ -47,7 +45,12 @@ _ENCODERS = [
     ("all-MiniLM-L6-v2", "MiniLM-L6\n(384-d)"),
     ("all-mpnet-base-v2", "MPNet-Base\n(768-d)"),
     ("paraphrase-MiniLM-L6-v2", "Para-MiniLM\n(384-d)"),
+    ("intfloat/e5-base-v2", "E5-Base\n(768-d)"),
+    ("facebook/contriever", "Contriever\n(768-d)"),
 ]
+
+# default corpus size (updated for phase 30 consistency with main experiments)
+_DEFAULT_CORPUS_SIZE = 1000
 
 # attacks evaluated per encoder
 _ATTACKS = ["minja", "injecmem", "agentpoison_triggered"]
@@ -58,7 +61,9 @@ _ATTACK_LABELS = {
 }
 
 
-def _run_encoder_experiment(encoder_name: str) -> dict:
+def _run_encoder_experiment(
+    encoder_name: str, corpus_size: int = _DEFAULT_CORPUS_SIZE
+) -> dict:
     """
     run sad evaluation for a single encoder over all three attacks.
 
@@ -71,10 +76,15 @@ def _run_encoder_experiment(encoder_name: str) -> dict:
 
     rng_seed = 42
     corpus = SyntheticCorpus(seed=rng_seed)
-    benign_entries = corpus.generate_benign_entries(200)
-    victim_qs = [q["query"] for q in corpus.get_victim_queries()]
+    benign_entries = corpus.generate_benign_entries(corpus_size)
+    if corpus_size > 200:
+        victim_qs = [q["query"] for q in corpus.get_victim_queries_extended(100)]
+    else:
+        victim_qs = [q["query"] for q in corpus.get_victim_queries()]
 
     benign_texts = [e["content"] for e in benign_entries]
+    # use first half for calibration, second half for test
+    n_cal = len(benign_texts) // 2
 
     from evaluation.retrieval_sim import (
         generate_centroid_agentpoison_passage,
@@ -98,8 +108,10 @@ def _run_encoder_experiment(encoder_name: str) -> dict:
 
     # --- minja (plain calibration) —
     # minja poison: bridging-step passages, one per victim query × malicious goal
-    det_minja = SemanticAnomalyDetector(threshold_sigma=2.0, model_name=encoder_name)
-    det_minja.calibrate(benign_texts[:100], victim_qs[:10])
+    det_minja = SemanticAnomalyDetector(
+        threshold_sigma=2.0, model_name=encoder_name, scoring_mode="combined"
+    )
+    det_minja.calibrate(benign_texts[:n_cal], victim_qs[:10])
     for q in victim_qs:
         det_minja.update_query_set(q)
 
@@ -108,7 +120,7 @@ def _run_encoder_experiment(encoder_name: str) -> dict:
         for q in victim_qs[:5]
         for goal in malicious_goals[:1]
     ]
-    r_minja = det_minja.evaluate_on_corpus(minja_poison, benign_texts[100:200])
+    r_minja = det_minja.evaluate_on_corpus(minja_poison, benign_texts[n_cal:])
     results["minja"] = {
         "tpr": r_minja["tpr"],
         "fpr": r_minja["fpr"],
@@ -118,8 +130,10 @@ def _run_encoder_experiment(encoder_name: str) -> dict:
 
     # --- injecmem (plain calibration) —
     # injecmem: retriever-agnostic anchor passages, 3x per template
-    det_injec = SemanticAnomalyDetector(threshold_sigma=2.0, model_name=encoder_name)
-    det_injec.calibrate(benign_texts[:100], victim_qs[:10])
+    det_injec = SemanticAnomalyDetector(
+        threshold_sigma=2.0, model_name=encoder_name, scoring_mode="combined"
+    )
+    det_injec.calibrate(benign_texts[:n_cal], victim_qs[:10])
     for q in victim_qs:
         det_injec.update_query_set(q)
 
@@ -127,7 +141,7 @@ def _run_encoder_experiment(encoder_name: str) -> dict:
         generate_injecmem_passage(malicious_goals[0], variant_index=i) for i in range(5)
     ] * 3  # 3x copies per injecmem design
 
-    r_injec = det_injec.evaluate_on_corpus(injecmem_poison, benign_texts[100:200])
+    r_injec = det_injec.evaluate_on_corpus(injecmem_poison, benign_texts[n_cal:])
     results["injecmem"] = {
         "tpr": r_injec["tpr"],
         "fpr": r_injec["fpr"],
@@ -136,8 +150,10 @@ def _run_encoder_experiment(encoder_name: str) -> dict:
     }
 
     # --- agentpoison — triggered calibration —
-    det_ap = SemanticAnomalyDetector(threshold_sigma=2.0, model_name=encoder_name)
-    det_ap.calibrate_triggered(benign_texts[:100], victim_qs[:10], trigger)
+    det_ap = SemanticAnomalyDetector(
+        threshold_sigma=2.0, model_name=encoder_name, scoring_mode="combined"
+    )
+    det_ap.calibrate_triggered(benign_texts[:n_cal], victim_qs[:10], trigger)
     triggered_qs = [f"{trigger} {q}" for q in victim_qs]
     for q in triggered_qs:
         det_ap.update_query_set(q)
@@ -146,7 +162,7 @@ def _run_encoder_experiment(encoder_name: str) -> dict:
         generate_centroid_agentpoison_passage(victim_qs, goal)
         for goal in malicious_goals
     ]
-    r_ap = det_ap.evaluate_on_corpus(ap_poison, benign_texts[100:200])
+    r_ap = det_ap.evaluate_on_corpus(ap_poison, benign_texts[n_cal:])
     results["agentpoison_triggered"] = {
         "tpr": r_ap["tpr"],
         "fpr": r_ap["fpr"],
@@ -157,7 +173,7 @@ def _run_encoder_experiment(encoder_name: str) -> dict:
     return results
 
 
-def run_all_encoders() -> dict:
+def run_all_encoders(corpus_size: int = _DEFAULT_CORPUS_SIZE) -> dict:
     """
     run encoder generalization across all encoder / attack combinations.
 
@@ -167,7 +183,7 @@ def run_all_encoders() -> dict:
     all_results = {}
     for enc_name, _enc_label in _ENCODERS:
         print(f"  evaluating encoder: {enc_name} ...")
-        all_results[enc_name] = _run_encoder_experiment(enc_name)
+        all_results[enc_name] = _run_encoder_experiment(enc_name, corpus_size)
     return all_results
 
 
@@ -280,9 +296,11 @@ def generate_encoder_table(all_results: dict) -> Path:
     """
     enc_names = [e[0] for e in _ENCODERS]
     enc_short = {
-        "all-MiniLM-L6-v2": r"\texttt{MiniLM-L6}",
-        "all-mpnet-base-v2": r"\texttt{MPNet-Base}",
-        "paraphrase-MiniLM-L6-v2": r"\texttt{Para-MiniLM}",
+        "all-MiniLM-L6-v2": r"MiniLM-L6 ($d{=}384$)",
+        "all-mpnet-base-v2": r"MPNet-Base ($d{=}768$)",
+        "paraphrase-MiniLM-L6-v2": r"Para-MiniLM ($d{=}384$)",
+        "intfloat/e5-base-v2": r"E5-Base ($d{=}768$)",
+        "facebook/contriever": r"Contriever ($d{=}768$)",
     }
     atk_labels = {
         "minja": r"\minja{}",
@@ -295,12 +313,11 @@ def generate_encoder_table(all_results: dict) -> Path:
     lines.append(r"  \centering")
     lines.append(r"  \small")
     lines.append(
-        r"  \caption{SAD encoder generalization: TPR / FPR / AUROC at $k=2.0$ "
-        r"for three sentence-transformer encoders.  Results are consistent "
-        r"across encoder capacity and training objective, confirming that "
-        r"SAD's detection signal is encoder-agnostic.}"
+        r"  \caption{Encoder generalization: \memsad{} across "
+        + str(len(enc_names))
+        + r" encoders ($\kappa = 2.0$, combined scoring).}"
     )
-    lines.append(r"  \label{tab:encoder_generalization}")
+    lines.append(r"  \label{tab:encoder_gen}")
     lines.append(r"  \begin{tabular}{llccc}")
     lines.append(r"    \toprule")
     lines.append(r"    Encoder & Attack & TPR & FPR & AUROC \\")
@@ -338,8 +355,18 @@ def generate_encoder_table(all_results: dict) -> Path:
 
 def main() -> None:
     """run encoder generalization experiment and save figure + table."""
-    print("running encoder generalization experiment ...")
-    all_results = run_all_encoders()
+    import argparse
+
+    parser = argparse.ArgumentParser(description="encoder generalization experiment")
+    parser.add_argument(
+        "--corpus-size", type=int, default=_DEFAULT_CORPUS_SIZE, help="corpus size"
+    )
+    args = parser.parse_args()
+
+    print(
+        f"running encoder generalization experiment (corpus_size={args.corpus_size}) ..."
+    )
+    all_results = run_all_encoders(corpus_size=args.corpus_size)
 
     print("generating figure ...")
     generate_encoder_generalization_figure(all_results)

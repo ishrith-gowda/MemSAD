@@ -1,0 +1,19 @@
+\begin{table}[h]
+  \centering
+  \small
+  \caption{OOD detection baseline comparison at $|\cM|=1{,}000$. \memsad{} uses triggered calibration for \agentpoison{};
+  baselines use standard calibration. AUROC reported.}
+  \label{tab:ood_comparison}
+  \begin{tabular}{l ccc ccc}
+    \toprule
+    & \multicolumn{3}{c}{AUROC} & \multicolumn{3}{c}{TPR ($\fpr \leq 0.05$)} \\
+    \cmidrule(lr){2-4} \cmidrule(lr){5-7}
+    Method & AP & MJ & IM & AP & MJ & IM \\
+    \midrule
+    \memsad{} (ours) & $1.000$ & $0.914$ & $0.816$ & $1.00$ & $0.80$ & $0.40$ \\
+    Energy Score & $0.945$ & $0.969$ & $0.698$ & $0.40$ & $0.20$ & $0.40$ \\
+    Mahalanobis & $0.420$ & $0.694$ & $0.452$ & $1.00$ & $1.00$ & $1.00$ \\
+    KNN ($k=10$) & $0.533$ & $0.786$ & $0.534$ & $0.00$ & $0.40$ & $0.00$ \\
+    \bottomrule
+  \end{tabular}
+\end{table}

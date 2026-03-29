@@ -1,23 +1,31 @@
 \begin{table}[h]
   \centering
   \small
-  \caption{SAD encoder generalization: TPR / FPR / AUROC at $k=2.0$ for three sentence-transformer encoders.  Results are consistent across encoder capacity and training objective, confirming that SAD's detection signal is encoder-agnostic.}
-  \label{tab:encoder_generalization}
+  \caption{Encoder generalization: \memsad{} across 5 encoders ($\kappa = 2.0$, combined scoring).}
+  \label{tab:encoder_gen}
   \begin{tabular}{llccc}
     \toprule
     Encoder & Attack & TPR & FPR & AUROC \\
     \midrule
-    \texttt{MiniLM-L6} & \minja{} & 0.800 & 0.090 & 0.966 \\
-     & \injecmem{} & 0.400 & 0.090 & 0.816 \\
-     & \agentpoison{} (trig.) & 1.000 & 0.040 & 1.000 \\
+    MiniLM-L6 ($d{=}384$) & \minja{} & 0.800 & 0.138 & 0.914 \\
+     & \injecmem{} & 0.400 & 0.138 & 0.816 \\
+     & \agentpoison{} (trig.) & 1.000 & 0.090 & 1.000 \\
     \midrule
-    \texttt{MPNet-Base} & \minja{} & 1.000 & 0.100 & 0.954 \\
-     & \injecmem{} & 0.200 & 0.100 & 0.840 \\
-     & \agentpoison{} (trig.) & 1.000 & 0.100 & 1.000 \\
+    MPNet-Base ($d{=}768$) & \minja{} & 1.000 & 0.126 & 0.940 \\
+     & \injecmem{} & 0.400 & 0.126 & 0.886 \\
+     & \agentpoison{} (trig.) & 1.000 & 0.084 & 1.000 \\
     \midrule
-    \texttt{Para-MiniLM} & \minja{} & 1.000 & 0.080 & 0.978 \\
-     & \injecmem{} & 0.000 & 0.080 & 0.744 \\
-     & \agentpoison{} (trig.) & 1.000 & 0.040 & 1.000 \\
+    Para-MiniLM ($d{=}384$) & \minja{} & 1.000 & 0.184 & 0.957 \\
+     & \injecmem{} & 0.000 & 0.184 & 0.645 \\
+     & \agentpoison{} (trig.) & 1.000 & 0.068 & 0.998 \\
+    \midrule
+    E5-Base ($d{=}768$) & \minja{} & 1.000 & 0.158 & 0.978 \\
+     & \injecmem{} & 1.000 & 0.158 & 0.946 \\
+     & \agentpoison{} (trig.) & 1.000 & 0.074 & 0.997 \\
+    \midrule
+    Contriever ($d{=}768$) & \minja{} & 1.000 & 0.214 & 0.922 \\
+     & \injecmem{} & 0.400 & 0.214 & 0.759 \\
+     & \agentpoison{} (trig.) & 1.000 & 0.144 & 0.926 \\
     \bottomrule
   \end{tabular}
 \end{table}

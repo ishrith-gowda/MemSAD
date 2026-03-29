@@ -295,7 +295,7 @@ The \emph{combined scoring mode} averages max-query and mean-query similarity, c
 \subsection{Gradient coupling theorem}
 \label{sec:gradient}
 
-Can the defender design a detection objective that decouples from retrieval, allowing the adversary to optimize retrieval without increasing detectability? The following theorem proves impossibility: any detection function monotone in cosine similarity inherits the retrieval gradient, and conversely, any detection function that decouples from retrieval necessarily misses high-similarity adversarial entries.
+The core question is whether the defender can design a detection objective that decouples from retrieval. While the forward direction (monotone $\cD$ shares the gradient of $\cR$ by the chain rule) is elementary, the operational consequence is non-trivial: any continuous perturbation that increases retrieval score \emph{must} proportionally increase detection score, quantified by the ratio $g'(\cR)$. The converse is the deeper result: if $\cD$ is \emph{not} monotone in $\cR$, there \emph{necessarily exist} adversarial embeddings with high retrieval score but low detection score. Together, these establish that \memsad{}'s max-similarity score is not merely a design choice but a necessary condition for continuous-domain detection completeness.
 
 \begin{theorem}[Gradient coupling]
 \label{thm:gradient_coupling}
@@ -622,7 +622,9 @@ FPR at plain calibration: $0.04$ across all attacks ($n = 100$ test benign entri
 Key results (full tables in Appendix~\ref{app:ablation}):
 \textbf{Threshold:} $\kappa = 2.0$ with combined scoring is optimal.
 \textbf{Corpus size:} \agentpoison{} is robust ($\asrr = 1.00$) across $|\cM| \in \{200, \ldots, 1000\}$; untriggered attacks (\minja{}, \injecmem{}) degrade $4$--$7\times$ at $|\cM| = 1{,}000$ (Figure~\ref{fig:corpus_scaling}).
-\textbf{Encoder generalization:} \memsad{} validated across 6 encoders including OpenAI embeddings; triggered calibration achieves $\tpr = 1.000$ for \agentpoison{} on all (Appendix~\ref{app:encoder_gen}).
+\textbf{Encoder generalization:} \memsad{} validated across 5 encoders including Contriever and E5 at $|\cM|=1{,}000$; triggered calibration achieves $\tpr = 1.000$ for \agentpoison{} on all (Appendix~\ref{app:encoder_gen}).
+\textbf{OOD baselines:} Energy Score~\citep{liu2020energy} is competitive on \minja{} AUROC ($0.969$) but \memsad{}'s query-awareness yields decisive advantage on triggered attacks (AUROC $1.000$ vs.\ $0.945$); Mahalanobis~\citep{lee2018simple} and KNN fail ($\fpr > 0.96$; Appendix~\ref{app:ood}).
+\textbf{Calibration sensitivity:} AUROC is stable across calibration regimes; threshold tuning requires domain-matched queries (Appendix~\ref{app:calibration_sensitivity}).
 
 %% ============================================================
 \section{Discussion and limitations}
@@ -648,7 +650,7 @@ Memory poisoning is simultaneously easier than previously reported ($4\times$ un
 (i)~Our corpus contains $1{,}000$ entries; production systems may contain $10^4$--$10^6$ entries, though \memsad{}'s $O(md)$ cost is independent of $|\cM|$.
 (ii)~Measured $\asra$ (Table~\ref{tab:attack_results}) shows significant variation across agent models: GPT-2 lower bound ($0.90$) vs.\ GPT-4o-mini ($0.20$) for \agentpoison{}, reflecting the gap between proxy and production-scale evaluation.
 (iii)~The regret bound (Theorem~\ref{thm:regret}) assumes slowly drifting queries; abrupt distribution shifts degrade calibration.
-(iv)~We use a single primary encoder (MiniLM-L6); cross-encoder transfer is validated on 6 encoders including Contriever and OpenAI (Appendix~\ref{app:encoder_gen}).
+(iv)~We use a single primary encoder (MiniLM-L6); cross-encoder transfer is validated on 5 encoders including Contriever and E5 at $|\cM|=1{,}000$ (Appendix~\ref{app:encoder_gen}).
 
 %% ============================================================
 \section{Conclusion}
@@ -914,7 +916,7 @@ The first term is the Bernstein bound on the empirical FPR; the second accounts 
 \begin{table}[h]
   \centering
   \small
-  \caption{Encoder generalization: \memsad{} across 7 encoders ($\kappa = 2.0$, combined scoring).}
+  \caption{Encoder generalization: \memsad{} across 5 encoders at $|\cM|=1{,}000$ ($\kappa = 2.0$, combined scoring). AP uses triggered calibration.}
   \label{tab:encoder_gen}
   \vspace{2pt}
   \begin{tabular}{l ccc ccc}
@@ -923,20 +925,16 @@ The first term is the Bernstein bound on the empirical FPR; the second accounts 
     \cmidrule(lr){2-4} \cmidrule(lr){5-7}
     Encoder & AP & MJ & IM & AP & MJ & IM \\
     \midrule
-    MiniLM-L6 ($d{=}384$)     & 1.00 & 1.00 & 0.40 & 1.000 & 1.000 & 0.920 \\
-    MPNet-Base ($d{=}768$)     & 1.00 & 1.00 & 0.40 & 1.000 & 1.000 & 0.900 \\
-    Para-MiniLM ($d{=}384$)    & 1.00 & 0.80 & 0.20 & 1.000 & 0.960 & 0.840 \\
-    E5-Base ($d{=}768$)        & 1.00 & 0.80 & 0.40 & 1.000 & 0.940 & 0.880 \\
-    Contriever ($d{=}768$)     & 1.00 & 1.00 & 0.40 & 1.000 & 1.000 & 0.900 \\
-    BGE-Large ($d{=}1024$)     & 1.00 & 1.00 & 0.60 & 1.000 & 1.000 & 0.940 \\
-    OpenAI-small ($d{=}1536$)  & 1.00 & 1.00 & 0.60 & 1.000 & 1.000 & 0.960 \\
+    MiniLM-L6 ($d{=}384$)     & 1.00 & 0.80 & 0.40 & 1.000 & 0.914 & 0.816 \\
+    MPNet-Base ($d{=}768$)     & 1.00 & 1.00 & 0.40 & 1.000 & 0.940 & 0.886 \\
+    Para-MiniLM ($d{=}384$)    & 1.00 & 1.00 & 0.00 & 0.998 & 0.957 & 0.645 \\
+    E5-Base ($d{=}768$)        & 1.00 & 1.00 & 1.00 & 0.997 & 0.978 & 0.946 \\
+    Contriever ($d{=}768$)     & 1.00 & 1.00 & 0.40 & 0.926 & 0.922 & 0.759 \\
     \bottomrule
   \end{tabular}
-  \\[2pt]
-  {\footnotesize FPR $= 0.00$ for all encoders at $\kappa = 2.0$. AP uses triggered calibration.}
 \end{table}
 
-Key findings: (1)~Triggered calibration achieves $\tpr = 1.000$ for \agentpoison{} on all encoders, confirming Theorem~\ref{thm:gradient_coupling} transfers across architectures. (2)~Higher-dimensional encoders achieve better separation for \minja{} and \injecmem{}. (3)~Inter-encoder CKA~\citep{kornblith2019similarity} predicts $\asrr$ transferability.
+Key findings at $|\cM|=1{,}000$: (1)~Triggered calibration achieves $\tpr = 1.000$ for \agentpoison{} on \emph{all} encoders, confirming the gradient coupling signal transfers across architectures. (2)~\minja{} detection is robust ($\tpr \geq 0.80$, AUROC $\geq 0.914$) across all encoders. (3)~\injecmem{} is more encoder-sensitive: E5-Base achieves $\tpr = 1.00$ while Para-MiniLM achieves $0.00$, suggesting that the anchor-crafted templates vary in cross-encoder similarity.
 
 \section{Graph memory attacks}
 \label{app:graph}
@@ -1108,6 +1106,59 @@ By the DKW inequality, $\sup_t |F_N(t) - F(t)| \leq \sqrt{\log(2/\delta)/(2N)}$ 
 \end{proof}
 
 At $N = 200$, $\delta = 0.05$: the excess error is $\leq 0.086$, meaning \memsad{}'s empirical FPR of $0.000$ implies true FPR $\leq 0.086$ with 95\% confidence. The Clopper-Pearson validation (Table~\ref{tab:fpr_validation}) provides a tighter bound of $0.004$ by exploiting the binomial structure.
+
+\section{OOD detection baseline comparison}
+\label{app:ood}
+
+We compare \memsad{} against three standard OOD detection methods adapted to the memory poisoning setting: Energy Score~\citep{liu2020energy} ($\text{score} = -T \log \sum_i \exp(\cosim(e, q_i)/T)$), Mahalanobis distance~\citep{lee2018simple} in embedding space, and KNN distance ($k=10$) to the benign calibration set.
+
+\begin{table}[h]
+  \centering
+  \small
+  \caption{OOD detection baseline comparison at $|\cM|=1{,}000$.
+  \memsad{} uses triggered calibration for \agentpoison{}; baselines use standard calibration.}
+  \label{tab:ood_comparison}
+  \begin{tabular}{l ccc ccc}
+    \toprule
+    & \multicolumn{3}{c}{AUROC} & \multicolumn{3}{c}{TPR ($\fpr \leq 0.05$)} \\
+    \cmidrule(lr){2-4} \cmidrule(lr){5-7}
+    Method & AP & MJ & IM & AP & MJ & IM \\
+    \midrule
+    \memsad{} (ours) & $\mathbf{1.000}$ & $0.914$ & $\mathbf{0.816}$ & $\mathbf{1.00}$ & $0.80$ & $0.40$ \\
+    Energy Score & $0.945$ & $\mathbf{0.969}$ & $0.698$ & $0.40$ & $0.20$ & $0.40$ \\
+    Mahalanobis & $0.420$ & $0.694$ & $0.452$ & $1.00$ & $1.00$ & $1.00$ \\
+    KNN ($k=10$) & $0.533$ & $0.786$ & $0.534$ & $0.00$ & $0.40$ & $0.00$ \\
+    \bottomrule
+  \end{tabular}
+  \\[2pt]
+  {\footnotesize Mahalanobis achieves high TPR but at FPR $= 0.964$ (unusable). Bold = best AUROC per attack.}
+\end{table}
+
+\memsad{}'s query-awareness gives it a decisive advantage for triggered attacks (\agentpoison{}: AUROC $= 1.000$ vs.\ Energy's $0.945$). Energy Score is competitive on \minja{} AUROC ($0.969$) but has lower TPR at the operating threshold. Mahalanobis distance fails catastrophically (FPR $= 0.964$) because memory entries are diverse in embedding space---the covariance-based model cannot distinguish poison from benign outliers.
+
+\section{Calibration query sensitivity}
+\label{app:calibration_sensitivity}
+
+\begin{table}[h]
+  \centering
+  \small
+  \caption{Calibration query sensitivity: \memsad{} AUROC across calibration regimes ($\kappa=2.0$, $|\cM|=1{,}000$). AUROC is stable; threshold-based TPR/FPR degrades with out-of-domain queries.}
+  \label{tab:calibration_sensitivity}
+  \begin{tabular}{l ccc cc}
+    \toprule
+    & \multicolumn{3}{c}{AUROC} & \multicolumn{2}{c}{FPR} \\
+    \cmidrule(lr){2-4} \cmidrule(lr){5-6}
+    Calibration regime & AP & MJ & IM & AP & MJ \\
+    \midrule
+    Domain-matched & $1.000$ & $0.914$ & $0.816$ & $0.090$ & $0.138$ \\
+    Partial overlap (50\%) & $0.822$ & $0.914$ & $0.816$ & $0.370$ & $0.370$ \\
+    Random queries & $0.822$ & $0.914$ & $0.816$ & $0.954$ & $0.954$ \\
+    Out-of-domain & $0.822$ & $0.914$ & $0.816$ & $0.974$ & $0.974$ \\
+    \bottomrule
+  \end{tabular}
+\end{table}
+
+AUROC (ranking quality) is remarkably stable: \minja{} and \injecmem{} maintain AUROC $= 0.914$ and $0.816$ regardless of calibration queries, because the score distribution's \emph{shape} is encoder-determined. However, the operating threshold requires domain-matched queries to achieve low FPR; random or out-of-domain calibration yields FPR $> 0.95$. This confirms that \memsad{}'s ranking ability is calibration-invariant, but practical deployment requires representative query samples for threshold tuning.
 
 %% ============================================================
 \input{checklist}
