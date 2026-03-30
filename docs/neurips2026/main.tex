@@ -140,7 +140,7 @@ Unlike training-time backdoor attacks that embed triggers via parameter poisonin
 On the defense side, A-MemGuard~\citep{amemguard2025} proposes proactive defenses via query rewriting, RevPRAG~\citep{tan2025revprag} detects poisoning through LLM activation analysis, ReliabilityRAG~\citep{reliabilityrag2025} provides provable robustness via graph-theoretic MIS, and SeCon-RAG~\citep{seconrag2025} uses entity-intent extraction. None provides formal detection guarantees for streaming agent memory.
 
 \paragraph{RAG corpus poisoning and certified defenses.}
-\citet{zou2024poisonedrag} optimize adversarial documents via HotFlip~\citep{ebrahimi2018hotflip} ($> 90\%$ ASR on million-document corpora).
+\citet{zou2024poisonedrag} optimize adversarial documents via HotFlip~\citep{ebrahimi2018hotflip} ($>\!90\%$ ASR on million-document corpora).
 \citet{xiang2024robustrag} provide certified robustness via \emph{isolate-then-aggregate}, but require post-retrieval processing of $k$ passages.
 RAGDefender~\citep{ragdefender2025} applies post-retrieval passage scoring; SPECTRE~\citep{hayase2021spectre} uses spectral detection requiring full corpus access ($O(|\cM|^2 d)$).
 Our work differs along three axes: (i)~defenses operate at \emph{write time} on individual entries ($O(md)$ per entry), (ii)~we require no corpus-level access, and (iii)~we provide both a certified detection radius (Lemma~\ref{lem:certified}) and minimax optimality (Theorem~\ref{thm:minimax_lower}), whereas prior certificates apply post-retrieval.
@@ -362,7 +362,7 @@ We establish four additional results; full statements and proofs are in Appendix
 For Gaussian benign/poisoned score distributions with SNR $\rho$, any threshold detector calibrated on $N$ samples satisfies $\fpr + (1 - \tpr) \geq 1 - \rho\sqrt{N}/2$. Reliable detection requires $N \geq 4(1-\epsilon)^2/\rho^2$.
 \end{theorem}
 
-\noindent \memsad{} achieves reliable detection with $N = O(\log(1/\delta)/\rho^2)$ (Theorem~\ref{thm:calibration_bound}), matching the $\Omega(1/\rho^2)$ lower bound up to $\log(1/\delta)$---establishing minimax optimality via Le Cam's method~\citep{lecam1973convergence}.
+\noindent \memsad{} achieves reliable detection with $N = O(\log(1/\delta)/\rho^2)$ (Theorem~\ref{thm:calibration_bound}), matching the $\Omega(1/\rho^2)$ lower bound up to $\log(1/\delta)$, thereby establishing minimax optimality via Le Cam's method~\citep{lecam1973convergence}.
 
 \begin{theorem}[Calibration bound]
 \label{thm:calibration_bound}
@@ -470,7 +470,7 @@ Bootstrap 95\% CIs from 5 independent seeds (each seed generates a distinct corp
 
 Table~\ref{tab:attack_results} reports the main results at $|\cM| = 1{,}000$.
 \agentpoison{} achieves $\asrr = 1.00$ under the triggered-query protocol (Section~\ref{sec:threat}), confirming that trigger optimization defeats corpus dilution entirely.
-\minja{} drops from $\asrr = 0.65$ at $|\cM|=200$ to $0.14$ at $|\cM|=1{,}000$---a $5\times$ dilution effect demonstrating that untriggered attacks are naturally mitigated by corpus scale.\footnote{$\isr$ measures write-time injection success; $\asrr$ measures retrieval-time exposure.}
+\minja{} drops from $\asrr = 0.65$ at $|\cM|=200$ to $0.14$ at $|\cM|=1{,}000$, a $5\times$ dilution effect demonstrating that untriggered attacks are naturally mitigated by corpus scale.\footnote{$\isr$ measures write-time injection success; $\asrr$ measures retrieval-time exposure.}
 \injecmem{} similarly drops from $0.50$ to $0.07$, with benign accuracy improving from $0.80$ to $0.98$ as poison entries become a smaller fraction of the corpus.
 \textbf{Measured $\asra$:} GPT-2 provides a lower bound ($\asra = 0.90$ for \agentpoison{}); GPT-4o-mini shows $\asra = 0.20$, reflecting stronger safety alignment. MINJA and InjecMEM show $\asra \leq 0.17$, suggesting that diluted retrieval also reduces action execution.
 
@@ -558,7 +558,7 @@ Key results (full tables in Appendix~\ref{app:ablation}):
 Memory poisoning compounds over sessions: $P(\text{compromise in } N \text{ sessions}) = 1 - (1 - \asrr)^{Nq}$ for $q$ queries/session. Even \minja{} at $\asrr = 0.14$ reaches 90\% compromise in 4 sessions; composite defense ($\asrr^* = 0$) is necessary (Table~\ref{tab:compound_exposure}, Appendix~\ref{app:compound}).
 
 \paragraph{Tool-use agent.}
-GPT-4o-mini with 5 tool definitions (function calling) achieves $\asra = 0.48$ for \agentpoison{}---the agent executes adversarial tool calls in 48\% of queries. \minja{} and \injecmem{} show $\asra = 0.00$ at $|\cM| = 1{,}000$ (Table~\ref{tab:tool_agent}, Appendix~\ref{app:tool_agent}).
+GPT-4o-mini with 5 tool definitions (function calling) achieves $\asra = 0.48$ for \agentpoison{}; the agent executes adversarial tool calls in 48\% of queries. \minja{} and \injecmem{} show $\asra = 0.00$ at $|\cM| = 1{,}000$ (Table~\ref{tab:tool_agent}, Appendix~\ref{app:tool_agent}).
 
 \paragraph{Production validation.}
 On Mem0~\citep{mem0} (LLM-mediated storage), \agentpoison{} drops to $\asrr = 0.00$: internal reformulation strips trigger structure. Raw vector stores remain fully exposed; \memsad{} provides explicit defense where implicit reformulation is absent (Table~\ref{tab:mem0_validation}, Appendix~\ref{app:mem0}).
@@ -585,7 +585,7 @@ Proposition~\ref{prop:synonym} reveals a structural limitation: paraphrase-train
 
 We introduced \memsad{}, the first defense for memory poisoning in retrieval-augmented agents with formal guarantees: gradient coupling (Theorem~\ref{thm:gradient_coupling}) establishes that any monotone detector inherits the retrieval gradient, making continuous evasion impossible; the certified radius (Lemma~\ref{lem:certified}) gives checkable per-entry guarantees; and Le Cam's method (Theorem~\ref{thm:minimax_lower}) proves minimax optimality.
 Equally important is what \memsad{} \emph{cannot} do: Proposition~\ref{prop:synonym} identifies exactly where continuous guarantees break down, showing that the gap between semantic similarity and lexical identity is the fundamental open frontier.
-Closing this gap---perhaps via joint semantic-lexical detectors or provenance-aware memory architectures---is the key challenge for securing the next generation of persistent-memory agents.
+Closing this gap, perhaps via joint semantic-lexical detectors or provenance-aware memory architectures, is the key challenge for securing the next generation of persistent-memory agents.
 Code and data will be released upon publication.
 
 %% ============================================================
@@ -1099,7 +1099,7 @@ We compare \memsad{} against three standard OOD detection methods adapted to the
   {\footnotesize Mahalanobis achieves high TPR but at FPR $= 0.964$ (unusable). Bold = best AUROC per attack.}
 \end{table}
 
-\memsad{}'s query-awareness gives it a decisive advantage for triggered attacks (\agentpoison{}: AUROC $= 1.000$ vs.\ Energy's $0.945$). Energy Score is competitive on \minja{} AUROC ($0.969$) but has lower TPR at the operating threshold. Mahalanobis distance fails catastrophically (FPR $= 0.964$) because memory entries are diverse in embedding space---the covariance-based model cannot distinguish poison from benign outliers.
+\memsad{}'s query-awareness gives it a decisive advantage for triggered attacks (\agentpoison{}: AUROC $= 1.000$ vs.\ Energy's $0.945$). Energy Score is competitive on \minja{} AUROC ($0.969$) but has lower TPR at the operating threshold. Mahalanobis distance fails catastrophically (FPR $= 0.964$) because memory entries are diverse in embedding space: the covariance-based model cannot distinguish poison from benign outliers.
 
 \section{Calibration query sensitivity}
 \label{app:calibration_sensitivity}
