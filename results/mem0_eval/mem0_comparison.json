@@ -1,0 +1,37 @@
+{
+  "mem0_results": {
+    "agentpoison": {
+      "attack_name": "agentpoison",
+      "n_memories": 53,
+      "n_poison": 3,
+      "n_queries": 20,
+      "asr_r": 0.0,
+      "add_latency_ms": 183342.38195419312,
+      "search_latency_ms": 5285.165786743164
+    },
+    "minja": {
+      "attack_name": "minja",
+      "n_memories": 53,
+      "n_poison": 3,
+      "n_queries": 20,
+      "asr_r": 0.0,
+      "add_latency_ms": 170983.08420181274,
+      "search_latency_ms": 4676.088571548462
+    },
+    "injecmem": {
+      "attack_name": "injecmem",
+      "n_memories": 53,
+      "n_poison": 3,
+      "n_queries": 20,
+      "asr_r": 0.05,
+      "add_latency_ms": 168213.69767189026,
+      "search_latency_ms": 4396.318435668945
+    }
+  },
+  "synthetic_asr_r": {
+    "agentpoison": 1.0,
+    "minja": 0.14,
+    "injecmem": 0.07
+  },
+  "correlation": -0.8660254037844387
+}
