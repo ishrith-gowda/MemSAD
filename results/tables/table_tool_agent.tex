@@ -1,0 +1,19 @@
+\begin{table}[t]
+  \centering
+  \small
+  \caption{Tool-use agent evaluation: $\asra$ measured with GPT-4o-mini function calling ($n = 50$ queries). Unlike chat-only evaluation, the agent has access to real tools (email, calendar, credentials, file read, security policy).}
+  \label{tab:tool_agent}
+  \vspace{2pt}
+  \begin{tabular}{l cccc}
+    \toprule
+    Attack & $\asra$ & $\asra \mid \text{ret}$ & Poison Ret. & Tools/Query \\
+    \midrule
+    \agentpoison{} & $0.48$ & $0.51$ & 47/50 & $1.52$ \\
+    \minja{} & $0.00$ & $0.00$ & 5/50 & $0.26$ \\
+    \injecmem{} & $0.00$ & $0.00$ & 5/50 & $0.08$ \\
+    \bottomrule
+  \end{tabular}
+  \\[2pt]
+  {\footnotesize $\asra \mid \text{ret}$: $\asra$ conditioned on poison being in the retrieved context. Tools: email, calendar, credentials, file read, security policy.}
+  \vspace{-6pt}
+\end{table}
