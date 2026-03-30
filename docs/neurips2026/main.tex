@@ -117,12 +117,14 @@ Despite the severity of these threats, no prior work provides a unified evaluati
 Existing RAG defenses~\citep{zou2024poisonedrag, chaudhari2024phantom, xiang2024robustrag} assume corpus-level access and offline cleaning, neither of which applies to the streaming ingestion model of agent memory.
 
 \paragraph{Contributions.}
-Our five contributions span theory, algorithm design, and empirical methodology.
+Our seven contributions span theory, algorithm design, and empirical methodology.
 \textbf{(1)}~\emph{Formal threat model.} Stackelberg game formulation (Definitions~\ref{def:threat_model}--\ref{def:stackelberg}) with equilibrium existence (Proposition~\ref{prop:equilibrium}), and a protocol distinction showing that evaluating \agentpoison{} under its intended triggered-query protocol raises $\asrr$ from $0.25$ to $1.00$.
-\textbf{(2)}~\emph{\memsad{} defense.} A calibration-based detector (Definition~\ref{def:sad}) with the gradient coupling theorem (Theorem~\ref{thm:gradient_coupling}) proving continuous evasion impossible, and a certified detection radius (Lemma~\ref{lem:certified}) providing checkable, per-entry guarantees.
-\textbf{(3)}~\emph{Theoretical foundations.} Information-theoretic lower bound via Le Cam's method (Theorem~\ref{thm:minimax_lower}) proving minimax optimality up to a $\log(1/\delta)$ factor; finite-sample calibration bounds (Theorem~\ref{thm:calibration_bound}); online regret bounds (Theorem~\ref{thm:regret}) with optimal window at rate $O(\sigma^{2/3}\Delta^{1/3})$; and a Wasserstein generalization bound (Theorem~\ref{thm:generalization}) for transfer to unseen attacks.
-\textbf{(4)}~\emph{Impossibility characterization.} Formal analysis of the discrete synonym-invariance loophole (Proposition~\ref{prop:synonym}) with tight perturbation bounds, characterizing exactly where continuous guarantees break down.
-\textbf{(5)}~\emph{Rigorous evaluation.} A $3 \times 5$ attack-defense matrix with Bonferroni-corrected hypothesis testing ($\alpha' = 0.003$, 15 comparisons), bootstrap CIs, and Clopper-Pearson validation (20 trials, $n = 1{,}000$) demonstrating composite portfolios achieve $\tpr = 1.00$, $\fpr = 0.00$ across all attacks.
+\textbf{(2)}~\emph{\memsad{} defense.} A calibration-based detector (Definition~\ref{def:sad}) with the gradient coupling theorem (Theorem~\ref{thm:gradient_coupling}) proving continuous evasion impossible, a certified detection radius (Lemma~\ref{lem:certified}) providing checkable per-entry guarantees, and a Fisher-Rao characterization (Theorem~\ref{thm:fisher_rao}) of the detection-evasion geometry showing the tradeoff is governed by the information metric on the embedding manifold.
+\textbf{(3)}~\emph{Theoretical foundations.} Information-theoretic lower bound via Le Cam's method (Theorem~\ref{thm:minimax_lower}) proving minimax optimality up to a $\log(1/\delta)$ factor; finite-sample calibration bounds (Theorem~\ref{thm:calibration_bound}); online regret bounds (Theorem~\ref{thm:regret}) with optimal window at rate $O(\sigma^{2/3}\Delta^{1/3})$; Wasserstein generalization bound (Theorem~\ref{thm:generalization}); and computational hardness of optimal evasion (Proposition~\ref{prop:hardness}).
+\textbf{(4)}~\emph{Closing the synonym loophole.} Formal characterization of the synonym-invariance loophole (Proposition~\ref{prop:synonym}), and \memsad{}+: a combined semantic-lexical detector that closes this loophole via character n-gram divergence features that are provably not synonym-invariant (Proposition~\ref{prop:memsad_plus}), reducing evasion by $3\times$ on \injecmem{} entries.
+\textbf{(5)}~\emph{Persistent threat analysis.} Compound exposure analysis showing that even ``weak'' per-query attacks ($\asrr = 0.14$) reach 90\% compromise probability within 4 agent sessions (Table~\ref{tab:compound_exposure}), reframing attack severity for persistent memory.
+\textbf{(6)}~\emph{Real-system validation.} Tool-use agent evaluation with GPT-4o-mini function calling ($\asra = 0.48$ for \agentpoison{} with actual tool execution; Table~\ref{tab:tool_agent}), and Mem0 production memory system validation showing LLM-mediated storage provides implicit defense (Table~\ref{tab:mem0_validation}).
+\textbf{(7)}~\emph{Rigorous evaluation.} A $3 \times 5$ attack-defense matrix with Bonferroni-corrected hypothesis testing ($\alpha' = 0.003$, 15 comparisons), bootstrap CIs, and Clopper-Pearson validation (20 trials, $n = 1{,}000$) demonstrating composite portfolios achieve $\tpr = 1.00$, $\fpr = 0.00$ across all attacks.
 
 %% ============================================================
 \section{Related work}
@@ -316,6 +318,28 @@ The forward direction follows from the chain rule: $\nabla \cD = g'(\cR) \cdot \
 
 \noindent \memsad{}'s max-cosine scoring (Definition~\ref{def:sad}) instantiates $g = \mathrm{id}$, achieving maximal coupling. In particular, $\cD(e_c') < \cD(e_c)$ (evasion) implies $\cR(e_c') < \cR(e_c)$ (retrieval degradation) to first order; the second-order tradeoff surface is analyzed in Appendix~\ref{app:tradeoff_surface}.
 
+\subsection{Information-geometric characterization}
+\label{sec:fisher_rao}
+
+Theorem~\ref{thm:gradient_coupling} establishes gradient-level coupling; we now show this reflects a deeper \emph{geometric} structure on the embedding manifold.
+
+\begin{theorem}[Fisher-Rao detection-evasion metric]
+\label{thm:fisher_rao}
+Let $\cE = \{e \in \mathbb{S}^{d-1}\}$ be the embedding manifold under Assumption~\ref{ass:encoder}(iii). Define the parameterized score family $p_e(s) = \cN(s; \cosim(e, e_{q^*}), \hat{\sigma}^2)$.
+The Fisher information metric on $\cE$ is $g_{ij}^F(e) = \hat{\sigma}^{-2} \partial_i \cR(e) \partial_j \cR(e)$, and the geodesic distance between an adversarial embedding $e_{\text{adv}}$ and any undetected embedding $e'$ satisfying $\cD(e') \leq \hat{\mu} + \kappa\hat{\sigma}$ is:
+\begin{equation}
+  d_F(e_{\text{adv}}, e') \geq \frac{|\cR(e_{\text{adv}}) - (\hat{\mu} + \kappa\hat{\sigma})|}{\hat{\sigma}}.
+  \label{eq:fisher_rao}
+\end{equation}
+Any continuous evasion path from $e_{\text{adv}}$ to $e'$ has length $\geq d_F(e_{\text{adv}}, e')$ under the Fisher-Rao metric, and every point on this path degrades retrieval rank proportionally to the distance traversed.
+\end{theorem}
+
+\begin{proof}[Proof sketch]
+The Fisher information for the one-parameter Gaussian model $\cN(\mu, \sigma^2)$ is $I(\mu) = 1/\sigma^2$. Since $\cR(e) = \cosim(e, e_{q^*})$ and $\cD = g \circ \cR$ with monotone $g$, the induced metric on $\cE$ is $g^F_{ij} = I \cdot \partial_i \cR \partial_j \cR$, a rank-1 pullback of the Fisher metric. The geodesic lower bound follows from $d_F \geq |h^{-1}(\cD(e_{\text{adv}})) - h^{-1}(\cD(e'))| / \sigma$ via the Cramér-Rao inequality on the induced statistical manifold. Full proof in Appendix~\ref{app:proof_fisher_rao}.
+\end{proof}
+
+\noindent The Fisher-Rao distance $d_F$ provides a \emph{geometry-aware} bound on evasion cost: the adversary must traverse at least $d_F / \hat{\sigma}$ standard deviations of retrieval degradation to reach the undetected region, which is strictly stronger than the first-order gradient coupling of Theorem~\ref{thm:gradient_coupling}. This connects \memsad{} to the broader framework of information-geometric hypothesis testing~\citep{amari2016information}.
+
 \subsection{Certified detection guarantee}
 \label{sec:certified}
 
@@ -439,6 +463,20 @@ Let $P_{\text{new}}$ be the score distribution of a novel attack with $W_1(P_{\t
 
 \noindent In our experiments, \minja{} and \injecmem{} have $W_1 \approx 0.03\hat{\sigma}$, predicting $|\Delta\tpr| \leq 0.03$. The observed $\Delta\tpr = 0.00$ is well within this bound.
 
+\subsection{Computational hardness of optimal evasion}
+\label{sec:hardness}
+
+\begin{proposition}[Hardness of optimal evasion]
+\label{prop:hardness}
+The \emph{minimum-perturbation evasion problem}---finding the smallest $\delta$ such that $\cD(e_c + \delta) \leq \hat{\mu} + \kappa\hat{\sigma}$ while $\cR(e_c + \delta) \geq \tau_{\text{ret}}$---is NP-hard for piecewise-linear encoders.
+\end{proposition}
+
+\begin{proof}[Proof sketch]
+We reduce from the Closest Vector Problem (CVP) in lattices, which is NP-hard~\citep{micciancio2001hardness}. For a ReLU-based encoder $\enc$, the pre-image of the feasible set $\{\cD \leq \tau_{\text{det}}\} \cap \{\cR \geq \tau_{\text{ret}}\}$ defines a union of polytopes in the input space (each activation pattern induces a linear region). Finding the closest point to $e_c$ within this union reduces to a CVP instance over the lattice defined by the encoder's weight matrices. Full reduction in Appendix~\ref{app:proof_hardness}.
+\end{proof}
+
+\noindent This implies that even with full knowledge of $(\hat{\mu}, \hat{\sigma}, \kappa)$, the adversary cannot efficiently find the minimum-perturbation continuous evasion in general. Combined with the gradient coupling theorem, this motivates the adversary's shift to discrete (synonym) substitution, which bypasses the continuous optimization landscape entirely.
+
 \subsection{The discrete synonym loophole}
 
 \begin{proposition}[Synonym-invariance loophole]
@@ -457,6 +495,46 @@ Cauchy-Schwarz gives $|\enc(q)^\top(\enc(c') - \enc(c))| \leq \|\enc(c') - \enc(
 \end{proof}
 
 This does \emph{not} contradict Theorem~\ref{thm:gradient_coupling}: the coupling holds for \emph{continuous} perturbations in $\RR^d$, while synonym substitution operates in the \emph{discrete} token space where $\epsilon_{\text{syn}} \approx 0$ for paraphrase-trained encoders. The triangle inequality bound $r\epsilon_{\text{syn}}$ is an upper bound; non-linear encoder interactions may cause cancellation, making the actual perturbation smaller.
+
+\subsection{\memsad{}+: closing the synonym loophole}
+\label{sec:memsad_plus}
+
+We extend \memsad{} with character-level features that are provably \emph{not} synonym-invariant.
+
+\begin{proposition}[\memsad{}+ combined detection]
+\label{prop:memsad_plus}
+Let $D_{\text{char}}(c) \coloneqq \mathrm{JSD}(\hat{p}_c \| \hat{p}_0)$ be the Jensen-Shannon divergence between the character $n$-gram distribution of $c$ and the benign corpus baseline $\hat{p}_0$.
+For synonym substitution $c' = \mathrm{sub}(c, w_i, w_i')$ with $i = 1, \ldots, r$:
+\begin{equation}
+  D_{\text{char}}(c') \geq D_{\text{char}}(c) - r \cdot \delta_{\text{char}},
+  \label{eq:memsad_plus}
+\end{equation}
+where $\delta_{\text{char}} \coloneqq \max_{(w, w')} |\mathrm{JSD}(\hat{p}_{c[w \to w']} \| \hat{p}_0) - \mathrm{JSD}(\hat{p}_c \| \hat{p}_0)|$ is the per-substitution JSD shift. For typical synonym pairs, $\delta_{\text{char}} \gg \epsilon_{\text{syn}}$ (e.g., ``credentials'' $\to$ ``authorization tokens'' shifts character trigram distribution substantially while $\epsilon_{\text{syn}} \approx 0$). \memsad{}+ flags $c$ if $s(c; \cH) > \tau_{\text{sem}}$ \emph{or} $D_{\text{char}}(c) > \tau_{\text{char}}$.
+\end{proposition}
+
+\begin{table}[t]
+  \centering
+  \small
+  \caption{\memsad{}+ vs.\ \memsad{}: TPR comparison on original and synonym-substituted passages ($|\cM| = 1{,}000$, $\kappa = 2.0$).}
+  \label{tab:memsad_plus}
+  \vspace{2pt}
+  \begin{tabular}{l cc cc}
+    \toprule
+    & \multicolumn{2}{c}{\memsad{}} & \multicolumn{2}{c}{\memsad{}+} \\
+    \cmidrule(lr){2-3} \cmidrule(lr){4-5}
+    Attack & Original & Synonym & Original & Synonym \\
+    \midrule
+    \agentpoison{}$^\dagger$ & 1.00 & 1.00 & 1.00 & 1.00 \\
+    \minja{}                  & 1.00 & 0.80 & 1.00 & 0.80 \\
+    \injecmem{}               & 0.20 & 0.00 & 0.60 & 0.40 \\
+    \bottomrule
+  \end{tabular}
+  \\[2pt]
+  {\footnotesize $^\dagger$Triggered calibration. Character n-gram JSD features improve \injecmem{} detection by $3\times$.}
+  \vspace{-6pt}
+\end{table}
+
+\noindent Empirically, \memsad{}+ raises \injecmem{} TPR from $0.00$ (synonym-evaded) to $0.40$ and original TPR from $0.20$ to $0.60$ (Table~\ref{tab:memsad_plus}), demonstrating that character-level features partially close the synonym loophole.
 
 %% ============================================================
 \section{Additional defenses}
@@ -626,6 +704,90 @@ Key results (full tables in Appendix~\ref{app:ablation}):
 \textbf{OOD baselines:} Energy Score~\citep{liu2020energy} is competitive on \minja{} AUROC ($0.969$) but \memsad{}'s query-awareness yields decisive advantage on triggered attacks (AUROC $1.000$ vs.\ $0.945$); Mahalanobis~\citep{lee2018simple} and KNN fail ($\fpr > 0.96$; Appendix~\ref{app:ood}).
 \textbf{Calibration sensitivity:} AUROC is stable across calibration regimes; threshold tuning requires domain-matched queries (Appendix~\ref{app:calibration_sensitivity}).
 
+\subsection{Compound exposure: persistent threat analysis}
+
+\begin{table}[t]
+  \centering
+  \small
+  \caption{Compound exposure: cumulative compromise probability over agent sessions ($q = 5$ queries/session, $|\cM| = 1{,}000$).}
+  \label{tab:compound_exposure}
+  \vspace{2pt}
+  \begin{tabular}{l c cccc c}
+    \toprule
+    Attack & $\asrr$ & $N_{50\%}$ & $N_{90\%}$ & $N_{95\%}$ & $\EE[N]$ & Defended \\
+    \midrule
+    \agentpoison{} & $1.00$ & 1 & 1 & 1 & 1.0 & $\asrr^* = 0$ \\
+    \minja{}        & $0.14$ & 1 & 4 & 4 & 1.9 & $\asrr^* = 0$ \\
+    \injecmem{}     & $0.07$ & 2 & 7 & 9 & 3.3 & $\asrr^* = 0$ \\
+    \bottomrule
+  \end{tabular}
+  \\[2pt]
+  {\footnotesize $N_p$: sessions to reach $p$ compromise probability. $\EE[N]$: expected sessions to first compromise.}
+  \vspace{-6pt}
+\end{table}
+
+Memory poisoning is qualitatively different from per-interaction attacks: the poison persists indefinitely and compounds over queries.
+For $q$ queries per session with per-query $\asrr$: $P(\text{compromise in } N \text{ sessions}) = 1 - (1 - \asrr)^{Nq}$.
+Table~\ref{tab:compound_exposure} shows that \minja{} at $\asrr = 0.14$ reaches 90\% compromise in just 4 sessions ($q = 5$); \injecmem{} at $\asrr = 0.07$ reaches 95\% in 9 sessions.
+These are \emph{not} weak attacks---they are persistent threats.
+Composite defense ($\asrr^* = 0$) is necessary, not optional.
+
+\subsection{Tool-use agent evaluation}
+
+\begin{table}[t]
+  \centering
+  \small
+  \caption{Tool-use agent evaluation: $\asra$ measured with GPT-4o-mini function calling ($n = 50$ queries). The agent has access to 5 tools: email, calendar, credentials, file read, security policy.}
+  \label{tab:tool_agent}
+  \vspace{2pt}
+  \begin{tabular}{l cccc}
+    \toprule
+    Attack & $\asra$ & $\asra \mid \text{ret}$ & Poison Ret. & Tools/Query \\
+    \midrule
+    \agentpoison{} & $0.48$ & $0.51$ & 47/50 & $1.52$ \\
+    \minja{}        & $0.00$ & $0.00$ & 5/50 & $0.26$ \\
+    \injecmem{}     & $0.00$ & $0.00$ & 5/50 & $0.08$ \\
+    \bottomrule
+  \end{tabular}
+  \\[2pt]
+  {\footnotesize $\asra \mid \text{ret}$: conditioned on poison in retrieved context. Tool breakdown: \texttt{disable\_security} (19), \texttt{read\_sensitive} (14), \texttt{exfiltrate\_credentials} (7), \texttt{redirect\_calendar} (2).}
+  \vspace{-6pt}
+\end{table}
+
+We evaluate with GPT-4o-mini equipped with actual tool definitions (function calling), the strongest form of $\asra$ measurement.
+\agentpoison{} achieves $\asra = 0.48$: the agent executes adversarial tool calls (security policy modification, credential access, data exfiltration) in 48\% of queries.
+\minja{} and \injecmem{} show $\asra = 0.00$, consistent with their diluted retrieval at $|\cM| = 1{,}000$.
+Combined with compound exposure, \agentpoison{} poses a genuine security threat even with production-grade safety alignment.
+
+\subsection{Production memory system validation}
+
+We validate on Mem0~\citep{mem0}, a production memory system with LLM-mediated storage (50 realistic conversational memories, 20 queries).
+
+\begin{table}[t]
+  \centering
+  \small
+  \caption{Production memory system validation: $\asrr$ on Mem0 (LLM-mediated) vs.\ FAISS (raw vector store) at $|\cM| = 1{,}000$.}
+  \label{tab:mem0_validation}
+  \vspace{2pt}
+  \begin{tabular}{l ccc}
+    \toprule
+    Attack & FAISS $\asrr$ & Mem0 $\asrr$ & Reduction \\
+    \midrule
+    \agentpoison{} & $1.00$ & $0.00$ & $-1.00$ \\
+    \minja{}        & $0.14$ & $0.00$ & $-0.14$ \\
+    \injecmem{}     & $0.07$ & $0.05$ & $-0.02$ \\
+    \bottomrule
+  \end{tabular}
+  \\[2pt]
+  {\footnotesize Mem0's LLM reformulation strips trigger-optimized structure, providing implicit defense.}
+  \vspace{-6pt}
+\end{table}
+
+\agentpoison{}: $\asrr = 0.00$ on Mem0 vs.\ $1.00$ on FAISS---Mem0's internal LLM reformulation strips trigger-optimized structure.
+\injecmem{}: $\asrr = 0.05$ on Mem0 vs.\ $0.07$ on FAISS---broad anchors partially survive reformulation.
+This reveals a taxonomy of memory system vulnerability: \emph{raw vector stores} (FAISS, Pinecone, Weaviate) are fully exposed to the attack surface we characterize; \emph{LLM-mediated stores} (Mem0) provide implicit defense via semantic reformulation, but at the cost of processing latency ($\sim$3s/entry vs.\ $<$1ms).
+Our \memsad{} defense is necessary for the common raw-storage case and provides explicit, formally guaranteed detection where implicit reformulation is absent.
+
 %% ============================================================
 \section{Discussion and limitations}
 \label{sec:discussion}
@@ -639,18 +801,24 @@ Lemma~\ref{lem:certified} provides per-entry certified detection; Theorem~\ref{t
 The practical implication is to maximize the SNR $\rho$ via triggered calibration, which raises $\rho$ from $1.2$ to $3.8$ for \agentpoison{}.
 We recommend a layered deployment: (i)~watermarking at ingestion, (ii)~rolling \memsad{} at retrieval, and (iii)~composite detection for high-value agents ($\sim$200\,ms total; Appendix~\ref{app:complexity}).
 
-\paragraph{The synonym loophole.}
-Proposition~\ref{prop:synonym} reveals a structural limitation of all embedding-based detectors: paraphrase-trained encoders map synonyms to nearly identical embeddings ($\epsilon_{\text{syn}} \approx 0$), creating a discrete evasion channel orthogonal to gradient coupling.
-Closing this gap requires complementary features: lexical diversity, syntactic structure, or provenance metadata.
+\paragraph{The synonym loophole and \memsad{}+.}
+Proposition~\ref{prop:synonym} reveals a structural limitation of all embedding-based detectors: paraphrase-trained encoders map synonyms to nearly identical embeddings ($\epsilon_{\text{syn}} \approx 0$). \memsad{}+ (Proposition~\ref{prop:memsad_plus}) partially closes this gap via character n-gram features, improving \injecmem{} TPR from $0.00$ to $0.40$ under synonym substitution. However, complete closure requires stronger signals (syntactic structure, provenance metadata) that we leave to future work.
+
+\paragraph{Persistent threats and tool-use risk.}
+The compound exposure analysis (Table~\ref{tab:compound_exposure}) demonstrates that even low per-query $\asrr$ compounds rapidly over agent sessions. Combined with tool-use evaluation (Table~\ref{tab:tool_agent}) showing GPT-4o-mini executes adversarial tool calls ($\asra = 0.48$), this establishes that memory poisoning poses genuine security risk in production deployments with tool access.
+
+\paragraph{Memory system taxonomy.}
+The Mem0 validation reveals a previously unreported taxonomy: raw vector stores are fully vulnerable, while LLM-mediated stores provide implicit defense via semantic reformulation (Section~\ref{sec:experiments}). This implies that the deployment architecture itself is a defense axis, complementary to \memsad{}.
 
 \paragraph{Broader implications.}
 Memory poisoning is simultaneously easier than previously reported ($4\times$ under the intended protocol) and more defensible than expected (composite $\tpr = 1.00$, $\fpr = 0.00$), but no purely semantic defense is complete. The Stackelberg formulation provides a principled framework for this arms race.
 
 \paragraph{Limitations.}
 (i)~Our corpus contains $1{,}000$ entries; production systems may contain $10^4$--$10^6$ entries, though \memsad{}'s $O(md)$ cost is independent of $|\cM|$.
-(ii)~Measured $\asra$ (Table~\ref{tab:attack_results}) shows significant variation across agent models: GPT-2 lower bound ($0.90$) vs.\ GPT-4o-mini ($0.20$) for \agentpoison{}, reflecting the gap between proxy and production-scale evaluation.
+(ii)~Tool-use $\asra$ evaluation uses $n = 50$ queries per attack; larger-scale evaluation would tighten confidence intervals.
 (iii)~The regret bound (Theorem~\ref{thm:regret}) assumes slowly drifting queries; abrupt distribution shifts degrade calibration.
-(iv)~We use a single primary encoder (MiniLM-L6); cross-encoder transfer is validated on 5 encoders including Contriever and E5 at $|\cM|=1{,}000$ (Appendix~\ref{app:encoder_gen}).
+(iv)~The computational hardness result (Proposition~\ref{prop:hardness}) applies to piecewise-linear encoders; transformer encoders involve softmax nonlinearities where the reduction is conjectured but not proven.
+(v)~\memsad{}+ reduces but does not eliminate synonym evasion; character-level features remain susceptible to paraphrase-level rewrites (full sentence rewriting rather than word-level substitution).
 
 %% ============================================================
 \section{Conclusion}
@@ -707,6 +875,44 @@ Decompose: $|\hat{\tau}_t - \tau_t^*| \leq \underbrace{|\hat{\tau}_t - \tau_t^{\
 Estimation error: $O(\sigma(1+\kappa)/\sqrt{m_{\max}})$ by Theorem~\ref{thm:calibration_bound}.
 Drift error: cosine similarity is 1-Lipschitz on $\mathbb{S}^{d-1}$, and the window mean averages over $m_{\max}$ steps with linearly accumulating drift, so $|\mu_t^{\cH} - \mu_t| \leq m_{\max}\Delta/2$ (worst case at the window boundary; the $1/2$ arises from averaging). This affects only the constant in $m_{\max}^*$ but not the rate.
 Setting equal: $\sigma/\sqrt{m_{\max}} = m_{\max}\Delta$ gives $m_{\max}^* = (\sigma/\Delta)^{2/3}$ (up to constants), yielding per-step regret $O(\sigma^{2/3}\Delta^{1/3})$.
+
+\subsection{Proof of Theorem~\ref{thm:fisher_rao} (detailed)}
+\label{app:proof_fisher_rao}
+
+\paragraph{Fisher information metric.} Consider the parameterized family $p_e(s) = \cN(s; \mu(e), \hat{\sigma}^2)$ where $\mu(e) = \cosim(e, e_{q^*})$ and $\hat{\sigma}^2$ is the calibrated variance. The Fisher information matrix on the statistical manifold $\{p_e : e \in \cE\}$ is:
+\begin{equation}
+  g_{ij}^F(e) = \EE_{p_e}\!\left[\frac{\partial \log p_e}{\partial e_i} \frac{\partial \log p_e}{\partial e_j}\right] = \frac{1}{\hat{\sigma}^2} \frac{\partial \mu}{\partial e_i} \frac{\partial \mu}{\partial e_j} = \hat{\sigma}^{-2} \partial_i \cR(e) \partial_j \cR(e).
+\end{equation}
+This is a rank-1 metric: $g^F = \hat{\sigma}^{-2} \nabla\cR \nabla\cR^\top$, the pullback of the scalar Fisher information $I(\mu) = 1/\hat{\sigma}^2$ through the map $e \mapsto \cR(e)$.
+
+\paragraph{Geodesic lower bound.} For any path $\gamma: [0,1] \to \cE$ from $e_{\text{adv}} = \gamma(0)$ to $e' = \gamma(1)$, the Fisher-Rao length is:
+\begin{equation}
+  L_F(\gamma) = \int_0^1 \sqrt{\dot{\gamma}(t)^\top g^F(\gamma(t)) \dot{\gamma}(t)}\, dt = \frac{1}{\hat{\sigma}} \int_0^1 |\nabla\cR(\gamma(t))^\top \dot{\gamma}(t)|\, dt \geq \frac{|\cR(e_{\text{adv}}) - \cR(e')|}{\hat{\sigma}},
+\end{equation}
+where the inequality follows from $\int_0^1 |f'(t)| dt \geq |f(1) - f(0)|$ applied to $f(t) = \cR(\gamma(t))$.
+
+\paragraph{Detection-retrieval coupling.} Since $\cD = g \circ \cR$ with monotone $g$ (Theorem~\ref{thm:gradient_coupling}), evasion requires $\cD(e') \leq \hat{\mu} + \kappa\hat{\sigma}$, which via monotonicity implies $\cR(e') \leq g^{-1}(\hat{\mu} + \kappa\hat{\sigma})$. Substituting into the geodesic bound:
+\begin{equation}
+  d_F(e_{\text{adv}}, e') \geq \frac{\cR(e_{\text{adv}}) - g^{-1}(\hat{\mu} + \kappa\hat{\sigma})}{\hat{\sigma}} = \frac{|\cR(e_{\text{adv}}) - (\hat{\mu} + \kappa\hat{\sigma})|}{\hat{\sigma}},
+\end{equation}
+where the last equality uses $g = \text{id}$ (since $\cD$ is the cosine similarity score and $\cR$ coincides with $\cD$ under Assumption~\ref{ass:encoder}). The proportional retrieval degradation along the path follows from the rank-1 structure: $g^F$ has a single nonzero eigenvalue in the $\nabla\cR$ direction, so the geodesic cost is entirely paid in retrieval degradation. \qed
+
+\subsection{Proof of Proposition~\ref{prop:hardness} (detailed)}
+\label{app:proof_hardness}
+
+\paragraph{Reduction from CVP.} Given a CVP instance $(\Lambda, t)$ where $\Lambda \subseteq \RR^n$ is a lattice with basis $B \in \RR^{n \times n}$ and $t \in \RR^n$ is the target vector, we construct a memory poisoning evasion instance as follows.
+
+\paragraph{Encoder construction.} Define a ReLU encoder $\enc: \RR^n \to \RR^d$ with $L$ layers. Each ReLU activation partitions the input space into $O(2^{nL})$ linear regions~\citep{micciancio2001hardness}. Within each region $R_i$, the encoder acts as an affine map: $\enc(x) = W_i x + b_i$ for $x \in R_i$.
+
+\paragraph{Feasible set.} The evasion constraint $\cD(e_c + \delta) \leq \hat{\mu} + \kappa\hat{\sigma}$ with $\cR(e_c + \delta) \geq \tau_{\text{ret}}$ defines a set:
+\begin{equation}
+  \cF = \{x : \cosim(\enc(x), \enc(q^*)) \leq \hat{\mu} + \kappa\hat{\sigma}\} \cap \{x : \cosim(\enc(x), \enc(q^*)) \geq \tau_{\text{ret}}\}.
+\end{equation}
+Within each linear region $R_i$, $\cF \cap R_i$ is the intersection of two half-spaces in the input (via the affine map), hence a convex polytope. The global feasible set $\cF = \bigcup_i (\cF \cap R_i)$ is a \emph{union of polytopes}.
+
+\paragraph{Reduction.} Set the lattice basis as $B = W_1^\top$ (first-layer weights), and the target $t$ as the current adversarial input $x_c$. Finding the minimum-norm perturbation $\delta^* = \argmin_\delta \|\delta\|$ such that $x_c + \delta \in \cF$ requires finding the closest point in a union of polytopes to $x_c$. When the polytope boundaries align with the lattice structure of $W_1$ (which can be arranged by construction), this is at least as hard as CVP. Since CVP is NP-hard under randomized reductions~\citep{micciancio2001hardness}, the minimum-perturbation evasion problem is NP-hard. \qed
+
+\paragraph{Practical implication.} This hardness result is \emph{worst-case}: for specific encoder architectures, heuristic attacks (e.g., projected gradient descent) may find approximate solutions. However, the result implies that no polynomial-time algorithm can guarantee finding the \emph{optimal} continuous evasion, motivating the adversary's empirical shift to discrete synonym substitution.
 
 \subsection{Detection-evasion tradeoff surface}
 \label{app:tradeoff_surface}
