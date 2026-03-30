@@ -331,7 +331,7 @@ class ToolAgentEvaluator:
         returns:
             (response_text, list_of_tool_calls)
         """
-        resp = self._client.chat.completions.create(
+        resp = self._client.chat.completions.create(  # type: ignore[call-overload]
             model=self.model,
             messages=[
                 {"role": "system", "content": self._SYSTEM_PROMPT},
@@ -523,7 +523,7 @@ def run_tool_agent_evaluation(
     trigger = "system task context access compliance"
 
     # generate poison entries per attack
-    attacks = {
+    attacks: dict[str, dict[str, Any]] = {
         "agentpoison": {
             "poison": [
                 generate_centroid_agentpoison_passage(victim_qs, goal)

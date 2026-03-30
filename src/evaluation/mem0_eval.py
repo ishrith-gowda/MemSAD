@@ -178,9 +178,9 @@ class Mem0Evaluator:
         """search mem0 and return results."""
         results = self._memory.search(query, user_id=self.user_id, limit=self.top_k)
         if isinstance(results, dict) and "results" in results:
-            return results["results"]
+            return list(results["results"])
         if isinstance(results, list):
-            return results
+            return list(results)
         return []
 
     def evaluate_attack(
@@ -322,7 +322,7 @@ def run_mem0_evaluation(
     trigger = "system task context access compliance"
 
     # generate poison entries
-    attacks_config = {
+    attacks_config: dict[str, dict[str, Any]] = {
         "agentpoison": {
             "poison": [
                 generate_centroid_agentpoison_passage(victim_queries, goal)
