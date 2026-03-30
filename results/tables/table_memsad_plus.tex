@@ -1,0 +1,24 @@
+\begin{table}[t]
+  \centering
+  \small
+  \caption{\memsad{} vs.\ \memsad{}+ detection under synonym substitution ($\kappa=2.0$, $|\cM|=1{,}000$). \memsad{}+ adds character n-gram and domain vocabulary features that are not synonym-invariant.}
+  \label{tab:memsad_plus}
+  \vspace{2pt}
+  \begin{tabular}{l l ccc ccc}
+    \toprule
+    & & \multicolumn{3}{c}{\memsad{}} & \multicolumn{3}{c}{\memsad{}+} \\
+    \cmidrule(lr){3-5} \cmidrule(lr){6-8}
+    Attack & Variant & TPR & FPR & AUROC & TPR & FPR & AUROC \\
+    \midrule
+    AP & Original & $0.00$ & $0.01$ & $0.824$ & $0.00$ & $0.07$ & $0.710$ \\
+    AP & Synonym & $0.00$ & $0.01$ & $0.824$ & $0.00$ & $0.07$ & $0.710$ \\
+    \addlinespace
+    MJ & Original & $0.00$ & $0.01$ & $0.914$ & $0.00$ & $0.07$ & $0.718$ \\
+    MJ & Synonym & $0.00$ & $0.01$ & $0.758$ & $0.00$ & $0.07$ & $0.437$ \\
+    \addlinespace
+    IM & Original & $0.20$ & $0.01$ & $0.816$ & $0.60$ & $0.07$ & $0.906$ \\
+    IM & Synonym & $0.00$ & $0.01$ & $0.810$ & $0.40$ & $0.07$ & $0.885$ \\
+    \bottomrule
+  \end{tabular}
+  \vspace{-6pt}
+\end{table}
