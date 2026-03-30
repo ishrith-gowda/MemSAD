@@ -331,13 +331,14 @@ class ToolAgentEvaluator:
         returns:
             (response_text, list_of_tool_calls)
         """
-        resp = self._client.chat.completions.create(  # type: ignore[call-overload]
+        tools_param: Any = AGENT_TOOLS
+        resp = self._client.chat.completions.create(
             model=self.model,
             messages=[
                 {"role": "system", "content": self._SYSTEM_PROMPT},
                 {"role": "user", "content": context},
             ],
-            tools=AGENT_TOOLS,
+            tools=tools_param,
             tool_choice="auto",
             max_tokens=self.max_tokens,
             temperature=self.temperature,
