@@ -1,0 +1,19 @@
+\begin{table}[t]
+  \centering
+  \small
+  \caption{Compound exposure: cumulative compromise probability over agent sessions ($q = 5$ queries/session, $|\cM| = 1{,}000$).}
+  \label{tab:compound_exposure}
+  \vspace{2pt}
+  \begin{tabular}{l c cccc c}
+    \toprule
+    Attack & $\asrr$ & $N_{50\%}$ & $N_{90\%}$ & $N_{95\%}$ & $\EE[N]$ & Defended \\
+    \midrule
+    \agentpoison{} & $1.00$ & 1 & 1 & 1 & 1.0 & $\asrr^* = 0$ \\
+    \minja{} & $0.14$ & 1 & 4 & 4 & 1.9 & $\asrr^* = 0$ \\
+    \injecmem{} & $0.07$ & 2 & 7 & 9 & 3.3 & $\asrr^* = 0$ \\
+    \bottomrule
+  \end{tabular}
+  \\[2pt]
+  {\footnotesize $N_{p}$: sessions to reach $p$ compromise probability. $\EE[N]$: expected sessions to first compromise. Defended: residual $\asrr$ after composite portfolio.}
+  \vspace{-6pt}
+\end{table}
