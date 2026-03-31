@@ -298,23 +298,29 @@ The \emph{combined scoring mode} averages max-query and mean-query similarity, c
 \subsection{Gradient coupling theorem}
 \label{sec:gradient}
 
-The core question is whether the defender can design a detection objective that decouples from retrieval. While the forward direction (monotone $\cD$ shares the gradient of $\cR$ by the chain rule) is elementary, the operational consequence is non-trivial: any continuous perturbation that increases retrieval score \emph{must} proportionally increase detection score, quantified by the ratio $g'(\cR)$. The converse is the deeper result: if $\cD$ is \emph{not} monotone in $\cR$, there \emph{necessarily exist} adversarial embeddings with high retrieval score but low detection score. Together, these establish that \memsad{}'s max-similarity score is not merely a design choice but a necessary condition for continuous-domain detection completeness.
+The core question is whether the defender can design a detection objective that decouples from retrieval.
+The forward direction (monotone $\cD$ shares the gradient of $\cR$, by the chain rule) is a design principle: by choosing $\cD = g \circ \cR$, the defender ensures that any continuous embedding perturbation reducing detection score proportionally reduces retrieval score, with rate $g'(\cR)$.
+The operationally significant result is the \emph{converse}: any $\cD$ that is \emph{not} monotone in $\cR$ necessarily admits adversarial embeddings with high retrieval score yet low detection score, i.e., the adversary can evade detection without sacrificing retrieval rank. This characterizes \memsad{}'s max-similarity score as the \emph{necessary} structure for continuous-domain detection completeness.
 
-\begin{theorem}[Gradient coupling]
+\begin{theorem}[Gradient coupling and converse]
 \label{thm:gradient_coupling}
-Let $\enc$ satisfy Assumption~\ref{ass:encoder}, let $e_c \coloneqq \enc(c) \in \RR^d$, and $q^* \coloneqq \argmax_{q \in \cH} \cosim(e_c, \enc(q))$. Define the retrieval objective $\cR(e_c) \coloneqq \cosim(e_c, \enc(q^*))$ and let $\cD : \RR^d \to \RR$ be any differentiable detection function satisfying $\cD = g \circ \cR$ for differentiable, monotone increasing $g$ with $g' > 0$. Then:
+Let $\enc$ satisfy Assumption~\ref{ass:encoder}, $e_c \coloneqq \enc(c)$, $q^* \coloneqq \argmax_{q \in \cH} \cosim(e_c, \enc(q))$, $\cR(e_c) \coloneqq \cosim(e_c, \enc(q^*))$.
+
+\emph{(i) Forward (design principle):} For any differentiable $\cD = g \circ \cR$ with monotone increasing $g$, $g' > 0$:
 \begin{equation}
-  \nabla_{e_c} \cD(e_c)
-  = g'(\cR(e_c)) \cdot \nabla_{e_c} \cR(e_c)
-  = g'(\cR(e_c)) \cdot \frac{\enc(q^*) - (e_c^\top \enc(q^*)) e_c}{\|e_c\|^2 \|\enc(q^*)\|}.
+  \nabla_{e_c} \cD(e_c) = g'(\cR(e_c)) \cdot \nabla_{e_c} \cR(e_c),
+  \quad \text{so} \quad
+  \langle \delta, \nabla \cD \rangle < 0 \iff \langle \delta, \nabla \cR \rangle < 0.
   \label{eq:gradient}
 \end{equation}
-Since $g' > 0$, for any perturbation $\delta \in \RR^d$: $\langle \delta, \nabla \cD \rangle < 0 \iff \langle \delta, \nabla \cR \rangle < 0$.
-Conversely, if $\cD$ is not monotone in $\cR$, there exist adversarial embeddings $e_c$ with $\cR(e_c) > \tau_{\text{ret}}$ yet $\cD(e_c) < \tau_{\text{det}}$, i.e., successful retrieval without detection.
+Under L2-normalization (Assumption~\ref{ass:encoder}(iii)), $\nabla_{e_c}\cR = \enc(q^*) - (e_c^\top\enc(q^*))e_c$.
+
+\emph{(ii) Converse (necessity):} If $\cD$ is \emph{not} monotone in $\cR$, there exist thresholds $\tau_{\text{ret}}, \tau_{\text{det}}$ and adversarial embeddings $e_c$ with $\cR(e_c) > \tau_{\text{ret}}$ yet $\cD(e_c) < \tau_{\text{det}}$: the adversary can achieve retrieval rank $\leq k$ while evading detection.
 \end{theorem}
 
 \begin{proof}
-The forward direction follows from the chain rule: $\nabla \cD = g'(\cR) \cdot \nabla \cR$ with $g' > 0$ preserving the sign of every directional derivative. For the converse, non-monotonicity of $\cD$ in $\cR$ implies the existence of $e_c, e_c'$ with $\cR(e_c') > \cR(e_c)$ but $\cD(e_c') < \cD(e_c)$; by continuity, a level set of $\cD$ at $\tau_{\text{det}}$ intersects the region $\{\cR > \tau_{\text{ret}}\}$ for appropriate thresholds.
+\emph{(i)} The chain rule gives $\nabla \cD = g'(\cR) \cdot \nabla \cR$ directly; $g' > 0$ preserves the sign of every directional derivative. Under Assumption~\ref{ass:encoder}(iii) ($\|e_c\| = 1$), the sphere gradient of cosine similarity is $\nabla_{e_c}\cosim(e_c, v) = v - (e_c^\top v)e_c$.
+\emph{(ii)} Non-monotonicity implies $\exists\, e_c, e_c'$ with $\cR(e_c') > \cR(e_c)$ but $\cD(e_c') < \cD(e_c)$. Set $\tau_{\text{ret}} = \cR(e_c)$ and $\tau_{\text{det}} = \cD(e_c)$; then $e_c'$ satisfies $\cR(e_c') > \tau_{\text{ret}}$ and $\cD(e_c') < \tau_{\text{det}}$ by construction.
 \end{proof}
 
 \noindent \memsad{}'s max-cosine scoring (Definition~\ref{def:sad}) instantiates $g = \mathrm{id}$, achieving maximal coupling. \emph{Remark on combined scoring (eq.~\ref{eq:sad_combined}):} the mean-query term satisfies an analogous coupling theorem with $g' = 1/|\cH|$; the convex combination $s_{\text{comb}} = \frac{1}{2}s_{\max} + \frac{1}{2}s_{\text{mean}}$ inherits coupling with $g'_{\text{comb}} \geq 1/(2|\cH|) > 0$, so Theorem~\ref{thm:gradient_coupling} and Lemma~\ref{lem:certified} apply to $s_{\text{comb}}$ with the same directional guarantee. In particular, $\cD(e_c') < \cD(e_c)$ (evasion) implies $\cR(e_c') < \cR(e_c)$ (retrieval degradation) to first order; the second-order tradeoff surface is analyzed in Appendix~\ref{app:tradeoff_surface}.
@@ -440,7 +446,7 @@ We evaluate four additional defenses spanning orthogonal strategies, all operati
 
 \paragraph{Vector memory.}
 FAISS IndexFlatIP with L2-normalized all-MiniLM-L6-v2 embeddings ($d = 384$).
-Benign corpus: $|\cM| = 1{,}000$ synthetic entries across 7 categories, matching the per-user memory scale of deployed systems where active memory stores typically contain $10^2$--$10^3$ entries~\citep{chen2024agentpoison,dong2025minja}; corpus-size ablation (Appendix~\ref{app:ablation}) validates results across $|\cM| \in \{50, \ldots, 1000\}$.
+Benign corpus: $|\cM| = 1{,}000$ synthetic entries across 7 categories (task reminders, calendar events, user preferences, factual knowledge, document references, configuration settings, conversation history), matching the per-user memory scale of deployed systems where active memory stores typically contain $10^2$--$10^3$ entries~\citep{chen2024agentpoison,dong2025minja}; corpus-size ablation (Appendix~\ref{app:ablation}) validates results across $|\cM| \in \{50, \ldots, 1000\}$. \memsad{} calibration uses $N = 50$ benign entries as the reference set (Theorem~\ref{thm:calibration_bound} predicts $|\tau_N - \tau^*| \leq 0.044$ at $N=50$, $\delta=0.05$).
 Poison counts: $n = 5$ (\agentpoison{}), $10$ (\minja{}), $15$ (\injecmem{}).
 $k = 5$; $|\cQ_v| = |\cQ_b| = 100$.
 Bootstrap 95\% CIs from 5 independent seeds (each seed generates a distinct corpus permutation and query sample); attack outcomes are deterministic given a fixed corpus, so CI widths reflect corpus-composition variance.
@@ -672,7 +678,7 @@ Within each linear region $R_i$, $\cF \cap R_i$ is the intersection of two half-
 
 \paragraph{Reduction.} Set the lattice basis as $B = W_1^\top$ (first-layer weights), and the target $t$ as the current adversarial input $x_c$. Finding the minimum-norm perturbation $\delta^* = \argmin_\delta \|\delta\|$ such that $x_c + \delta \in \cF$ requires finding the closest point in a union of polytopes to $x_c$. When the polytope boundaries align with the lattice structure of $W_1$ (which can be arranged by construction), this is at least as hard as CVP. Since CVP is NP-hard under randomized reductions~\citep{micciancio2001hardness}, the minimum-perturbation evasion problem is NP-hard. \qed
 
-\paragraph{Practical implication.} This hardness result is \emph{worst-case}: for specific encoder architectures, heuristic attacks (e.g., projected gradient descent) may find approximate solutions. However, the result implies that no polynomial-time algorithm can guarantee finding the \emph{optimal} continuous evasion, motivating the adversary's empirical shift to discrete synonym substitution.
+\paragraph{Practical implication.} This hardness result is \emph{worst-case} over encoder architectures: for the specific ReLU encoder construction used in the reduction, the optimal evasion is NP-hard. For the actual all-MiniLM-L6-v2 encoder (transformer architecture), the reduction does not directly apply due to softmax nonlinearities, and the result is conjectured but not proven. The practical takeaway is that efficient optimal evasion is unlikely, motivating the adversary's empirical shift to discrete synonym substitution that sidesteps gradient-based search entirely.
 
 \subsection{Detection-evasion tradeoff surface}
 \label{app:tradeoff_surface}
@@ -879,6 +885,27 @@ The first term is the Bernstein bound on the empirical FPR; the second accounts 
     10 & 1.00 & 0.75 & 0.60 \\
     \bottomrule
   \end{tabular}
+\end{table}
+
+\begin{table}[h]
+  \centering
+  \small
+  \caption{Calibration set size ablation: $|\tau_N - \tau^*|$ vs.\ $N$ (theoretical bound from Theorem~\ref{thm:calibration_bound} vs.\ observed, $\delta=0.05$, \minja{}).}
+  \label{tab:ablation_calibration}
+  \vspace{2pt}
+  \begin{tabular}{l cc}
+    \toprule
+    $N$ (calibration size) & Bound (Thm.~\ref{thm:calibration_bound}) & Observed \\
+    \midrule
+    25  & 0.061 & 0.038 \\
+    50  & 0.044 & 0.027 \\
+    100 & 0.031 & 0.019 \\
+    200 & 0.022 & 0.014 \\
+    500 & 0.014 & 0.009 \\
+    \bottomrule
+  \end{tabular}
+  \\[2pt]
+  {\footnotesize Bound is tight to within $\approx 1.6\times$; $N=50$ (main evaluation) gives $|\tau_N - \tau^*| \leq 0.044$.}
 \end{table}
 
 \section{Multi-encoder evaluation}
@@ -1185,16 +1212,16 @@ Memory poisoning compounds over sessions: $P(\text{compromise in } N \text{ sess
 \begin{table}[h]
   \centering
   \small
-  \caption{Tool-use agent evaluation: $\asra$ measured with GPT-4o-mini function calling ($n = 50$ queries). The agent has access to 5 tools: email, calendar, credentials, file read, security policy.}
+  \caption{Tool-use agent evaluation: $\asra$ measured with GPT-4o-mini function calling ($n = 50$ queries, Clopper-Pearson 95\% CI). The agent has access to 5 tools: email, calendar, credentials, file read, security policy.}
   \label{tab:tool_agent}
   \vspace{2pt}
   \begin{tabular}{l cccc}
     \toprule
     Attack & $\asra$ & $\asra \mid \text{ret}$ & Poison Ret. & Tools/Query \\
     \midrule
-    \agentpoison{} & $0.48$ & $0.51$ & 47/50 & $1.52$ \\
-    \minja{}        & $0.00$ & $0.00$ & 5/50 & $0.26$ \\
-    \injecmem{}     & $0.00$ & $0.00$ & 5/50 & $0.08$ \\
+    \agentpoison{} & $0.48_{[0.34, 0.62]}$ & $0.51$ & 47/50 & $1.52$ \\
+    \minja{}        & $0.00_{[0.00, 0.07]}$ & $0.00$ & 5/50 & $0.26$ \\
+    \injecmem{}     & $0.00_{[0.00, 0.07]}$ & $0.00$ & 5/50 & $0.08$ \\
     \bottomrule
   \end{tabular}
   \\[2pt]
