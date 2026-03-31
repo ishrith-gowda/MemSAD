@@ -5,7 +5,7 @@
 \item {\bf Claims}
     \item[] Question: Do the main claims made in the abstract and introduction accurately reflect the paper's contributions and scope?
     \item[] Answer: \answerYes{}
-    \item[] Justification: All five contributions listed in Section~\ref{sec:intro} are supported by theoretical results (Theorems~\ref{thm:gradient_coupling}--\ref{thm:regret}, Lemma~\ref{lem:certified}, Proposition~\ref{prop:synonym}) and experimental validation in Section~\ref{sec:experiments}.
+    \item[] Justification: All seven contributions listed in Section~\ref{sec:intro} are supported by theoretical results (Theorems~\ref{thm:gradient_coupling}--\ref{thm:generalization}, Lemma~\ref{lem:certified}, Propositions~\ref{prop:hardness}--\ref{prop:memsad_plus}) and experimental validation in Section~\ref{sec:experiments}.
 
 \item {\bf Limitations}
     \item[] Question: Does the paper discuss the limitations of the work performed by the authors?
@@ -80,6 +80,6 @@
 \item {\bf Declaration of LLM usage}
     \item[] Question: Does the paper describe the usage of LLMs if it is an important, original, or non-standard component of the core methods in this research? Note that if the LLM is used only for writing, editing, or formatting purposes and does \emph{not} impact the core methodology, scientific rigor, or originality of the research, declaration is not required.
     \item[] Answer: \answerYes{}
-    \item[] Justification: GPT-2 is used as a backbone for the token-level watermark encoder and as a local agent evaluator for measuring ASR-A lower bounds. These uses are described in Section~\ref{sec:other_defenses} and Appendix~\ref{app:defenses}.
+    \item[] Justification: GPT-2 is used as a local agent evaluator for measuring ASR-A lower bounds. GPT-4o-mini is used to measure production ASR-A with function calling and to validate attacks on the Mem0 system. These uses are described in Sections~\ref{sec:experiments} and Appendices~\ref{app:tool_agent}--\ref{app:mem0}.
 
 \end{enumerate}
