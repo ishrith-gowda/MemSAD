@@ -144,7 +144,7 @@ On the defense side, A-MemGuard~\citep{amemguard2025} proposes proactive defense
 \citet{zou2024poisonedrag} optimize adversarial documents via HotFlip~\citep{ebrahimi2018hotflip} ($>\!90\%$ ASR on million-document corpora).
 \citet{xiang2024robustrag} provide certified robustness via \emph{isolate-then-aggregate}, but require post-retrieval processing of $k$ passages.
 RAGDefender~\citep{ragdefender2025} applies post-retrieval passage scoring; SPECTRE~\citep{hayase2021spectre} uses spectral detection requiring full corpus access ($O(|\cM|^2 d)$).
-Our work differs along three axes: (i)~defenses operate at \emph{write time} on individual entries ($O(md)$ per entry), (ii)~we require no corpus-level access, and (iii)~we provide both a certified detection radius (Lemma~\ref{lem:certified}) and minimax optimality (Theorem~\ref{thm:minimax_lower}), whereas prior certificates apply post-retrieval.
+Randomized-smoothing-based certified defenses for LLMs~\citep{robey2023smoothllm} provide probabilistic guarantees against prompt-level perturbations but operate on query inputs, not on persistent memory entries. Our work differs along three axes: (i)~defenses operate at \emph{write time} on individual entries ($O(md)$ per entry), (ii)~we require no corpus-level access, and (iii)~our certificate (Lemma~\ref{lem:certified}) is deterministic given the calibration bound, unlike randomized-smoothing certificates which are probabilistic over random masks.
 
 \paragraph{Game-theoretic security and adaptive evaluation.}
 \citet{tramer2020adaptive} formalize best practices for adaptive attack evaluation; \citet{carlini2017evaluating} demonstrate that defenses without formal guarantees are routinely broken.
@@ -317,7 +317,7 @@ Conversely, if $\cD$ is not monotone in $\cR$, there exist adversarial embedding
 The forward direction follows from the chain rule: $\nabla \cD = g'(\cR) \cdot \nabla \cR$ with $g' > 0$ preserving the sign of every directional derivative. For the converse, non-monotonicity of $\cD$ in $\cR$ implies the existence of $e_c, e_c'$ with $\cR(e_c') > \cR(e_c)$ but $\cD(e_c') < \cD(e_c)$; by continuity, a level set of $\cD$ at $\tau_{\text{det}}$ intersects the region $\{\cR > \tau_{\text{ret}}\}$ for appropriate thresholds.
 \end{proof}
 
-\noindent \memsad{}'s max-cosine scoring (Definition~\ref{def:sad}) instantiates $g = \mathrm{id}$, achieving maximal coupling. In particular, $\cD(e_c') < \cD(e_c)$ (evasion) implies $\cR(e_c') < \cR(e_c)$ (retrieval degradation) to first order; the second-order tradeoff surface is analyzed in Appendix~\ref{app:tradeoff_surface}.
+\noindent \memsad{}'s max-cosine scoring (Definition~\ref{def:sad}) instantiates $g = \mathrm{id}$, achieving maximal coupling. \emph{Remark on combined scoring (eq.~\ref{eq:sad_combined}):} the mean-query term satisfies an analogous coupling theorem with $g' = 1/|\cH|$; the convex combination $s_{\text{comb}} = \frac{1}{2}s_{\max} + \frac{1}{2}s_{\text{mean}}$ inherits coupling with $g'_{\text{comb}} \geq 1/(2|\cH|) > 0$, so Theorem~\ref{thm:gradient_coupling} and Lemma~\ref{lem:certified} apply to $s_{\text{comb}}$ with the same directional guarantee. In particular, $\cD(e_c') < \cD(e_c)$ (evasion) implies $\cR(e_c') < \cR(e_c)$ (retrieval degradation) to first order; the second-order tradeoff surface is analyzed in Appendix~\ref{app:tradeoff_surface}.
 
 \subsection{Information-geometric characterization}
 \label{sec:fisher_rao}
@@ -329,7 +329,7 @@ The gradient coupling reflects a deeper geometric structure. We show that the ev
 Let $\cE = \{e \in \mathbb{S}^{d-1}\}$ under Assumption~\ref{ass:encoder}(iii). The Fisher information metric induced by the score family $p_e(s) = \cN(s; \cosim(e, e_{q^*}), \hat{\sigma}^2)$ is $g_{ij}^F(e) = \hat{\sigma}^{-2} \partial_i \cR(e) \partial_j \cR(e)$. The geodesic distance to any undetected embedding satisfies $d_F(e_{\text{adv}}, e') \geq |\cR(e_{\text{adv}}) - (\hat{\mu} + \kappa\hat{\sigma})| / \hat{\sigma}$, and every point on any continuous evasion path degrades retrieval proportionally to the distance traversed.
 \end{theorem}
 
-\noindent The Fisher-Rao distance is strictly stronger than gradient coupling: the adversary must traverse $\geq d_F/\hat{\sigma}$ standard deviations of retrieval degradation to evade detection, connecting \memsad{} to information-geometric hypothesis testing~\citep{amari2016information}. Proof in Appendix~\ref{app:proof_fisher_rao}.
+\noindent The Fisher-Rao distance quantifies the information cost of evasion: the adversary must traverse $\geq d_F/\hat{\sigma}$ standard deviations of retrieval degradation, connecting \memsad{} to information-geometric hypothesis testing~\citep{amari2016information}. The rank-1 metric $g^F = \hat{\sigma}^{-2}\nabla\cR\nabla\cR^\top$ measures only retrieval-relevant perturbations: paths orthogonal to $\nabla\cR$ carry zero Fisher-Rao cost \emph{and} zero retrieval change, so they do not constitute evasion. Proof in Appendix~\ref{app:proof_fisher_rao}.
 
 \subsection{Certified detection guarantee}
 \label{sec:certified}
@@ -427,7 +427,7 @@ where $\delta_{\text{char}} \coloneqq \max_{(w, w')} |\mathrm{JSD}(\hat{p}_{c[w 
 \label{sec:other_defenses}
 
 We evaluate four additional defenses spanning orthogonal strategies, all operating at pre-ingestion time.
-\textbf{Watermark:} the defender watermarks all legitimate entries at write time via a unigram scheme~\citep{zhao2024watermark} ($z_{\text{thr}} = 4.0$, $\fpr \approx 3.2 \times 10^{-5}$), rejecting unwatermarked entries; this requires control of the ingestion pipeline.
+\textbf{Watermark:} the defender watermarks all legitimate entries at write time via a unigram scheme~\citep{zhao2024watermark,kirchenbauer2023watermark} ($z_{\text{thr}} = 1.5$, $\fpr = 0.000$ empirically; higher thresholds inflate FPR for short entries), rejecting unwatermarked entries; this requires control of the ingestion pipeline.
 \textbf{Validation:} rule-based pattern matching ($O(|c| \cdot |P|)$).
 \textbf{Proactive:} computes mean cosine similarity against 16 domain probes, flagging entries exceeding $\tau = 0.19$.
 \textbf{Composite:} weighted ensemble of the above: flag if $\sum_j w_j d_j(c) > \theta$.
@@ -455,7 +455,7 @@ Bootstrap 95\% CIs from 5 independent seeds (each seed generates a distinct corp
 \begin{table}[t]
   \centering
   \small
-  \caption{Attack results ($|\cM|=1{,}000$, 100 queries, 5 seeds, bootstrap 95\% CI). $\asra$ measured with GPT-2 (lower bound) and GPT-4o-mini; $^\dagger$projected from original papers.}
+  \caption{Attack results ($|\cM|=1{,}000$, 100 queries, 5 seeds, bootstrap 95\% CI). $\asra^{\text{GPT-2}}$: permissive model without safety alignment (high-compliance upper bound); $\asra^{\text{4o-mini}}$: production-aligned; $^\dagger$projected from original papers.}
   \label{tab:attack_results}
   \vspace{2pt}
   \begin{tabular}{lcccccc}
@@ -473,7 +473,7 @@ Table~\ref{tab:attack_results} reports the main results at $|\cM| = 1{,}000$.
 \agentpoison{} achieves $\asrr = 1.00$ under the triggered-query protocol (Section~\ref{sec:threat}), confirming that trigger optimization defeats corpus dilution entirely.
 \minja{} drops from $\asrr = 0.65$ at $|\cM|=200$ to $0.14$ at $|\cM|=1{,}000$, a $5\times$ dilution effect demonstrating that untriggered attacks are naturally mitigated by corpus scale.\footnote{$\isr$ measures write-time injection success; $\asrr$ measures retrieval-time exposure.}
 \injecmem{} similarly drops from $0.50$ to $0.07$, with benign accuracy improving from $0.80$ to $0.98$ as poison entries become a smaller fraction of the corpus.
-\textbf{Measured $\asra$:} GPT-2 provides a lower bound ($\asra = 0.90$ for \agentpoison{}); GPT-4o-mini shows $\asra = 0.20$, reflecting stronger safety alignment. MINJA and InjecMEM show $\asra \leq 0.17$, suggesting that diluted retrieval also reduces action execution.
+\textbf{Measured $\asra$:} GPT-2 (no safety alignment) yields $\asra = 0.90$ for \agentpoison{}, an upper bound under maximal compliance; GPT-4o-mini shows $\asra = 0.20$, reflecting production safety alignment and the gap between naive and hardened agents. MINJA and InjecMEM show $\asra \leq 0.17$, suggesting that diluted retrieval also reduces action execution.
 
 % figures moved to appendix for space; see Appendix~\ref{app:additional_figures}
 
@@ -556,7 +556,7 @@ Key results (full tables in Appendix~\ref{app:ablation}):
 \subsection{Extended evaluations}
 
 \paragraph{Compound exposure.}
-Memory poisoning compounds over sessions: $P(\text{compromise in } N \text{ sessions}) = 1 - (1 - \asrr)^{Nq}$ for $q$ queries/session. Even \minja{} at $\asrr = 0.14$ reaches 90\% compromise in 4 sessions; composite defense ($\asrr^* = 0$) is necessary (Table~\ref{tab:compound_exposure}, Appendix~\ref{app:compound}).
+Memory poisoning compounds over sessions: $P(\text{compromise in } N \text{ sessions}) = 1 - (1 - \asrr)^{Nq}$ for $q$ queries/session.\footnote{This assumes i.i.d.\ Bernoulli trials across queries, which is a lower bound on true risk: persistent memory means a successfully retrieved adversarial entry may influence subsequent queries, further compounding exposure.} Even \minja{} at $\asrr = 0.14$ reaches 90\% compromise in 4 sessions; composite defense ($\asrr^* = 0$) is necessary (Table~\ref{tab:compound_exposure}, Appendix~\ref{app:compound}).
 
 \paragraph{Tool-use agent.}
 GPT-4o-mini with 5 tool definitions (function calling) achieves $\asra = 0.48$ for \agentpoison{}; the agent executes adversarial tool calls in 48\% of queries. \minja{} and \injecmem{} show $\asra = 0.00$ at $|\cM| = 1{,}000$ (Table~\ref{tab:tool_agent}, Appendix~\ref{app:tool_agent}).
@@ -617,7 +617,7 @@ $H_0$: $s(c; \cH) \sim P_0 = \cN(\mu_0, \sigma^2)$ (benign);
 $H_1$: $s(c; \cH) \sim P_1 = \cN(\mu_1, \sigma^2)$ (poisoned), $\mu_1 > \mu_0$.
 Then $\KL(P_0 \| P_1) = (\mu_1 - \mu_0)^2 / (2\sigma^2) = \rho^2/2$.
 
-\paragraph{Application.} For product distributions, $\KL(P_0^N \| P_1^N) = N\rho^2/2$. By Pinsker: $\TV(P_0^N, P_1^N) \leq \sqrt{N\rho^2/4} = \rho\sqrt{N}/2$. Le Cam gives minimax risk $R^* \geq \frac{1}{2}(1 - \TV) \geq \frac{1}{2}(1 - \rho\sqrt{N}/2)$. Total error $\geq 2R^* = 1 - \rho\sqrt{N}/2$.
+\paragraph{Application.} For product distributions, $\KL(P_0^N \| P_1^N) = N\rho^2/2$. By Pinsker: $\TV(P_0^N, P_1^N) \leq \sqrt{N\rho^2/4} = \rho\sqrt{N}/2$. Le Cam gives minimax risk $R^* \geq \frac{1}{2}(1 - \TV) \geq \frac{1}{2}(1 - \rho\sqrt{N}/2)$ under the uniform prior $\PP(H_0) = \PP(H_1) = 1/2$. Under this prior, the frequentist total error $\fpr + (1-\tpr) = 2 \cdot P_e \geq 2R^* = 1 - \rho\sqrt{N}/2$.
 
 \paragraph{Alternative via Fano.} For $M = 2$ hypotheses, Fano's inequality gives $P_e \geq 1 - (I(X; \Theta) + \log 2)/\log M = 1 - (N\rho^2/4 + \log 2)/\log 2$, where $I(X; \Theta) \leq \max_j \KL(P_j^N \| \bar{P}^N) \leq N\rho^2/4$ by the mixture bound. This yields a slightly weaker constant but extends to the $M$-ary setting (e.g., distinguishing $M$ attack types simultaneously).
 
@@ -626,7 +626,7 @@ Then $\KL(P_0 \| P_1) = (\mu_1 - \mu_0)^2 / (2\sigma^2) = \rho^2/2$.
 \subsection{Proof of Theorem~\ref{thm:calibration_bound}}
 \label{app:proof_calibration}
 
-By Hoeffding on $[0,1]$: $|\hat{\mu}_N - \mu| \leq \sqrt{\log(2/\delta)/(2N)}$ w.p.\ $\geq 1 - \delta/2$. By chi-squared concentration: $|\hat{\sigma}_N - \sigma| \leq \sigma\sqrt{\log(2/\delta)/(2(N-1))}$ w.p.\ $\geq 1 - \delta/2$. Triangle inequality: $|\tau_N - \tau^*| \leq |\hat{\mu}_N - \mu| + \kappa|\hat{\sigma}_N - \sigma|$. Union bound yields the calibration bound in Theorem~\ref{thm:calibration_bound}.
+By Hoeffding on $[0,1]$ \citep{wainwright2019highdim}: $|\hat{\mu}_N - \mu| \leq \sqrt{\log(2/\delta)/(2N)}$ w.p.\ $\geq 1 - \delta/2$. By sub-Gaussian concentration of the sample standard deviation \citep{wainwright2019highdim}: $|\hat{\sigma}_N - \sigma| \leq \sigma\sqrt{\log(2/\delta)/(2(N-1))}$ w.p.\ $\geq 1 - \delta/2$. Triangle inequality: $|\tau_N - \tau^*| \leq |\hat{\mu}_N - \mu| + \kappa|\hat{\sigma}_N - \sigma|$. Union bound yields the calibration bound in Theorem~\ref{thm:calibration_bound}.
 
 \subsection{Proof of Theorem~\ref{thm:regret}}
 \label{app:proof_regret}
@@ -810,6 +810,8 @@ The first term is the Bernstein bound on the empirical FPR; the second accounts 
 
 \paragraph{Proactive.} 16 probe queries span 8 subtopics. Threshold $\tau = 0.19$ minimizes FPR while maintaining $\geq 0.50$ TPR on centroid passages.
 
+\paragraph{Composite defense.} The weighted ensemble uses $w_{\text{wm}} = 0.50$, $w_{\text{val}} = 0.20$, $w_{\text{pro}} = 0.30$, threshold $\theta = 0.50$: an entry is rejected if $0.50 \cdot d_{\text{wm}}(c) + 0.20 \cdot d_{\text{val}}(c) + 0.30 \cdot d_{\text{pro}}(c) > 0.50$. Composite achieves $\tpr = 1.00$ because watermarking alone achieves $\tpr = 1.00$ when controlling ingestion; for attacks exploiting auto-storage (bypassing watermarking), proactive and validation terms provide the remaining detection.
+
 \paragraph{Evaluation correction.} Prior work evaluated \agentpoison{} with plain queries $q$; the paper's Algorithm~2 specifies triggered queries $q \oplus \trigger^*$, changing $\cosim$ from $\approx 0.45$ to $\sim 0.78$.
 
 \section{Ablation studies}
@@ -919,7 +921,7 @@ Three structural attacks: \textbf{Hub insertion} (high-degree adversarial node),
 \label{app:propagation}
 
 \begin{definition}[SIR propagation]
-For $N$ agents sharing $\cM_{\text{shared}}$, the discrete-step SIR model~\citep{gu2024agentsmith} evolves: $S(t{+}1) = S(t) - \beta S(t) I(t)/N$, $I(t{+}1) = I(t) + \beta S(t) I(t)/N - \gamma I(t)$, $R(t{+}1) = R(t) + \gamma I(t)$, where $\beta$ is transmission rate and $\gamma$ recovery rate.
+For $N$ agents sharing $\cM_{\text{shared}}$, the discrete-step SIR model~\citep{kermack1927sir,gu2024agentsmith} evolves: $S(t{+}1) = S(t) - \beta S(t) I(t)/N$, $I(t{+}1) = I(t) + \beta S(t) I(t)/N - \gamma I(t)$, $R(t{+}1) = R(t) + \gamma I(t)$, where $\beta$ is transmission rate and $\gamma$ recovery rate.
 \end{definition}
 
 Without defense, steady-state infection is $I_\infty/N = 1 - \gamma/\beta$ for $\beta > \gamma$. With \memsad{} quarantine ($\tpr = 1.00$ for \minja{}), $\gamma_{\text{eff}} = \gamma + \tpr \cdot \beta$; the condition $\beta > \gamma_{\text{eff}}$ is never satisfied, eliminating secondary infection.
@@ -961,7 +963,7 @@ Without defense, steady-state infection is $I_\infty/N = 1 - \gamma/\beta$ for $
     Defense & FPR & 95\% CI & $n$/trial \\
     \midrule
     \memsad{} ($\kappa = 2.0$) & 0.000 & $[0.000, 0.004]$ & 1000 \\
-    Watermark ($z_{\text{thr}} = 4.0$) & 0.000 & $[0.000, 0.004]$ & 1000 \\
+    Watermark ($z_{\text{thr}} = 1.5$) & 0.000 & $[0.000, 0.004]$ & 1000 \\
     Proactive ($\tau = 0.19$) & 0.010 & $[0.004, 0.023]$ & 1000 \\
     \bottomrule
   \end{tabular}
