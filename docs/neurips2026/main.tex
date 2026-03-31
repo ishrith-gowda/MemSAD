@@ -62,6 +62,7 @@
 \newcommand{\cN}{\mathcal{N}}
 \newcommand{\cX}{\mathcal{X}}
 \newcommand{\cU}{\mathcal{U}}
+\newcommand{\cE}{\mathcal{E}}
 \newcommand{\sad}{\textsc{SAD}}
 \newcommand{\memsad}{\textsc{MemSAD}}
 \newcommand{\agentpoison}{\textsc{AgentPoison}}
@@ -571,7 +572,7 @@ On Mem0~\citep{mem0} (LLM-mediated storage), \agentpoison{} drops to $\asrr = 0.
 No single defense dominates across access models $\alpha$: watermarking fails when auto-storage bypasses ingestion control; \memsad{} needs triggered calibration for \agentpoison{}; proactive detection complements both. The defender's uncertainty about $\alpha$ motivates composite portfolios ($\asrr^* = 0$, Proposition~\ref{prop:equilibrium}). We recommend layered deployment: watermarking at ingestion, rolling \memsad{} at retrieval, composite for high-value agents ($\sim$200\,ms total; Appendix~\ref{app:complexity}).
 
 \paragraph{The synonym frontier.}
-Proposition~\ref{prop:synonym} reveals a structural limitation: paraphrase-trained encoders map synonyms to nearly identical embeddings ($\epsilon_{\text{syn}} \approx 0$). \memsad{}+ partially closes this via character n-gram features, but complete closure requires syntactic structure or provenance metadata. Meanwhile, compound exposure (Table~\ref{tab:compound_exposure}) shows even weak attacks reach 90\% compromise in 4 sessions, and tool-use evaluation (Table~\ref{tab:tool_agent}) confirms $\asra = 0.48$ with GPT-4o-mini---memory poisoning poses genuine production risk.
+Proposition~\ref{prop:synonym} reveals a structural limitation: paraphrase-trained encoders map synonyms to nearly identical embeddings ($\epsilon_{\text{syn}} \approx 0$). \memsad{}+ partially closes this via character n-gram features, but complete closure requires syntactic structure or provenance metadata. Meanwhile, compound exposure (Table~\ref{tab:compound_exposure}) shows even weak attacks reach 90\% compromise in 4 sessions, and tool-use evaluation (Table~\ref{tab:tool_agent}) confirms $\asra = 0.48$ with GPT-4o-mini, establishing that memory poisoning poses genuine production risk.
 
 \paragraph{Limitations.}
 (i)~Corpus scale: $|\cM| = 1{,}000$; production systems may reach $10^6$ entries.
@@ -817,7 +818,7 @@ The first term is the Bernstein bound on the empirical FPR; the second accounts 
 \begin{table}[h]
   \centering
   \small
-  \caption{\memsad{} threshold sensitivity with combined scoring.}
+  \caption{\memsad{} threshold sensitivity with combined scoring ($|\cM|=200$; see Table~\ref{tab:defense_tpr_fpr} for $|\cM|=1{,}000$ results).}
   \label{tab:ablation_threshold}
   \vspace{2pt}
   \begin{tabular}{l ccc ccc}
@@ -847,13 +848,16 @@ The first term is the Bernstein bound on the empirical FPR; the second accounts 
     \toprule
     $|\cM|$ & \agentpoison{} & \minja{} & \injecmem{} \\
     \midrule
-    50  & 1.00 & 0.70 & 0.65 \\
-    100 & 1.00 & 0.65 & 0.55 \\
-    200 & 1.00 & 0.65 & 0.50 \\
-    300 & 1.00 & 0.60 & 0.40 \\
-    500 & 1.00 & 0.60 & 0.30 \\
+    50   & 1.00 & 0.70 & 0.65 \\
+    100  & 1.00 & 0.65 & 0.55 \\
+    200  & 1.00 & 0.65 & 0.50 \\
+    300  & 1.00 & 0.60 & 0.40 \\
+    500  & 1.00 & 0.60 & 0.30 \\
+    1000 & 1.00 & 0.14 & 0.07 \\
     \bottomrule
   \end{tabular}
+  \\[2pt]
+  {\footnotesize \agentpoison{} uses triggered protocol; $|\cM|=1{,}000$ row matches main evaluation (Table~\ref{tab:attack_results}).}
 \end{table}
 
 \begin{table}[h]
