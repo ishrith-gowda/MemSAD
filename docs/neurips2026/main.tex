@@ -255,11 +255,11 @@ Under Assumption~\ref{ass:encoder}(iii), $\cosim(\enc(q), \enc(m)) = \enc(q)^\to
   \vspace{-6pt}
 \end{table}
 
-The three attacks (Table~\ref{tab:attack_properties}) span monotonically decreasing adversary capability.
+The three attacks (Table~\ref{tab:attack_properties}) span decreasing adversary access requirements (write $\supset$ query $\supset$ single-interaction), which is the primary capability ordering; measured $\asrt$ is a secondary metric that depends on corpus scale and agent model.
 \agentpoison{} ($\alpha = \textsc{write}$) optimizes $\trigger^* = \argmax_{\trigger} \EE_{q \sim \cQ_v}[\cosim(\enc(q \oplus \trigger), \enc(\passage))]$ via HotFlip over DPR embeddings.
 \minja{} ($\alpha = \textsc{query}$) exploits auto-storage via progressive-shortening.
 \injecmem{} ($\alpha = \textsc{single}$) injects broad-vocabulary anchor passages spanning multiple domains.
-\textbf{Protocol distinction:} \citet{chen2024agentpoison}'s Algorithm~2 specifies triggered queries $q \oplus \trigger^*$; evaluating with plain $q$ measures a weaker threat model (cosine similarity $\approx 0.45$ vs.\ $\approx 0.78$). Under the intended protocol, $\asrr$ increases from $0.25$ to $1.00$.
+\textbf{Protocol distinction:} \citet{chen2024agentpoison}'s Algorithm~2 specifies triggered queries $q \oplus \trigger^*$; evaluating with plain queries $q$ (as in prior reproductions) measures a weaker setting (cosine similarity $\approx 0.45$ vs.\ $\approx 0.78$). Following the intended protocol, $\asrr$ increases from $0.25$ to $1.00$.
 
 %% ============================================================
 \section{\memsad{}: Semantic Anomaly Detection}
