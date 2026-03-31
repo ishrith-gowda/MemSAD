@@ -481,7 +481,7 @@ Table~\ref{tab:attack_results} reports the main results at $|\cM| = 1{,}000$.
 
 Table~\ref{tab:defense_tpr_fpr} reports the full $3 \times 5$ matrix (heatmap in Appendix~\ref{app:additional_figures}).
 \textbf{(i)}~Watermark achieves perfect detection when the defender controls ingestion, but \minja{} and \injecmem{} exploit auto-storage pathways that bypass watermarking; \memsad{} provides content-level detection independent of ingestion control.
-\textbf{(ii)}~\memsad{} detects \minja{} ($\tpr = 0.40$, AUROC $= 0.812$) and \injecmem{} ($\tpr = 0.20$, AUROC $= 0.867$) at $|\cM|=1{,}000$; triggered calibration raises \agentpoison{} to $\tpr = 1.00$, AUROC $= 1.000$. The defender need not know the exact trigger: calibrating with domain-representative queries spanning expected usage patterns suffices.
+\textbf{(ii)}~\memsad{} detects \minja{} ($\tpr = 0.40$, AUROC $= 0.914$) and \injecmem{} ($\tpr = 0.20$, AUROC $= 0.816$) at $|\cM|=1{,}000$; triggered calibration raises \agentpoison{} to $\tpr = 1.00$, AUROC $= 1.000$. The defender need not know the exact trigger: calibrating with domain-representative queries spanning expected usage patterns suffices.
 \textbf{(iii)}~Proactive is complementary: $\tpr = 1.00$ for \agentpoison{}, $0.07$ for \minja{}.
 \textbf{(iv)}~Composite portfolios achieve $\tpr = 1.00$, $\fpr = 0.00$ across all attacks (Proposition~\ref{prop:equilibrium}).
 
@@ -500,7 +500,7 @@ Table~\ref{tab:defense_tpr_fpr} reports the full $3 \times 5$ matrix (heatmap in
     Watermark   & 1.00 & 1.00 & 1.00 & 0.00 & 0.00 & 0.00 & 0.991 \\
     Validation  & 0.60 & 0.40 & 0.80 & 0.10 & 0.10 & 0.10 & --- \\
     Proactive   & 1.00 & 0.07 & 0.60 & 0.01 & 0.01 & 0.01 & --- \\
-    \memsad{} (comb.)  & 0.00$^\dagger$ & 0.40 & 0.20 & 0.04 & 0.04 & 0.04 & 0.846 \\
+    \memsad{} (comb.)  & 0.00$^\dagger$ & 0.40 & 0.20 & 0.04 & 0.04 & 0.04 & 0.867 \\
     Composite   & 1.00 & 1.00 & 1.00 & 0.00 & 0.00 & 0.00 & --- \\
     \bottomrule
   \end{tabular}
@@ -541,7 +541,7 @@ The certified condition (Lemma~\ref{lem:certified}) still holds for \minja{} pos
 \subsection{Statistical validation}
 
 Bonferroni-corrected binomial tests ($\alpha' = 0.003$, 15 comparisons): all composite results reject $H_0: \tpr = 0$ with power $= 1.00$ (Appendix~\ref{app:hypothesis}).
-\memsad{} AUROC at $\kappa = 2.0$: $0.867$ (\injecmem{}), $0.812$ (\minja{}); triggered calibration raises \agentpoison{} to AUROC $= 1.000$.
+\memsad{} AUROC at $\kappa = 2.0$: $0.914$ (\minja{}), $0.816$ (\injecmem{}), $0.870$ (\agentpoison{}, plain); triggered calibration raises \agentpoison{} to AUROC $= 1.000$.
 Theory validation: calibration bound predicts $|\tau_N - \tau^*| \leq 0.031$ at $N = 200$; observed $0.018$ (Appendix~\ref{app:sad_analysis}).
 
 \subsection{Ablation highlights}
