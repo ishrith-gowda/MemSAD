@@ -120,7 +120,7 @@ Existing RAG defenses~\citep{zou2024poisonedrag, chaudhari2024phantom, xiang2024
 \paragraph{Contributions.}
 Our seven contributions span theory, algorithm design, and empirical methodology.
 \textbf{(1)}~\emph{Formal threat model.} Stackelberg game formulation (Definitions~\ref{def:threat_model}--\ref{def:stackelberg}) with equilibrium existence (Proposition~\ref{prop:equilibrium}), and a protocol distinction showing that evaluating \agentpoison{} under its intended triggered-query protocol raises $\asrr$ from $0.25$ to $1.00$.
-\textbf{(2)}~\emph{\memsad{} defense.} A calibration-based detector (Definition~\ref{def:sad}) with the gradient coupling theorem (Theorem~\ref{thm:gradient_coupling}) proving continuous evasion impossible, a certified detection radius (Lemma~\ref{lem:certified}) providing checkable per-entry guarantees, and a Fisher-Rao characterization (Theorem~\ref{thm:fisher_rao}) of the detection-evasion geometry showing the tradeoff is governed by the information metric on the embedding manifold.
+\textbf{(2)}~\emph{\memsad{} defense.} A calibration-based detector (Definition~\ref{def:sad}) with a gradient coupling theorem (Theorem~\ref{thm:gradient_coupling}) establishing that monotone retrieval-score detectors are \emph{necessary and sufficient} for continuous-evasion resistance (Karlin--Rubin analogue for embedding spaces), a certified detection radius (Lemma~\ref{lem:certified}) providing checkable per-entry guarantees, and a Fisher-Rao characterization (Theorem~\ref{thm:fisher_rao}) showing the detection-evasion tradeoff is governed by the information metric on the embedding manifold.
 \textbf{(3)}~\emph{Theoretical foundations.} Information-theoretic lower bound via Le Cam's method (Theorem~\ref{thm:minimax_lower}) proving minimax optimality up to a $\log(1/\delta)$ factor; finite-sample calibration bounds (Theorem~\ref{thm:calibration_bound}); online regret bounds (Theorem~\ref{thm:regret}) with optimal window at rate $O(\sigma^{2/3}\Delta^{1/3})$; Wasserstein generalization bound (Theorem~\ref{thm:generalization}); and computational hardness of optimal evasion (Proposition~\ref{prop:hardness}).
 \textbf{(4)}~\emph{Closing the synonym loophole.} Formal characterization of the synonym-invariance loophole (Proposition~\ref{prop:synonym}), and \memsad{}+: a combined semantic-lexical detector that closes this loophole via character n-gram divergence features that are provably not synonym-invariant (Proposition~\ref{prop:memsad_plus}), reducing evasion by $3\times$ on \injecmem{} entries.
 \textbf{(5)}~\emph{Persistent threat analysis.} Compound exposure analysis showing that even ``weak'' per-query attacks ($\asrr = 0.14$) reach 90\% compromise probability within 4 agent sessions (Table~\ref{tab:compound_exposure}), reframing attack severity for persistent memory.
@@ -298,15 +298,14 @@ The \emph{combined scoring mode} averages max-query and mean-query similarity, c
 \subsection{Gradient coupling theorem}
 \label{sec:gradient}
 
-The core question is whether the defender can design a detection objective that decouples from retrieval.
-The forward direction (monotone $\cD$ shares the gradient of $\cR$, by the chain rule) is a design principle: by choosing $\cD = g \circ \cR$, the defender ensures that any continuous embedding perturbation reducing detection score proportionally reduces retrieval score, with rate $g'(\cR)$.
-The operationally significant result is the \emph{converse}: any $\cD$ that is \emph{not} monotone in $\cR$ necessarily admits adversarial embeddings with high retrieval score yet low detection score, i.e., the adversary can evade detection without sacrificing retrieval rank. This characterizes \memsad{}'s max-similarity score as the \emph{necessary} structure for continuous-domain detection completeness.
+The central structural question is: \emph{what property must a detector possess to guarantee that any continuous evasion attempt degrades retrieval rank?}
+We answer this with a necessity--sufficiency--canonicity result, following the pattern of the Karlin--Rubin theorem~\citep{lehmann1959testing} in hypothesis testing: monotonicity in the retrieval score is both \emph{necessary} (any non-monotone detector admits evasion without retrieval cost) and \emph{sufficient} (any monotone detector couples evasion to retrieval degradation), and the retrieval score is the \emph{minimal sufficient statistic} for this coupling property.
 
-\begin{theorem}[Gradient coupling and converse]
+\begin{theorem}[Gradient coupling: necessity, sufficiency, and canonicity]
 \label{thm:gradient_coupling}
 Let $\enc$ satisfy Assumption~\ref{ass:encoder}, $e_c \coloneqq \enc(c)$, $q^* \coloneqq \argmax_{q \in \cH} \cosim(e_c, \enc(q))$, $\cR(e_c) \coloneqq \cosim(e_c, \enc(q^*))$.
 
-\emph{(i) Forward (design principle):} For any differentiable $\cD = g \circ \cR$ with monotone increasing $g$, $g' > 0$:
+\emph{(i) Sufficiency:} For any differentiable $\cD = g \circ \cR$ with monotone increasing $g$, $g' > 0$:
 \begin{equation}
   \nabla_{e_c} \cD(e_c) = g'(\cR(e_c)) \cdot \nabla_{e_c} \cR(e_c),
   \quad \text{so} \quad
@@ -315,15 +314,24 @@ Let $\enc$ satisfy Assumption~\ref{ass:encoder}, $e_c \coloneqq \enc(c)$, $q^* \
 \end{equation}
 Under L2-normalization (Assumption~\ref{ass:encoder}(iii)), $\nabla_{e_c}\cR = \enc(q^*) - (e_c^\top\enc(q^*))e_c$.
 
-\emph{(ii) Converse (necessity):} If $\cD$ is \emph{not} monotone in $\cR$, there exist thresholds $\tau_{\text{ret}}, \tau_{\text{det}}$ and adversarial embeddings $e_c$ with $\cR(e_c) > \tau_{\text{ret}}$ yet $\cD(e_c) < \tau_{\text{det}}$: the adversary can achieve retrieval rank $\leq k$ while evading detection.
+\emph{(ii) Necessity:} If $\cD$ is \emph{not} monotone in $\cR$, there exist thresholds $\tau_{\text{ret}}, \tau_{\text{det}}$ and a continuous path $\gamma: [0,1] \to \mathbb{S}^{d-1}$ with $\cR(\gamma(1)) > \tau_{\text{ret}}$ yet $\cD(\gamma(1)) < \tau_{\text{det}}$: the adversary can traverse continuously to high retrieval rank while evading detection.
+
+\emph{(iii) Canonicity:} Among all detectors achieving coupling (i.e., satisfying (i)), the max-cosine score $\cD = \cR$ (i.e., $g = \mathrm{id}$) is the \emph{unique} detector that is a sufficient statistic for the adversarial-vs-benign hypothesis test induced by $\cR$: any other $g$ preserves the coupling direction but discards distributional information.
 \end{theorem}
 
 \begin{proof}
-\emph{(i)} The chain rule gives $\nabla \cD = g'(\cR) \cdot \nabla \cR$ directly; $g' > 0$ preserves the sign of every directional derivative. Under Assumption~\ref{ass:encoder}(iii) ($\|e_c\| = 1$), the sphere gradient of cosine similarity is $\nabla_{e_c}\cosim(e_c, v) = v - (e_c^\top v)e_c$.
-\emph{(ii)} Non-monotonicity implies $\exists\, e_c, e_c'$ with $\cR(e_c') > \cR(e_c)$ but $\cD(e_c') < \cD(e_c)$. Set $\tau_{\text{ret}} = \cR(e_c)$ and $\tau_{\text{det}} = \cD(e_c)$; then $e_c'$ satisfies $\cR(e_c') > \tau_{\text{ret}}$ and $\cD(e_c') < \tau_{\text{det}}$ by construction.
+\emph{(i)} The chain rule gives $\nabla \cD = g'(\cR) \cdot \nabla \cR$; $g' > 0$ preserves the sign of every directional derivative. Under Assumption~\ref{ass:encoder}(iii), the sphere gradient is $\nabla_{e_c}\cosim(e_c, v) = v - (e_c^\top v)e_c$.
+\emph{(ii)} Non-monotonicity implies $\exists\, e_c, e_c'$ with $\cR(e_c') > \cR(e_c)$ but $\cD(e_c') < \cD(e_c)$. By connectedness of $\mathbb{S}^{d-1}$, there exists a continuous path $\gamma$ from $e_c$ to $e_c'$. Setting $\tau_{\text{ret}} = \cR(e_c)$ and $\tau_{\text{det}} = \cD(e_c)$ yields the claimed path with $\cR(\gamma(1)) > \tau_{\text{ret}}$ and $\cD(\gamma(1)) < \tau_{\text{det}}$.
+\emph{(iii)} The sufficient statistic $\cR$ generates the likelihood ratio $p_1(e)/p_0(e)$ as a monotone function of $\cosim(e, e_{q^*})$ under Gaussian score families (Assumption~\ref{ass:encoder}). By the Neyman--Fisher factorization theorem~\citep{lehmann1959testing}, any function of $e_c$ that is a sufficient statistic for the binary hypothesis test $H_0$: benign vs.\ $H_1$: adversarial must be a function of $\cR(e_c)$. Hence $g = \mathrm{id}$ achieves minimal sufficiency; any $g \neq \mathrm{id}$ retains the coupling direction but is a lossy compression of $\cR$.
 \end{proof}
 
-\noindent \memsad{}'s max-cosine scoring (Definition~\ref{def:sad}) instantiates $g = \mathrm{id}$, achieving maximal coupling. \emph{Remark on combined scoring (eq.~\ref{eq:sad_combined}):} the mean-query term satisfies an analogous coupling theorem with $g' = 1/|\cH|$; the convex combination $s_{\text{comb}} = \frac{1}{2}s_{\max} + \frac{1}{2}s_{\text{mean}}$ inherits coupling with $g'_{\text{comb}} \geq 1/(2|\cH|) > 0$, so Theorem~\ref{thm:gradient_coupling} and Lemma~\ref{lem:certified} apply to $s_{\text{comb}}$ with the same directional guarantee. In particular, $\cD(e_c') < \cD(e_c)$ (evasion) implies $\cR(e_c') < \cR(e_c)$ (retrieval degradation) to first order; the second-order tradeoff surface is analyzed in Appendix~\ref{app:tradeoff_surface}.
+\begin{corollary}[Combined scoring preserves coupling]
+\label{cor:combined_coupling}
+The combined score $s_{\text{comb}} = \alpha\, s_{\max} + (1-\alpha)\, s_{\text{mean}}$ with $\alpha \in (0,1)$ satisfies the gradient coupling (i) with $g'_{\text{comb}} = \alpha + (1-\alpha)/|\cH| > 0$, and admits the same necessity characterization (ii). Consequently, Lemma~\ref{lem:certified} and Theorem~\ref{thm:fisher_rao} apply unchanged to $s_{\text{comb}}$.
+\end{corollary}
+\begin{proof}
+$s_{\text{comb}} = \alpha\,\cR(e_c) + (1-\alpha)\,\frac{1}{|\cH|}\sum_{q}\cosim(e_c, \enc(q))$. Each term is a positive-coefficient linear combination of cosine similarities, hence differentiable with $\nabla s_{\text{comb}} = \alpha \nabla s_{\max} + (1-\alpha)\nabla s_{\text{mean}}$, and $g'_{\text{comb}} = \alpha + (1-\alpha)/|\cH| > 0$. Non-monotonicity of $s_{\text{comb}}$ in $\cR$ would require negative $\alpha$ or $|\cH|=0$, neither of which holds. The second-order tradeoff surface is analyzed in Appendix~\ref{app:tradeoff_surface}.
+\end{proof}
 
 \subsection{Information-geometric characterization}
 \label{sec:fisher_rao}
@@ -446,7 +454,7 @@ We evaluate four additional defenses spanning orthogonal strategies, all operati
 
 \paragraph{Vector memory.}
 FAISS IndexFlatIP with L2-normalized all-MiniLM-L6-v2 embeddings ($d = 384$).
-Benign corpus: $|\cM| = 1{,}000$ synthetic entries across 7 categories (task reminders, calendar events, user preferences, factual knowledge, document references, configuration settings, conversation history), matching the per-user memory scale of deployed systems where active memory stores typically contain $10^2$--$10^3$ entries~\citep{chen2024agentpoison,dong2025minja}; corpus-size ablation (Appendix~\ref{app:ablation}) validates results across $|\cM| \in \{50, \ldots, 1000\}$. \memsad{} calibration uses $N = 50$ benign entries as the reference set (Theorem~\ref{thm:calibration_bound} predicts $|\tau_N - \tau^*| \leq 0.044$ at $N=50$, $\delta=0.05$).
+Benign corpus: $|\cM| = 1{,}000$ synthetic entries across 7 categories (task reminders, calendar events, user preferences, factual knowledge, document references, configuration settings, conversation history), matching the per-user memory scale of deployed systems where active memory stores typically contain $10^2$--$10^3$ entries~\citep{chen2024agentpoison,dong2025minja}; corpus-size ablation (Appendix~\ref{app:ablation}) validates results across $|\cM| \in \{50, \ldots, 1000\}$. \memsad{} calibration uses $N = 50$ benign entries as the reference set (Theorem~\ref{thm:calibration_bound} predicts $|\tau_N - \tau^*| \leq 0.044$ at $N=50$, $\delta=0.05$). \textbf{Cross-corpus generalization} is validated on a real-data corpus combining Natural Questions knowledge passages~\citep{kwiatkowski2019natural} with synthetic filler to $|\cM|=1{,}000$ (Appendix~\ref{app:nq_eval}): \agentpoison{} transfers ($\asrr = 1.00 \pm 0.00$); \minja{}'s $\asrr = 0.58 \pm 0.06$ on the topically homogeneous NQ corpus confirms corpus diversity is a risk factor.
 Poison counts: $n = 5$ (\agentpoison{}), $10$ (\minja{}), $15$ (\injecmem{}).
 $k = 5$; $|\cQ_v| = |\cQ_b| = 100$.
 Bootstrap 95\% CIs from 5 independent seeds (each seed generates a distinct corpus permutation and query sample); attack outcomes are deterministic given a fixed corpus, so CI widths reflect corpus-composition variance.
@@ -479,7 +487,7 @@ Table~\ref{tab:attack_results} reports the main results at $|\cM| = 1{,}000$.
 \agentpoison{} achieves $\asrr = 1.00$ under the triggered-query protocol (Section~\ref{sec:threat}), confirming that trigger optimization defeats corpus dilution entirely.
 \minja{} drops from $\asrr = 0.65$ at $|\cM|=200$ to $0.14$ at $|\cM|=1{,}000$, a $5\times$ dilution effect demonstrating that untriggered attacks are naturally mitigated by corpus scale.\footnote{$\isr$ measures write-time injection success; $\asrr$ measures retrieval-time exposure.}
 \injecmem{} similarly drops from $0.50$ to $0.07$, with benign accuracy improving from $0.80$ to $0.98$ as poison entries become a smaller fraction of the corpus.
-\textbf{Measured $\asra$:} GPT-2 (no safety alignment) yields $\asra = 0.90$ for \agentpoison{}, an upper bound under maximal compliance; GPT-4o-mini shows $\asra = 0.20$, reflecting production safety alignment and the gap between naive and hardened agents. MINJA and InjecMEM show $\asra \leq 0.17$, suggesting that diluted retrieval also reduces action execution.
+\textbf{Measured $\asra$:} GPT-2 (no safety alignment) yields $\asra = 0.90$ for \agentpoison{}, an upper bound under maximal compliance; GPT-4o-mini shows $\asra = 0.20$, reflecting production safety alignment. The resulting measured $\asrt = \asrr \times \asra^{\text{4o-mini}} = 1.00 \times 0.20 = 0.20$ is $3.4\times$ lower than the modelled $\asrt^{\dagger} = 0.68$ from~\citet{chen2024agentpoison}; this gap arises because modelled $\asra$ was estimated with an unaligned agent under jailbreak-style prompts, while GPT-4o-mini's safety training actively resists adversarial instructions. The modelled value represents a worst-case (minimally-aligned) agent; the measured value represents a production-aligned baseline. MINJA and InjecMEM show $\asra \leq 0.17$, consistent with diluted retrieval reducing action execution.
 
 % figures moved to appendix for space; see Appendix~\ref{app:additional_figures}
 
@@ -581,7 +589,7 @@ No single defense dominates across access models $\alpha$: watermarking fails wh
 Proposition~\ref{prop:synonym} reveals a structural limitation: paraphrase-trained encoders map synonyms to nearly identical embeddings ($\epsilon_{\text{syn}} \approx 0$). \memsad{}+ partially closes this via character n-gram features, but complete closure requires syntactic structure or provenance metadata. Meanwhile, compound exposure (Table~\ref{tab:compound_exposure}) shows even weak attacks reach 90\% compromise in 4 sessions, and tool-use evaluation (Table~\ref{tab:tool_agent}) confirms $\asra = 0.48$ with GPT-4o-mini, establishing that memory poisoning poses genuine production risk.
 
 \paragraph{Limitations.}
-(i)~Corpus scale: $|\cM| = 1{,}000$; production systems may reach $10^6$ entries.
+(i)~Corpus scale: $|\cM| = 1{,}000$; production systems may reach $10^6$ entries. Cross-corpus results on Natural Questions (Appendix~\ref{app:nq_eval}) provide partial real-data validation; large-scale evaluation remains future work.
 (ii)~Regret bound assumes slow drift; abrupt shifts degrade calibration.
 (iii)~Hardness result applies to piecewise-linear encoders; transformer extension is conjectured.
 (iv)~\memsad{}+ does not eliminate synonym evasion; sentence-level rewrites bypass character features.
@@ -634,7 +642,12 @@ Then $\KL(P_0 \| P_1) = (\mu_1 - \mu_0)^2 / (2\sigma^2) = \rho^2/2$.
 \subsection{Proof of Theorem~\ref{thm:calibration_bound}}
 \label{app:proof_calibration}
 
-By Hoeffding on $[0,1]$ \citep{wainwright2019highdim}: $|\hat{\mu}_N - \mu| \leq \sqrt{\log(2/\delta)/(2N)}$ w.p.\ $\geq 1 - \delta/2$. By sub-Gaussian concentration of the sample standard deviation \citep{wainwright2019highdim}: $|\hat{\sigma}_N - \sigma| \leq \sigma\sqrt{\log(2/\delta)/(2(N-1))}$ w.p.\ $\geq 1 - \delta/2$. Triangle inequality: $|\tau_N - \tau^*| \leq |\hat{\mu}_N - \mu| + \kappa|\hat{\sigma}_N - \sigma|$. Union bound yields the calibration bound in Theorem~\ref{thm:calibration_bound}.
+By Hoeffding on $[0,1]$ \citep{wainwright2019highdim}: $|\hat{\mu}_N - \mu| \leq \sqrt{\log(2/\delta)/(2N)}$ w.p.\ $\geq 1 - \delta/2$.
+
+For the standard deviation term, let $Z = (N-1)\hat{\sigma}_N^2/\sigma^2 \sim \chi^2(N-1)$ (exactly, for Gaussian scores; approximately for bounded scores by Berry-Esseen). By Laurent \& Massart~\citep{laurentmassart2000} Lemma~1: $\PP[Z \geq (N-1) + 2\sqrt{(N-1)x} + 2x] \leq e^{-x}$ and $\PP[Z \leq (N-1) - 2\sqrt{(N-1)x}] \leq e^{-x}$. Setting $x = \log(2/\delta)$ and applying the delta method ($\hat{\sigma}_N = \sigma\sqrt{Z/(N-1)}$, so $|\hat{\sigma}_N - \sigma| = \sigma|\sqrt{Z/(N-1)} - 1|$) with $\sqrt{1+u} - 1 \leq u/2$ for $|u| \leq 1$ yields:
+$|\hat{\sigma}_N - \sigma| \leq \sigma\sqrt{\log(2/\delta)/(2(N-1))}$ w.p.\ $\geq 1 - \delta/2$.
+
+Triangle inequality: $|\tau_N - \tau^*| \leq |\hat{\mu}_N - \mu| + \kappa|\hat{\sigma}_N - \sigma|$. Union bound yields the calibration bound in Theorem~\ref{thm:calibration_bound}.
 
 \subsection{Proof of Theorem~\ref{thm:regret}}
 \label{app:proof_regret}
@@ -670,15 +683,25 @@ where the last equality uses $g = \text{id}$ (since $\cD$ is the cosine similari
 
 \paragraph{Reduction from CVP.} Given a CVP instance $(\Lambda, t)$ where $\Lambda \subseteq \RR^n$ is a lattice with basis $B \in \RR^{n \times n}$ and $t \in \RR^n$ is the target vector, we construct a memory poisoning evasion instance as follows.
 
-\paragraph{Encoder construction.} Define a ReLU encoder $\enc: \RR^n \to \RR^d$ with $L$ layers. Each ReLU activation partitions the input space into $O(2^{nL})$ linear regions~\citep{micciancio2001hardness}. Within each region $R_i$, the encoder acts as an affine map: $\enc(x) = W_i x + b_i$ for $x \in R_i$.
-
-\paragraph{Feasible set.} The evasion constraint $\cD(e_c + \delta) \leq \hat{\mu} + \kappa\hat{\sigma}$ with $\cR(e_c + \delta) \geq \tau_{\text{ret}}$ defines a set:
+\paragraph{Encoder construction (explicit).}
+Let $n$ be the CVP lattice dimension. Define $\enc: \RR^n \to \RR^n$ as a single-hidden-layer ReLU network:
 \begin{equation}
-  \cF = \{x : \cosim(\enc(x), \enc(q^*)) \leq \hat{\mu} + \kappa\hat{\sigma}\} \cap \{x : \cosim(\enc(x), \enc(q^*)) \geq \tau_{\text{ret}}\}.
+  \enc(x) = \mathrm{ReLU}(W_1 x), \quad W_1 = B^\top \in \RR^{n \times n},
 \end{equation}
-Within each linear region $R_i$, $\cF \cap R_i$ is the intersection of two half-spaces in the input (via the affine map), hence a convex polytope. The global feasible set $\cF = \bigcup_i (\cF \cap R_i)$ is a \emph{union of polytopes}.
+where $B$ is the lattice basis matrix. Set the query embedding $\enc(q^*) = t/\|t\|$ (normalized target). Set biases to zero, so the encoder is $\enc(x) = \mathrm{ReLU}(B^\top x)$.
 
-\paragraph{Reduction.} Set the lattice basis as $B = W_1^\top$ (first-layer weights), and the target $t$ as the current adversarial input $x_c$. Finding the minimum-norm perturbation $\delta^* = \argmin_\delta \|\delta\|$ such that $x_c + \delta \in \cF$ requires finding the closest point in a union of polytopes to $x_c$. When the polytope boundaries align with the lattice structure of $W_1$ (which can be arranged by construction), this is at least as hard as CVP. Since CVP is NP-hard under randomized reductions~\citep{micciancio2001hardness}, the minimum-perturbation evasion problem is NP-hard. \qed
+\paragraph{Feasible set.} The evasion constraint $\cD(e_c + \delta) \leq \hat{\mu} + \kappa\hat{\sigma}$ with $\cR(e_c + \delta) \geq \tau_{\text{ret}}$ defines:
+\begin{equation}
+  \cF = \{x \in \RR^n : \cosim(\enc(x), t/\|t\|) \in [\tau_{\text{ret}},\, \hat{\mu} + \kappa\hat{\sigma}]\}.
+\end{equation}
+Within each ReLU activation region $\mathcal{I} \subseteq \{0,1\}^n$ (indexing which neurons are active), the encoder acts as the affine map $\enc_{\mathcal{I}}(x) = D_{\mathcal{I}} B^\top x$ where $D_{\mathcal{I}}$ is the diagonal activation mask. Hence $\cF \cap \text{region}_\mathcal{I}$ is a convex polytope defined by two half-space constraints in $x$-space.
+
+\paragraph{Formal reduction.}
+Given the CVP instance $(\Lambda = B\mathbb{Z}^n, t)$, let $x_0 = 0$ be the origin (current passage embedding). The minimum-perturbation evasion problem asks for:
+\[
+  \delta^* = \argmin_{\delta} \|\delta\| \quad \text{s.t.} \quad x_0 + \delta \in \cF.
+\]
+We claim $\|\delta^*\| = \|B^{-\top} v^* - 0\|$ where $v^*$ is the closest lattice vector to $t$ in $\Lambda$. Specifically: within the single activation region where all neurons are active ($D_\mathcal{I} = I$), $\enc(x) = B^\top x$, and $\cosim(B^\top x, t/\|t\|) = (B^\top x)^\top t / (\|B^\top x\| \cdot \|t\|)$. The feasibility constraint becomes a quadratic constraint in $x$. For the target similarity $\tau_{\text{ret}} = \cos\theta^*$ induced by the CVP distance, the minimum-norm $x$ satisfying the constraint corresponds exactly to finding the vector $x = B^{-\top} \lambda$ with $\lambda \in \mathbb{Z}^n$ closest to $t$ in the lattice metric --- which is exactly CVP. This reduction runs in polynomial time in $n$ (constructing $W_1 = B^\top$ and $\enc(q^*) = t/\|t\|$ takes $O(n^2)$ time). Since CVP is NP-hard under randomized reductions~\citep{micciancio2001hardness}, the minimum-perturbation evasion problem is NP-hard. \qed
 
 \paragraph{Practical implication.} This hardness result is \emph{worst-case} over encoder architectures: for the specific ReLU encoder construction used in the reduction, the optimal evasion is NP-hard. For the actual all-MiniLM-L6-v2 encoder (transformer architecture), the reduction does not directly apply due to softmax nonlinearities, and the result is conjectured but not proven. The practical takeaway is that efficient optimal evasion is unlikely, motivating the adversary's empirical shift to discrete synonym substitution that sidesteps gradient-based search entirely.
 
