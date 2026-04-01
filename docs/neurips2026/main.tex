@@ -585,6 +585,8 @@ Proposition~\ref{prop:synonym} reveals a structural limitation: paraphrase-train
 (ii)~Regret bound assumes slow drift; abrupt shifts degrade calibration.
 (iii)~Hardness result applies to piecewise-linear encoders; transformer extension is conjectured.
 (iv)~\memsad{}+ does not eliminate synonym evasion; sentence-level rewrites bypass character features.
+(v)~Compound exposure formula assumes i.i.d.\ sessions; persistent memory may violate independence if a successfully retrieved poison influences subsequent queries, making the formula a conservative lower bound on true risk.
+(vi)~OOD baseline comparison uses default Mahalanobis/KNN parameterization; properly tuned variants may improve FPR, though query-unawareness remains a structural disadvantage for triggered attacks.
 
 %% ============================================================
 \section{Conclusion}
