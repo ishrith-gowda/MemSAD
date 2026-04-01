@@ -144,7 +144,7 @@ On the defense side, A-MemGuard~\citep{amemguard2025} proposes proactive defense
 \citet{zou2024poisonedrag} optimize adversarial documents via HotFlip~\citep{ebrahimi2018hotflip} ($>\!90\%$ ASR on million-document corpora).
 \citet{xiang2024robustrag} provide certified robustness via \emph{isolate-then-aggregate}, but require post-retrieval processing of $k$ passages.
 RAGDefender~\citep{ragdefender2025} applies post-retrieval passage scoring; SPECTRE~\citep{hayase2021spectre} uses spectral detection requiring full corpus access ($O(|\cM|^2 d)$).
-Randomized-smoothing-based certified defenses for LLMs~\citep{robey2023smoothllm} provide probabilistic guarantees against prompt-level perturbations but operate on query inputs, not on persistent memory entries. Our work differs along three axes: (i)~defenses operate at \emph{write time} on individual entries ($O(md)$ per entry), (ii)~we require no corpus-level access, and (iii)~our certificate (Lemma~\ref{lem:certified}) is deterministic given the calibration bound, unlike randomized-smoothing certificates which are probabilistic over random masks.
+Randomized-smoothing-based certified defenses~\citep{cohen2019certified,robey2023smoothllm} provide probabilistic guarantees against $\ell_2$-bounded perturbations at test time, but operate on query inputs, not on persistent memory entries. Our work differs along three axes: (i)~defenses operate at \emph{write time} on individual entries ($O(md)$ per entry), (ii)~we require no corpus-level access, and (iii)~our certificate (Lemma~\ref{lem:certified}) is deterministic given the calibration bound, unlike randomized-smoothing certificates which are probabilistic over random masks.
 
 \paragraph{Game-theoretic security and adaptive evaluation.}
 \citet{tramer2020adaptive} formalize best practices for adaptive attack evaluation; \citet{carlini2017evaluating} demonstrate that defenses without formal guarantees are routinely broken.
@@ -436,7 +436,7 @@ We evaluate four additional defenses spanning orthogonal strategies, all operati
 \textbf{Watermark:} the defender watermarks all legitimate entries at write time via a unigram scheme~\citep{zhao2024watermark,kirchenbauer2023watermark} ($z_{\text{thr}} = 1.5$, $\fpr = 0.000$ empirically; higher thresholds inflate FPR for short entries), rejecting unwatermarked entries; this requires control of the ingestion pipeline.
 \textbf{Validation:} rule-based pattern matching ($O(|c| \cdot |P|)$).
 \textbf{Proactive:} computes mean cosine similarity against 16 domain probes, flagging entries exceeding $\tau = 0.19$.
-\textbf{Composite:} weighted ensemble of the above: flag if $\sum_j w_j d_j(c) > \theta$.
+\textbf{Composite:} weighted ensemble ($w_{\text{wm}}{=}0.50$, $w_{\text{val}}{=}0.20$, $w_{\text{pro}}{=}0.30$, $\theta{=}0.50$): flag if $\sum_j w_j d_j(c) > \theta$ (Appendix~\ref{app:defenses}).
 
 %% ============================================================
 \section{Experiments}
@@ -486,7 +486,7 @@ Table~\ref{tab:attack_results} reports the main results at $|\cM| = 1{,}000$.
 \subsection{Attack-defense interaction matrix}
 
 Table~\ref{tab:defense_tpr_fpr} reports the full $3 \times 5$ matrix (heatmap in Appendix~\ref{app:additional_figures}).
-\textbf{(i)}~Watermark achieves perfect detection when the defender controls ingestion, but \minja{} and \injecmem{} exploit auto-storage pathways that bypass watermarking; \memsad{} provides content-level detection independent of ingestion control.
+\textbf{(i)}~Watermark achieves $\tpr = 1.00$ in simulation (all entries pass through the same detection pipeline); however, in realistic deployments where \minja{} and \injecmem{} exploit auto-storage pathways that bypass ingestion control, watermarking fails silently --- motivating \memsad{}'s content-level detection, which is independent of ingestion control.
 \textbf{(ii)}~\memsad{} detects \minja{} ($\tpr = 0.40$, AUROC $= 0.914$) and \injecmem{} ($\tpr = 0.20$, AUROC $= 0.816$) at $|\cM|=1{,}000$; triggered calibration raises \agentpoison{} to $\tpr = 1.00$, AUROC $= 1.000$. The defender need not know the exact trigger: calibrating with domain-representative queries spanning expected usage patterns suffices.
 \textbf{(iii)}~Proactive is complementary: $\tpr = 1.00$ for \agentpoison{}, $0.07$ for \minja{}.
 \textbf{(iv)}~Composite portfolios achieve $\tpr = 1.00$, $\fpr = 0.00$ across all attacks (Proposition~\ref{prop:equilibrium}).
@@ -1336,7 +1336,7 @@ Mem0's internal LLM reformulation strips trigger-optimized structure (\agentpois
     \fbox{\parbox{0.7\linewidth}{\centering\vspace{1cm}fig\_measured\_asr\_a.pdf\vspace{1cm}}}%
   }
   \vspace{-6pt}
-  \caption{Measured vs.\ modelled $\asra$. GPT-2 provides a lower bound; GPT-4o-mini reflects production safety alignment.}
+  \caption{Measured vs.\ modelled $\asra$. GPT-2 (no safety alignment) provides an upper bound under maximal compliance; GPT-4o-mini reflects production safety alignment.}
   \label{fig:measured_asr_a}
 \end{figure}
 
