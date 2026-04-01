@@ -366,7 +366,7 @@ We establish four additional results; full statements and proofs are in Appendix
 
 \begin{theorem}[Minimax detection lower bound]
 \label{thm:minimax_lower}
-For Gaussian benign/poisoned score distributions with SNR $\rho$, any threshold detector calibrated on $N$ samples satisfies $\fpr + (1 - \tpr) \geq 1 - \rho\sqrt{N}/2$. Reliable detection requires $N \geq 4(1-\epsilon)^2/\rho^2$.
+For Gaussian benign/poisoned score distributions with SNR $\rho$, under the uniform prior $\PP(H_0) = \PP(H_1) = \tfrac{1}{2}$, any threshold detector calibrated on $N$ samples satisfies $\fpr + (1 - \tpr) \geq 1 - \rho\sqrt{N}/2$. Reliable detection at total-error level $\epsilon$ (i.e., $\fpr + (1{-}\tpr) \leq \epsilon$) requires $N \geq 4(1-\epsilon)^2/\rho^2$.
 \end{theorem}
 
 \noindent \memsad{} achieves reliable detection with $N = O(\log(1/\delta)/\rho^2)$ (Theorem~\ref{thm:calibration_bound}), matching the $\Omega(1/\rho^2)$ lower bound up to $\log(1/\delta)$, thereby establishing minimax optimality via Le Cam's method~\citep{lecam1973convergence}.
