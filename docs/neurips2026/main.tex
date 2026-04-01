@@ -1158,6 +1158,34 @@ We compare \memsad{} against three standard OOD detection methods adapted to the
 
 AUROC (ranking quality) is remarkably stable: \minja{} and \injecmem{} maintain AUROC $= 0.914$ and $0.816$ regardless of calibration queries, because the score distribution's \emph{shape} is encoder-determined. However, the operating threshold requires domain-matched queries to achieve low FPR; random or out-of-domain calibration yields FPR $> 0.95$. This confirms that \memsad{}'s ranking ability is calibration-invariant, but practical deployment requires representative query samples for threshold tuning.
 
+\section{Cross-corpus generalization: Natural Questions}
+\label{app:nq_eval}
+
+To validate that results generalize beyond the synthetic corpus, we evaluate all three attacks on a mixed corpus: the 82-entry NQ knowledge base (factual Wikipedia passages corresponding to the Natural Questions benchmark~\citep{kwiatkowski2019natural}) padded with synthetic non-knowledge entries to $|\cM| = 1{,}000$, with the 50 NQ factoid questions as victim queries.
+
+\begin{table}[h]
+  \centering
+  \small
+  \caption{Cross-corpus generalization: $\asrr$ on NQ-based corpus ($|\cM|=1{,}000$, 3 seeds). Synthetic results (Table~\ref{tab:attack_results}) shown for reference.}
+  \label{tab:nq_eval}
+  \vspace{2pt}
+  \begin{tabular}{l cc}
+    \toprule
+    Attack & NQ corpus $\asrr$ & Synthetic $\asrr$ \\
+    \midrule
+    \agentpoison{} (triggered) & $1.00 \pm 0.00$ & $1.00$ \\
+    \minja{}                   & $0.58 \pm 0.06$ & $0.14$ \\
+    \injecmem{}                & $0.00 \pm 0.00$ & $0.07$ \\
+    \bottomrule
+  \end{tabular}
+  \\[2pt]
+  {\footnotesize Three findings: (1) Trigger-optimized attacks transfer universally; (2) \minja{}'s ASR-R increases on the more topically homogeneous NQ corpus (less dilution by off-topic entries); (3) \injecmem{}'s broad-anchor templates, optimized for security-domain contexts, do not retrieve against factual QA queries.}
+\end{table}
+
+These results provide two actionable insights. First, corpus homogeneity is a risk factor: topically uniform memory stores (e.g., an agent with only factual knowledge) are more susceptible to untriggered attacks like \minja{}. Second, template-based attacks (\injecmem{}) are domain-restricted and require domain-matched adversarial content, which increases the attacker's burden. The trigger-optimized \agentpoison{} is uniquely dangerous because trigger optimization is corpus-agnostic: the same trigger achieves $\asrr = 1.00$ regardless of the benign corpus type.
+
+\memsad{} calibrated on NQ queries achieves TPR $= 0.00$ for \injecmem{} (consistent with $\asrr = 0.00$; no poison is retrieved). For \minja{} on NQ, the higher $\asrr = 0.58$ means the attack is retrievable, but the calibration threshold must be set using domain-matched victim queries --- precisely the triggered-calibration finding of Section~\ref{sec:experiments}.
+
 \section{\memsad{}+ evaluation}
 \label{app:memsad_plus}
 
