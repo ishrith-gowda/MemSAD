@@ -259,7 +259,7 @@ The three attacks (Table~\ref{tab:attack_properties}) span decreasing adversary 
 \agentpoison{} ($\alpha = \textsc{write}$) optimizes $\trigger^* = \argmax_{\trigger} \EE_{q \sim \cQ_v}[\cosim(\enc(q \oplus \trigger), \enc(\passage))]$ via HotFlip over DPR embeddings.
 \minja{} ($\alpha = \textsc{query}$) exploits auto-storage via progressive-shortening.
 \injecmem{} ($\alpha = \textsc{single}$) injects broad-vocabulary anchor passages spanning multiple domains.
-\textbf{Protocol distinction:} \citet{chen2024agentpoison}'s Algorithm~2 specifies triggered queries $q \oplus \trigger^*$; evaluating with plain queries $q$ (as in prior reproductions) measures a weaker setting (cosine similarity $\approx 0.45$ vs.\ $\approx 0.78$). Following the intended protocol, $\asrr$ increases from $0.25$ to $1.00$.
+\textbf{Protocol distinction:} \citet{chen2024agentpoison}'s Algorithm~2 specifies triggered queries $q \oplus \trigger^*$; evaluating with plain queries $q$ (as in prior reproductions) measures a weaker setting (cosine similarity $\approx 0.45$ vs.\ $\approx 0.78$). Following the intended protocol, $\asrr$ increases from $0.25$ to $1.00$. We note that trigger injection requires the adversary to also control the query channel (e.g., via a compromised front-end or prompt injection), placing \agentpoison{} at the highest capability tier --- a limitation acknowledged in~\citet{chen2024agentpoison}; \minja{} and \injecmem{} do not require query-side access.
 
 %% ============================================================
 \section{\memsad{}: Semantic Anomaly Detection}
