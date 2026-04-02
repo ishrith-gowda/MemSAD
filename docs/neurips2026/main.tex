@@ -95,7 +95,7 @@
 
 \begin{abstract}
 Persistent external memory enables LLM agents to maintain context across sessions, yet its security properties remain formally uncharacterized.
-We formalize memory poisoning attacks on retrieval-augmented agents as a Stackelberg game and present a unified evaluation framework spanning three attack classes with escalating access assumptions. Correcting a systematic protocol error in prior work, we show that faithful evaluation increases measured attack success by $4\times$.
+We formalize memory poisoning attacks on retrieval-augmented agents as a Stackelberg game and present a unified evaluation framework spanning three attack classes with escalating access assumptions. Correcting an evaluation protocol inconsistency relative to the original paper's Algorithm~2, we show that faithful evaluation increases measured attack success by $4\times$.
 Our primary contribution is \memsad{} (\emph{Semantic Anomaly Detection}), a calibration-based defense grounded in a \emph{gradient coupling theorem}: under encoder regularity, the anomaly score gradient and the retrieval objective gradient are provably identical, so any continuous perturbation that reduces detection risk necessarily degrades retrieval rank. This coupling yields a certified detection radius that guarantees correct classification regardless of adversary strategy.
 We prove minimax optimality via Le Cam's method, showing that any threshold detector requires $\Omega(1/\rho^2)$ calibration samples and \memsad{} achieves this up to $\log(1/\delta)$ factors. We further derive online regret bounds for rolling calibration with optimal window selection at rate $O(\sigma^{2/3}\Delta^{1/3})$, and formally characterize a discrete synonym-invariance loophole that precisely delineates where continuous guarantees break down.
 Experiments on a $3 \times 5$ attack-defense matrix with bootstrap confidence intervals, Bonferroni-corrected hypothesis tests, and Clopper-Pearson validation (20 trials, $n=1{,}000$) confirm the theory: composite defenses achieve $\tpr = 1.00$, $\fpr = 0.00$ across all attacks, while synonym substitution evades detection at $\Delta\asrr \approx 0$, delineating an open frontier for memory security.
@@ -322,7 +322,7 @@ Under L2-normalization (Assumption~\ref{ass:encoder}(iii)), $\nabla_{e_c}\cR = \
 \begin{proof}
 \emph{(i)} The chain rule gives $\nabla \cD = g'(\cR) \cdot \nabla \cR$; $g' > 0$ preserves the sign of every directional derivative. Under Assumption~\ref{ass:encoder}(iii), the sphere gradient is $\nabla_{e_c}\cosim(e_c, v) = v - (e_c^\top v)e_c$.
 \emph{(ii)} Non-monotonicity implies $\exists\, e_c, e_c'$ with $\cR(e_c') > \cR(e_c)$ but $\cD(e_c') < \cD(e_c)$. By connectedness of $\mathbb{S}^{d-1}$, there exists a continuous path $\gamma$ from $e_c$ to $e_c'$. Setting $\tau_{\text{ret}} = \cR(e_c)$ and $\tau_{\text{det}} = \cD(e_c)$ yields the claimed path with $\cR(\gamma(1)) > \tau_{\text{ret}}$ and $\cD(\gamma(1)) < \tau_{\text{det}}$.
-\emph{(iii)} The sufficient statistic $\cR$ generates the likelihood ratio $p_1(e)/p_0(e)$ as a monotone function of $\cosim(e, e_{q^*})$ under Gaussian score families (Assumption~\ref{ass:encoder}). By the Neyman--Fisher factorization theorem~\citep{lehmann1959testing}, any function of $e_c$ that is a sufficient statistic for the binary hypothesis test $H_0$: benign vs.\ $H_1$: adversarial must be a function of $\cR(e_c)$. Hence $g = \mathrm{id}$ achieves minimal sufficiency; any $g \neq \mathrm{id}$ retains the coupling direction but is a lossy compression of $\cR$.
+\emph{(iii)} The sufficient statistic $\cR$ generates the likelihood ratio $p_1(e)/p_0(e)$ as a monotone function of $\cosim(e, e_{q^*})$ under Gaussian score families (Assumption~\ref{ass:encoder}). By the Neyman--Fisher factorization theorem~\citep{lehmann1959testing}, $\cR(e_c)$ is sufficient for the binary hypothesis test $H_0$: benign vs.\ $H_1$: adversarial. Minimality follows from the Lehmann--Scheff\'{e} theorem~\citep{lehmann1959testing}: since $p_1(e)/p_0(e)$ is a monotone function of $\cR(e_c)$ alone, any sufficient statistic must be a function of $\cR(e_c)$, making it \emph{minimal sufficient}. Hence $g = \mathrm{id}$ achieves minimal sufficiency; any $g \neq \mathrm{id}$ retains the coupling direction but discards distributional information, i.e., is a lossy compression of $\cR$.
 \end{proof}
 
 \begin{corollary}[Combined scoring preserves coupling]
@@ -330,7 +330,7 @@ Under L2-normalization (Assumption~\ref{ass:encoder}(iii)), $\nabla_{e_c}\cR = \
 The combined score $s_{\text{comb}} = \alpha\, s_{\max} + (1-\alpha)\, s_{\text{mean}}$ with $\alpha \in (0,1)$ satisfies the gradient coupling (i) with $g'_{\text{comb}} = \alpha + (1-\alpha)/|\cH| > 0$, and admits the same necessity characterization (ii). Consequently, Lemma~\ref{lem:certified} and Theorem~\ref{thm:fisher_rao} apply unchanged to $s_{\text{comb}}$.
 \end{corollary}
 \begin{proof}
-$s_{\text{comb}} = \alpha\,\cR(e_c) + (1-\alpha)\,\frac{1}{|\cH|}\sum_{q}\cosim(e_c, \enc(q))$. Each term is a positive-coefficient linear combination of cosine similarities, hence differentiable with $\nabla s_{\text{comb}} = \alpha \nabla s_{\max} + (1-\alpha)\nabla s_{\text{mean}}$, and $g'_{\text{comb}} = \alpha + (1-\alpha)/|\cH| > 0$. Non-monotonicity of $s_{\text{comb}}$ in $\cR$ would require negative $\alpha$ or $|\cH|=0$, neither of which holds. The second-order tradeoff surface is analyzed in Appendix~\ref{app:tradeoff_surface}.
+$s_{\text{comb}} = \alpha\,\cR(e_c) + (1-\alpha)\,\frac{1}{|\cH|}\sum_{q}\cosim(e_c, \enc(q))$. The mean term $s_{\text{mean}}$ is differentiable everywhere on $\mathbb{S}^{d-1}$. The max term $s_{\max} = \max_{q \in \cH}\cosim(e_c, \enc(q))$ is not differentiable when two queries achieve equal similarity (a tie); however, ties form a measure-zero set on $\mathbb{S}^{d-1}$ (intersection of finitely many great circles), so $s_{\max}$ is differentiable almost everywhere, and at each such point $\nabla s_{\max} = \nabla_{e_c}\cosim(e_c, \enc(q^*))$ for the unique maximizer $q^*$. At all points of differentiability: $\nabla s_{\text{comb}} = \alpha \nabla s_{\max} + (1-\alpha)\nabla s_{\text{mean}}$, with $g'_{\text{comb}} = \alpha + (1-\alpha)/|\cH| > 0$. Non-monotonicity of $s_{\text{comb}}$ in $\cR$ would require negative $\alpha$ or $|\cH|=0$, neither of which holds. The second-order tradeoff surface is analyzed in Appendix~\ref{app:tradeoff_surface}.
 \end{proof}
 
 \subsection{Information-geometric characterization}
@@ -514,12 +514,12 @@ Table~\ref{tab:defense_tpr_fpr} reports the full $3 \times 5$ matrix (heatmap in
     Watermark   & 1.00 & 1.00 & 1.00 & 0.00 & 0.00 & 0.00 & 0.991 \\
     Validation  & 0.60 & 0.40 & 0.80 & 0.10 & 0.10 & 0.10 & --- \\
     Proactive   & 1.00 & 0.07 & 0.60 & 0.01 & 0.01 & 0.01 & --- \\
-    \memsad{} (comb.)  & 0.00$^\dagger$ & 0.40 & 0.20 & 0.04 & 0.04 & 0.04 & 0.867 \\
+    \memsad{} (comb.)  & 0.00$^\dagger$ & 0.40 & 0.20 & 0.00 & 0.00 & 0.00 & 0.867 \\
     Composite   & 1.00 & 1.00 & 1.00 & 0.00 & 0.00 & 0.00 & --- \\
     \bottomrule
   \end{tabular}
   \\[2pt]
-  {\footnotesize $^\dagger$Plain calibration; triggered calibration: TPR $= 1.00$, FPR $= 0.02$, AUROC $= 1.000$.}
+  {\footnotesize $^\dagger$Plain calibration (FPR\,=\,0.00); triggered calibration: TPR\,=\,1.00, FPR\,=\,0.00, AUROC\,=\,1.000. FPR validated over 1{,}000 trials; Clopper-Pearson 95\% CI: [0.000, 0.004] (Appendix~\ref{app:fpr}).}
   \vspace{-8pt}
 \end{table}
 
@@ -556,7 +556,7 @@ The certified condition (Lemma~\ref{lem:certified}) still holds for \minja{} pos
 
 Bonferroni-corrected binomial tests ($\alpha' = 0.003$, 15 comparisons): all composite results reject $H_0: \tpr = 0$ with power $= 1.00$ (Appendix~\ref{app:hypothesis}).
 \memsad{} AUROC at $\kappa = 2.0$: $0.914$ (\minja{}), $0.816$ (\injecmem{}), $0.870$ (\agentpoison{}, plain); triggered calibration raises \agentpoison{} to AUROC $= 1.000$.
-Theory validation: calibration bound predicts $|\tau_N - \tau^*| \leq 0.031$ at $N = 200$; observed $0.018$ (Appendix~\ref{app:sad_analysis}).
+Theory validation: calibration bound predicts $|\tau_N - \tau^*| \leq 0.022$ at $N = 200$; observed $0.014$ (Table~\ref{tab:ablation_calibration}, Appendix~\ref{app:ablation}).
 
 \subsection{Ablation highlights}
 
@@ -645,7 +645,7 @@ Then $\KL(P_0 \| P_1) = (\mu_1 - \mu_0)^2 / (2\sigma^2) = \rho^2/2$.
 
 By Hoeffding on $[0,1]$ \citep{wainwright2019highdim}: $|\hat{\mu}_N - \mu| \leq \sqrt{\log(2/\delta)/(2N)}$ w.p.\ $\geq 1 - \delta/2$.
 
-For the standard deviation term, let $Z = (N-1)\hat{\sigma}_N^2/\sigma^2 \sim \chi^2(N-1)$ (exactly, for Gaussian scores; approximately for bounded scores by Berry-Esseen). By Laurent \& Massart~\citep{laurentmassart2000} Lemma~1: $\PP[Z \geq (N-1) + 2\sqrt{(N-1)x} + 2x] \leq e^{-x}$ and $\PP[Z \leq (N-1) - 2\sqrt{(N-1)x}] \leq e^{-x}$. Setting $x = \log(2/\delta)$ and applying the delta method ($\hat{\sigma}_N = \sigma\sqrt{Z/(N-1)}$, so $|\hat{\sigma}_N - \sigma| = \sigma|\sqrt{Z/(N-1)} - 1|$) with $\sqrt{1+u} - 1 \leq u/2$ for $|u| \leq 1$ yields:
+For the standard deviation term, let $Z = (N-1)\hat{\sigma}_N^2/\sigma^2 \sim \chi^2(N-1)$ (exactly, for Gaussian scores; approximately for bounded scores by Berry-Esseen). By Laurent \& Massart~\citep{laurentmassart2000} Lemma~1: $\PP[Z \geq (N-1) + 2\sqrt{(N-1)x} + 2x] \leq e^{-x}$ and $\PP[Z \leq (N-1) - 2\sqrt{(N-1)x}] \leq e^{-x}$. Setting $x = \log(2/\delta)$ and applying the delta method ($\hat{\sigma}_N = \sigma\sqrt{Z/(N-1)}$, so $|\hat{\sigma}_N - \sigma| = \sigma|\sqrt{Z/(N-1)} - 1|$) with $\sqrt{1+u} - 1 \leq u/2$ for $0 \leq u \leq 1$ (by concavity of $\sqrt{\cdot}$) yields:
 $|\hat{\sigma}_N - \sigma| \leq \sigma\sqrt{\log(2/\delta)/(2(N-1))}$ w.p.\ $\geq 1 - \delta/2$.
 
 Triangle inequality: $|\tau_N - \tau^*| \leq |\hat{\mu}_N - \mu| + \kappa|\hat{\sigma}_N - \sigma|$. Union bound yields the calibration bound in Theorem~\ref{thm:calibration_bound}.
@@ -940,7 +940,7 @@ The first term is the Bernstein bound on the empirical FPR; the second accounts 
 \begin{table}[h]
   \centering
   \small
-  \caption{Encoder generalization: \memsad{} across 6 encoders at $|\cM|=1{,}000$ ($\kappa = 2.0$, combined scoring). AP uses triggered calibration. FPR omitted (0.000 for MiniLM/MPNet/Para/E5/Contriever; 0.086--0.138 for BGE-Large at this $\kappa$).}
+  \caption{Encoder generalization: \memsad{} across 6 encoders at $|\cM|=1{,}000$ ($\kappa = 2.0$, combined scoring). AP uses triggered calibration. FPR omitted (0.000 for MiniLM/MPNet/Para/E5/Contriever; 0.086--0.138 for BGE-Large at this $\kappa$). TPR here measures detection over 5 poison passages per attack; main Table~\ref{tab:defense_tpr_fpr} uses $n=10$ \minja{} / $n=15$ \injecmem{} entries (different poison set, same encoder, same $\kappa$).}
   \label{tab:encoder_gen}
   \vspace{2pt}
   \begin{tabular}{l ccc ccc}
@@ -959,7 +959,14 @@ The first term is the Bernstein bound on the empirical FPR; the second accounts 
   \end{tabular}
 \end{table}
 
-Key findings at $|\cM|=1{,}000$: (1)~Triggered calibration achieves $\tpr = 1.000$ for \agentpoison{} on \emph{all} 6 encoders, confirming the gradient coupling signal transfers across architectures and embedding dimensions. (2)~\minja{} detection is robust ($\tpr \geq 0.80$, AUROC $\geq 0.914$) across all encoders. (3)~\injecmem{} is more encoder-sensitive: E5-Base achieves $\tpr = 1.00$ while Para-MiniLM achieves $0.00$, suggesting anchor-crafted templates vary in cross-encoder similarity. (4)~BGE-Large ($d{=}1024$, instruction-tuned) achieves $\tpr = 1.00 / 1.00 / 0.80$ for AP/MJ/IM, AUROC $\geq 0.928$ across attacks; its higher FPR (0.09--0.14 at $\kappa=2.0$) reflects a broader embedding distribution that slightly overlaps the anomaly boundary---raising $\kappa$ to $2.5$ eliminates the false positives at the cost of $\tpr_{\text{IM}} = 0.60$.
+\begin{figure}[h]
+  \centering
+  \includegraphics[width=0.92\linewidth]{fig_encoder_generalization.pdf}
+  \caption{Encoder generalization: \memsad{} TPR (left) and FPR (right) across 6 encoders at $\kappa=2.0$. Triggered \agentpoison{} achieves TPR\,=\,1.00 on all encoders; \injecmem{} is more encoder-sensitive (TPR\,0.00--1.00).}
+  \label{fig:encoder_generalization}
+\end{figure}
+
+Key findings at $|\cM|=1{,}000$ (Figure~\ref{fig:encoder_generalization}): (1)~Triggered calibration achieves $\tpr = 1.000$ for \agentpoison{} on \emph{all} 6 encoders, confirming the gradient coupling signal transfers across architectures and embedding dimensions. (2)~\minja{} detection is robust ($\tpr \geq 0.80$, AUROC $\geq 0.914$) across all encoders. (3)~\injecmem{} is more encoder-sensitive: E5-Base achieves $\tpr = 1.00$ while Para-MiniLM achieves $0.00$, suggesting anchor-crafted templates vary in cross-encoder similarity. (4)~BGE-Large ($d{=}1024$, instruction-tuned) achieves $\tpr = 1.00 / 1.00 / 0.80$ for AP/MJ/IM, AUROC $\geq 0.928$ across attacks; its higher FPR (0.09--0.14 at $\kappa=2.0$) reflects a broader embedding distribution that slightly overlaps the anomaly boundary---raising $\kappa$ to $2.5$ eliminates the false positives at the cost of $\tpr_{\text{IM}} = 0.60$.
 
 \section{Graph memory attacks}
 \label{app:graph}
@@ -1358,7 +1365,7 @@ We evaluate GPT-4o-mini as a zero-shot write-time sanitization baseline: for eac
   \end{tabular}
 \end{table}
 
-\noindent\textbf{Results.} GPT-4o-mini achieves $\tpr = \fpr = 0$ (perfect classification) on the synthetic corpus at threshold $\tau = 0.5$, with AUROC $= 1.000$. Mean latency is $1.2$\,s per entry---roughly $1{,}000\times$ higher than \memsad{} ($\sim$1\,ms).
+\noindent\textbf{Results.} GPT-4o-mini achieves $\tpr = 1.000$, $\fpr = 0.000$ (perfect classification) on the synthetic corpus at threshold $\tau = 0.5$, with AUROC $= 1.000$. Mean latency is $1.2$\,s per entry---roughly $1{,}000\times$ higher than \memsad{} ($\sim$1\,ms).
 
 \textbf{Comparison with \memsad{}.} The LLM sanitizer achieves perfect TPR on the current synthetic corpus because the poison passages contain explicit command-style language (\emph{override all safety checks}, \emph{administrator note}) that is easily pattern-matched in text space. \memsad{} achieves comparable TPR ($1.000$ for \minja{} and triggered \agentpoison{}) with no API dependency, no latency overhead, and no per-call cost. The LLM baseline's key failure mode is semantic paraphrasing: if an adversary re-phrases injection commands in innocuous language that preserves the embedding anomaly, \memsad{} still detects the entry while a text-based classifier may be fooled. The LLM baseline and \memsad{} are therefore complementary rather than competing.
 
