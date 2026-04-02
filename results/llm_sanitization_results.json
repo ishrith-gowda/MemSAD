@@ -1,0 +1,29 @@
+{
+  "agent_poison": {
+    "tpr": 1.0,
+    "fpr": 0.0,
+    "auroc": 1.0,
+    "mean_latency_s": 1.1630959963891656,
+    "n_poison": 20,
+    "n_benign": 50,
+    "n_errors": 0
+  },
+  "minja": {
+    "tpr": 1.0,
+    "fpr": 0.0,
+    "auroc": 1.0,
+    "mean_latency_s": 1.1969636279574063,
+    "n_poison": 20,
+    "n_benign": 50,
+    "n_errors": 0
+  },
+  "injecmem": {
+    "tpr": 1.0,
+    "fpr": 0.0,
+    "auroc": 1.0,
+    "mean_latency_s": 1.2662907589276853,
+    "n_poison": 20,
+    "n_benign": 50,
+    "n_errors": 0
+  }
+}
