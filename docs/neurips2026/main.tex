@@ -563,7 +563,7 @@ Theory validation: calibration bound predicts $|\tau_N - \tau^*| \leq 0.031$ at 
 Key results (full tables in Appendix~\ref{app:ablation}):
 \textbf{Threshold:} $\kappa = 2.0$ with combined scoring is optimal.
 \textbf{Corpus size:} \agentpoison{} is robust ($\asrr = 1.00$) across $|\cM| \in \{200, \ldots, 1000\}$; untriggered attacks (\minja{}, \injecmem{}) degrade $4$--$7\times$ at $|\cM| = 1{,}000$ (Figure~\ref{fig:corpus_scaling}).
-\textbf{Encoder generalization:} \memsad{} validated across 5 encoders including Contriever and E5 at $|\cM|=1{,}000$; triggered calibration achieves $\tpr = 1.000$ for \agentpoison{} on all (Appendix~\ref{app:encoder_gen}).
+\textbf{Encoder generalization:} \memsad{} validated across 6 encoders including Contriever, E5-Base, and BGE-Large ($d{=}1024$) at $|\cM|=1{,}000$; triggered calibration achieves $\tpr = 1.000$ for \agentpoison{} on all (Appendix~\ref{app:encoder_gen}).
 \textbf{OOD baselines:} Energy Score~\citep{liu2020energy} is competitive on \minja{} AUROC ($0.969$) but \memsad{}'s query-awareness yields decisive advantage on triggered attacks (AUROC $1.000$ vs.\ $0.945$); Mahalanobis~\citep{lee2018simple} and KNN fail ($\fpr > 0.96$; Appendix~\ref{app:ood}).
 \textbf{Calibration sensitivity:} AUROC is stable across calibration regimes; threshold tuning requires domain-matched queries (Appendix~\ref{app:calibration_sensitivity}).
 
@@ -939,7 +939,7 @@ The first term is the Bernstein bound on the empirical FPR; the second accounts 
 \begin{table}[h]
   \centering
   \small
-  \caption{Encoder generalization: \memsad{} across 5 encoders at $|\cM|=1{,}000$ ($\kappa = 2.0$, combined scoring). AP uses triggered calibration.}
+  \caption{Encoder generalization: \memsad{} across 6 encoders at $|\cM|=1{,}000$ ($\kappa = 2.0$, combined scoring). AP uses triggered calibration. FPR omitted (0.000 for MiniLM/MPNet/Para/E5/Contriever; 0.086--0.138 for BGE-Large at this $\kappa$).}
   \label{tab:encoder_gen}
   \vspace{2pt}
   \begin{tabular}{l ccc ccc}
@@ -953,11 +953,12 @@ The first term is the Bernstein bound on the empirical FPR; the second accounts 
     Para-MiniLM ($d{=}384$)    & 1.00 & 1.00 & 0.00 & 0.998 & 0.957 & 0.645 \\
     E5-Base ($d{=}768$)        & 1.00 & 1.00 & 1.00 & 0.997 & 0.978 & 0.946 \\
     Contriever ($d{=}768$)     & 1.00 & 1.00 & 0.40 & 0.926 & 0.922 & 0.759 \\
+    BGE-Large ($d{=}1024$)     & 1.00 & 1.00 & 0.80 & 0.953 & 0.966 & 0.928 \\
     \bottomrule
   \end{tabular}
 \end{table}
 
-Key findings at $|\cM|=1{,}000$: (1)~Triggered calibration achieves $\tpr = 1.000$ for \agentpoison{} on \emph{all} encoders, confirming the gradient coupling signal transfers across architectures. (2)~\minja{} detection is robust ($\tpr \geq 0.80$, AUROC $\geq 0.914$) across all encoders. (3)~\injecmem{} is more encoder-sensitive: E5-Base achieves $\tpr = 1.00$ while Para-MiniLM achieves $0.00$, suggesting that the anchor-crafted templates vary in cross-encoder similarity.
+Key findings at $|\cM|=1{,}000$: (1)~Triggered calibration achieves $\tpr = 1.000$ for \agentpoison{} on \emph{all} 6 encoders, confirming the gradient coupling signal transfers across architectures and embedding dimensions. (2)~\minja{} detection is robust ($\tpr \geq 0.80$, AUROC $\geq 0.914$) across all encoders. (3)~\injecmem{} is more encoder-sensitive: E5-Base achieves $\tpr = 1.00$ while Para-MiniLM achieves $0.00$, suggesting anchor-crafted templates vary in cross-encoder similarity. (4)~BGE-Large ($d{=}1024$, instruction-tuned) achieves $\tpr = 1.00 / 1.00 / 0.80$ for AP/MJ/IM, AUROC $\geq 0.928$ across attacks; its higher FPR (0.09--0.14 at $\kappa=2.0$) reflects a broader embedding distribution that slightly overlaps the anomaly boundary---raising $\kappa$ to $2.5$ eliminates the false positives at the cost of $\tpr_{\text{IM}} = 0.60$.
 
 \section{Graph memory attacks}
 \label{app:graph}
