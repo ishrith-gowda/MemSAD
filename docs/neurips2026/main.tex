@@ -978,6 +978,35 @@ For $N$ agents sharing $\cM_{\text{shared}}$, the discrete-step SIR model~\citep
 
 Without defense, steady-state infection is $I_\infty/N = 1 - \gamma/\beta$ for $\beta > \gamma$. With \memsad{} quarantine ($\tpr = 1.00$ for \minja{}), $\gamma_{\text{eff}} = \gamma + \tpr \cdot \beta$; the condition $\beta > \gamma_{\text{eff}}$ is never satisfied, eliminating secondary infection.
 
+\subsection*{Empirical simulation}
+We instantiate the SIR model with $N=20$ agents, $p_{\text{re-store}}=0.30$, $T=30$ steps, 5 initial MINJA-style poison entries, and a 200-entry synthetic corpus (all-MiniLM-L6-v2 FAISS retrieval).  Three conditions are evaluated: (i)~no defense; (ii)~\memsad{} with triggered calibration ($\sigma=2.0$, combined scoring); (iii)~composite defense approximated by $\sigma=1.0$.
+
+\begin{figure}[h]
+  \centering
+  \includegraphics[width=0.92\linewidth]{fig_sir_propagation.pdf}
+  \caption{Multi-agent SIR propagation. \textbf{Left}: fraction of agents exposed over 30 steps. \textbf{Right}: secondary poison entry growth. Composite ($\sigma=1.0$) prevents spread entirely; \memsad{} ($\sigma=2.0$) delays saturation but 4 of 5 initial entries pass the looser threshold.}
+  \label{fig:sir_propagation}
+\end{figure}
+
+\begin{table}[h]
+  \centering
+  \small
+  \caption{Multi-agent SIR propagation results ($N=20$, $p_{\text{re-store}}=0.30$, $T=30$, 5 initial poison entries).}
+  \label{tab:sir_propagation}
+  \vspace{2pt}
+  \begin{tabular}{l cccc c}
+    \toprule
+    Defense & Final Spread & Step to 50\% & Step to 90\% & Secondary Entries & Quarantined \\
+    \midrule
+    No Defense                  & 1.00 & 4    & 17   & 26 & --- \\
+    \memsad{} ($\sigma=2.0$)    & 1.00 & 6    & 11   & 18 & 5   \\
+    Composite ($\sigma=1.0$)    & 0.00 & $>$30 & $>$30 & 0  & 2  \\
+    \bottomrule
+  \end{tabular}
+\end{table}
+
+\noindent The tighter composite threshold quarantines 2 of 5 initial entries and all secondary entries, holding spread to zero. \memsad{} at $\sigma=2.0$ quarantines 5 total entries (1 initial, 4 secondary) but 4 initial entries already seed infection; spread reaches saturation 13 steps later than the no-defense baseline ($t_{90\%}$: 17\,vs.\,11 steps after secondary quarantine delays propagation).
+
 \section{Statistical hypothesis tests}
 \label{app:hypothesis}
 
