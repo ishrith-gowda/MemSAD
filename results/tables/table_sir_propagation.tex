@@ -1,0 +1,16 @@
+\begin{table}[h]
+  \centering
+  \small
+  \caption{Multi-agent SIR propagation simulation ($N=20$ agents, $p_{\text{re-store}}=0.30$, $T=30$ steps, 5 initial poison entries). Defense: MemSAD quarantine at ingestion.}
+  \label{tab:sir_propagation}
+  \vspace{2pt}
+  \begin{tabular}{l cccc c}
+    \toprule
+    Defense & Final Spread & Step to 50\% & Step to 90\% & Secondary Entries & Quarantined \\
+    \midrule
+    No Defense & 1.00 & 4 & 17 & 26 & --- \\
+    MemSAD ($\sigma=2.0$) & 1.00 & 6 & 11 & 18 & 5 \\
+    Composite ($\sigma=1.0$) & 0.00 & >30 & >30 & 0 & 2 \\
+    \bottomrule
+  \end{tabular}
+\end{table}

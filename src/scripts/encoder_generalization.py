@@ -47,6 +47,7 @@ _ENCODERS = [
     ("paraphrase-MiniLM-L6-v2", "Para-MiniLM\n(384-d)"),
     ("intfloat/e5-base-v2", "E5-Base\n(768-d)"),
     ("facebook/contriever", "Contriever\n(768-d)"),
+    ("BAAI/bge-large-en-v1.5", "BGE-Large\n(1024-d)"),
 ]
 
 # default corpus size (updated for phase 30 consistency with main experiments)
@@ -301,6 +302,7 @@ def generate_encoder_table(all_results: dict) -> Path:
         "paraphrase-MiniLM-L6-v2": r"Para-MiniLM ($d{=}384$)",
         "intfloat/e5-base-v2": r"E5-Base ($d{=}768$)",
         "facebook/contriever": r"Contriever ($d{=}768$)",
+        "BAAI/bge-large-en-v1.5": r"BGE-Large ($d{=}1024$)",
     }
     atk_labels = {
         "minja": r"\minja{}",
