@@ -245,13 +245,15 @@ Under Assumption~\ref{ass:encoder}(iii), $\cosim(\enc(q), \enc(m)) = \enc(q)^\to
     \toprule
     Property & \agentpoison{} & \minja{} & \injecmem{} \\
     \midrule
-    Access model $\alpha$ & \textsc{write} & \textsc{query} & \textsc{single} \\
+    Access model $\alpha$ & \textsc{write}$^\dagger$ & \textsc{query} & \textsc{single} \\
     Trigger required        & \checkmark & --- & --- \\
     Retriever-agnostic    & ---        & ---        & \checkmark \\
     Entries injected $n$          & $1\times$  & $2\times$  & $3\times$ \\
     Modelled $\asra$              & $0.68$ & $0.76$ & $0.57$ \\
     \bottomrule
   \end{tabular}
+  \vspace{2pt}
+  \footnotesize{$^\dagger$Triggered-query evaluation additionally requires query-channel access (e.g., front-end control or prompt injection); see Section~\ref{sec:threat}.}
   \vspace{-6pt}
 \end{table}
 
@@ -340,7 +342,7 @@ The gradient coupling reflects a deeper geometric structure. We show that the ev
 
 \begin{theorem}[Fisher-Rao detection-evasion metric]
 \label{thm:fisher_rao}
-Let $\cE = \{e \in \mathbb{S}^{d-1}\}$ under Assumption~\ref{ass:encoder}(iii). The Fisher information metric induced by the score family $p_e(s) = \cN(s; \cosim(e, e_{q^*}), \hat{\sigma}^2)$ is $g_{ij}^F(e) = \hat{\sigma}^{-2} \partial_i \cR(e) \partial_j \cR(e)$. The geodesic distance to any undetected embedding satisfies $d_F(e_{\text{adv}}, e') \geq |\cR(e_{\text{adv}}) - (\hat{\mu} + \kappa\hat{\sigma})| / \hat{\sigma}$, and every point on any continuous evasion path degrades retrieval proportionally to the distance traversed.
+Let $\cE = \{e \in \mathbb{S}^{d-1}\}$ under Assumption~\ref{ass:encoder}(iii). The Fisher information metric induced by the score family $p_e(s) = \cN(s; \cosim(e, e_{q^*}), \hat{\sigma}^2)$ is $g_{ij}^F(e) = \hat{\sigma}^{-2} \partial_i \cR(e) \partial_j \cR(e)$. The geodesic distance to any undetected embedding satisfies $d_F(e_{\text{adv}}, e') \geq |\cR(e_{\text{adv}}) - (\hat{\mu} + \kappa\hat{\sigma})| / \hat{\sigma}$, and the Fisher-Rao cost of any continuous evasion path equals its retrieval degradation: paths must pay retrieval cost in exact proportion to Fisher-Rao distance (paths orthogonal to $\nabla\cR$ carry zero cost \emph{and} zero retrieval change).
 \end{theorem}
 
 \noindent The Fisher-Rao distance quantifies the information cost of evasion: the adversary must traverse $\geq d_F/\hat{\sigma}$ standard deviations of retrieval degradation, connecting \memsad{} to information-geometric hypothesis testing~\citep{amari2016information}. The rank-1 metric $g^F = \hat{\sigma}^{-2}\nabla\cR\nabla\cR^\top$ measures only retrieval-relevant perturbations: paths orthogonal to $\nabla\cR$ carry zero Fisher-Rao cost \emph{and} zero retrieval change, so they do not constitute evasion. Proof in Appendix~\ref{app:proof_fisher_rao}.
@@ -393,6 +395,14 @@ Under per-step drift $\Delta$, the optimal window $m_{\max}^* = \Theta((\sigma/\
 \label{thm:generalization}
 For a novel attack with $W_1(P_{\text{new}}, P_j) \leq \epsilon_W$: $|\tpr_{\text{new}} - \tpr_j| \leq \epsilon_W/\hat{\sigma} + O(1/\sqrt{N})$.
 \end{theorem}
+
+\begin{remark}[Practical estimation of $\epsilon_W$]
+\label{rem:epsilon_w}
+$\epsilon_W$ is a theoretical parameter bounding the Wasserstein distance between the score distribution of a known attack and a novel one.
+In practice, $\epsilon_W$ can be estimated from a validation set of the new attack type by computing the empirical $W_1$ distance between score distributions using sorting-based estimation~\citep{villani2009optimal}.
+Alternatively, under encoder Lipschitz continuity ($\|\enc(c') - \enc(c)\| \leq L\|c'-c\|$), attacks with bounded $\ell_2$ passage perturbation $\|c'-c\| \leq \rho$ satisfy $\epsilon_W \leq L\rho/\hat{\sigma}$ analytically.
+The theorem is principally a structural result: it guarantees that \memsad{}'s TPR degrades gracefully as novel attacks diverge from the calibration distribution, rather than collapsing abruptly.
+\end{remark}
 
 \begin{proposition}[Hardness of optimal evasion]
 \label{prop:hardness}
@@ -485,7 +495,7 @@ Bootstrap 95\% CIs from 5 independent seeds (each seed generates a distinct corp
 
 Table~\ref{tab:attack_results} reports the main results at $|\cM| = 1{,}000$.
 \agentpoison{} achieves $\asrr = 1.00$ under the triggered-query protocol (Section~\ref{sec:threat}), confirming that trigger optimization defeats corpus dilution entirely.
-\minja{} drops from $\asrr = 0.65$ at $|\cM|=200$ to $0.14$ at $|\cM|=1{,}000$, a $5\times$ dilution effect demonstrating that untriggered attacks are naturally mitigated by corpus scale.\footnote{$\isr$ measures write-time injection success; $\asrr$ measures retrieval-time exposure.}
+\minja{} drops from $\asrr = 0.65$ at $|\cM|=200$ to $0.14$ at $|\cM|=1{,}000$, a $4.6\times$ dilution effect demonstrating that untriggered attacks are naturally mitigated by corpus scale.\footnote{$\isr$ measures write-time injection success; $\asrr$ measures retrieval-time exposure.}
 \injecmem{} similarly drops from $0.50$ to $0.07$, with benign accuracy improving from $0.80$ to $0.98$ as poison entries become a smaller fraction of the corpus.
 \textbf{Measured $\asra$:} GPT-2 (no safety alignment) yields $\asra = 0.90$ for \agentpoison{}, an upper bound under maximal compliance; GPT-4o-mini shows $\asra = 0.20$, reflecting production safety alignment. The resulting measured $\asrt = \asrr \times \asra^{\text{4o-mini}} = 1.00 \times 0.20 = 0.20$ is $3.4\times$ lower than the modelled $\asrt^{\dagger} = 0.68$ from~\citet{chen2024agentpoison}; this gap arises because modelled $\asra$ was estimated with an unaligned agent under jailbreak-style prompts, while GPT-4o-mini's safety training actively resists adversarial instructions. The modelled value represents a worst-case (minimally-aligned) agent; the measured value represents a production-aligned baseline. MINJA and InjecMEM show $\asra \leq 0.17$, consistent with diluted retrieval reducing action execution.
 
@@ -571,10 +581,10 @@ Key results (full tables in Appendix~\ref{app:ablation}):
 \subsection{Extended evaluations}
 
 \paragraph{Compound exposure.}
-Memory poisoning compounds over sessions: $P(\text{compromise in } N \text{ sessions}) = 1 - (1 - \asrr)^{Nq}$ for $q$ queries/session.\footnote{This assumes i.i.d.\ Bernoulli trials across queries, which is a lower bound on true risk: persistent memory means a successfully retrieved adversarial entry may influence subsequent queries, further compounding exposure.} Even \minja{} at $\asrr = 0.14$ reaches 90\% compromise in 4 sessions; composite defense ($\asrr^* = 0$) is necessary (Table~\ref{tab:compound_exposure}, Appendix~\ref{app:compound}).
+Memory poisoning compounds over sessions: $P(\text{compromise in } N \text{ sessions}) = 1 - (1 - \asrr)^{Nq}$ for $q$ queries/session.\footnote{This assumes i.i.d.\ Bernoulli trials, which is a lower bound on true risk: persistent memory means a successfully retrieved adversarial entry may influence subsequent queries. Uncertainty in $\asrr$ (bootstrap 95\% CIs in Table~\ref{tab:attack_results}) propagates to compound probability via $\partial P / \partial \asrr = Nq(1-\asrr)^{Nq-1}$, yielding compound-exposure CIs that are conservative.} Even \minja{} at $\asrr = 0.14$ reaches 90\% compromise in 4 sessions; composite defense ($\asrr^* = 0$) is necessary (Table~\ref{tab:compound_exposure}, Appendix~\ref{app:compound}).
 
 \paragraph{Tool-use agent.}
-GPT-4o-mini with 5 tool definitions (function calling) achieves $\asra = 0.48$ for \agentpoison{}; the agent executes adversarial tool calls in 48\% of queries. \minja{} and \injecmem{} show $\asra = 0.00$ at $|\cM| = 1{,}000$ (Table~\ref{tab:tool_agent}, Appendix~\ref{app:tool_agent}).
+GPT-4o-mini with 5 tool definitions (function calling) achieves $\asra = 0.48$ [0.34, 0.62] for \agentpoison{}; the agent executes adversarial tool calls in 48\% of queries. \minja{} and \injecmem{} show $\asra = 0.00$ [0.00, 0.07] at $|\cM| = 1{,}000$; the non-zero upper CI bound reflects sparse event counts over 50 queries at low retrieval rates, not detector failure (Table~\ref{tab:tool_agent}, Appendix~\ref{app:tool_agent}).
 
 \paragraph{Production validation.}
 On Mem0~\citep{mem0} (LLM-mediated storage), \agentpoison{} drops to $\asrr = 0.00$: internal reformulation strips trigger structure. Raw vector stores remain fully exposed; \memsad{} provides explicit defense where implicit reformulation is absent (Table~\ref{tab:mem0_validation}, Appendix~\ref{app:mem0}).
@@ -589,6 +599,12 @@ No single defense dominates across access models $\alpha$: watermarking fails wh
 \paragraph{The synonym frontier.}
 Proposition~\ref{prop:synonym} reveals a structural limitation: paraphrase-trained encoders map synonyms to nearly identical embeddings ($\epsilon_{\text{syn}} \approx 0$). \memsad{}+ partially closes this via character n-gram features, but complete closure requires syntactic structure or provenance metadata. Meanwhile, compound exposure (Table~\ref{tab:compound_exposure}) shows even weak attacks reach 90\% compromise in 4 sessions, and tool-use evaluation (Table~\ref{tab:tool_agent}) confirms $\asra = 0.48$ with GPT-4o-mini, establishing that memory poisoning poses genuine production risk.
 
+\paragraph{Standalone \memsad{} performance.}
+Without triggered calibration, \memsad{} at $\sigma=2.0$ achieves $\tpr = 0.40$ for \minja{} and $\tpr = 0.20$ for \injecmem{} at $|\cM|=1{,}000$ (Table~\ref{tab:defense_tpr_fpr}).  These numbers reflect a deliberate design tradeoff: $\sigma=2.0$ controls FPR at $\leq 0.00$ empirically.  Triggered calibration is required for \agentpoison{}; for \minja{} and \injecmem{}, the composite defense (watermark + proactive + \memsad{}) achieves $\asrr^* = 0$.  Practitioners should treat \memsad{} as one layer of a composite, not a standalone silver bullet.
+
+\paragraph{Baselines not directly compared.}
+RevPRAG~\citep{tan2025revprag} detects poisoning via LLM hidden-state analysis at query time and is not directly compared because it operates as a \emph{read-time} detector requiring LLM inference per retrieved passage ($\sim$100ms/passage), while \memsad{} operates at \emph{write time} ($\sim$0.1ms/entry) with no LLM dependency.  The two are architecturally complementary; direct comparison would require identical evaluation environments not available in our read-write split setup.
+
 \paragraph{Limitations.}
 (i)~Corpus scale: $|\cM| = 1{,}000$; production systems may reach $10^6$ entries. Cross-corpus results on Natural Questions (Appendix~\ref{app:nq_eval}) provide partial real-data validation; large-scale evaluation remains future work.
 (ii)~Regret bound assumes slow drift; abrupt shifts degrade calibration.
@@ -596,6 +612,7 @@ Proposition~\ref{prop:synonym} reveals a structural limitation: paraphrase-train
 (iv)~\memsad{}+ does not eliminate synonym evasion; sentence-level rewrites bypass character features.
 (v)~Compound exposure formula assumes i.i.d.\ sessions; persistent memory may violate independence if a successfully retrieved poison influences subsequent queries, making the formula a conservative lower bound on true risk.
 (vi)~OOD baseline comparison uses default Mahalanobis/KNN parameterization; properly tuned variants may improve FPR, though query-unawareness remains a structural disadvantage for triggered attacks.
+(vii)~\agentpoison{}'s triggered evaluation additionally requires query-channel access (Table~\ref{tab:attack_properties}); results in the triggered setting reflect the highest attacker capability tier and should be interpreted accordingly.
 
 %% ============================================================
 \section{Conclusion}
@@ -988,33 +1005,33 @@ For $N$ agents sharing $\cM_{\text{shared}}$, the discrete-step SIR model~\citep
 Without defense, steady-state infection is $I_\infty/N = 1 - \gamma/\beta$ for $\beta > \gamma$. With \memsad{} quarantine ($\tpr = 1.00$ for \minja{}), $\gamma_{\text{eff}} = \gamma + \tpr \cdot \beta$; the condition $\beta > \gamma_{\text{eff}}$ is never satisfied, eliminating secondary infection.
 
 \subsection*{Empirical simulation}
-We instantiate the SIR model with $N=20$ agents, $p_{\text{re-store}}=0.30$, $T=30$ steps, 5 initial MINJA-style poison entries, and a 200-entry synthetic corpus (all-MiniLM-L6-v2 FAISS retrieval).  Three conditions are evaluated: (i)~no defense; (ii)~\memsad{} with triggered calibration ($\sigma=2.0$, combined scoring); (iii)~composite defense approximated by $\sigma=1.0$.
+We instantiate the SIR model with $N=20$ agents, $p_{\text{re-store}}=0.30$, $T=30$ steps, 5 initial MINJA-style poison entries, and a 200-entry synthetic corpus (all-MiniLM-L6-v2 FAISS retrieval).  Each condition is run under 5 independent seeds controlling agent query-sampling trajectories (corpus held fixed); both no-defense and defended conditions use the same per-trial seed for a fair comparison.  Three conditions are evaluated: (i)~no defense; (ii)~\memsad{} with triggered calibration ($\sigma=2.0$, combined scoring); (iii)~composite defense approximated by $\sigma=1.0$.
 
 \begin{figure}[h]
   \centering
   \includegraphics[width=0.92\linewidth]{fig_sir_propagation.pdf}
-  \caption{Multi-agent SIR propagation. \textbf{Left}: fraction of agents exposed over 30 steps. \textbf{Right}: secondary poison entry growth. Composite ($\sigma=1.0$) prevents spread entirely; \memsad{} ($\sigma=2.0$) delays saturation but 4 of 5 initial entries pass the looser threshold.}
+  \caption{Multi-agent SIR propagation (mean $\pm1\sigma$ over 5 seeds). \textbf{Left}: fraction of agents exposed over 30 steps. \textbf{Right}: secondary poison entry growth. Composite ($\sigma=1.0$) prevents spread entirely; \memsad{} ($\sigma=2.0$) matches no-defense spread timing but reduces secondary entries by 22\%, as 4 of 5 initial entries pass the looser threshold and the composite is required to stop initial spread.}
   \label{fig:sir_propagation}
 \end{figure}
 
 \begin{table}[h]
   \centering
   \small
-  \caption{Multi-agent SIR propagation results ($N=20$, $p_{\text{re-store}}=0.30$, $T=30$, 5 initial poison entries).}
+  \caption{Multi-agent SIR propagation results ($N=20$, $p_{\text{re-store}}=0.30$, $T=30$, 5 initial poison entries). Averaged over 5 independent seeds; timing columns show mean steps.}
   \label{tab:sir_propagation}
   \vspace{2pt}
   \begin{tabular}{l cccc c}
     \toprule
     Defense & Final Spread & Step to 50\% & Step to 90\% & Secondary Entries & Quarantined \\
     \midrule
-    No Defense                  & 1.00 & 4    & 17   & 26 & --- \\
-    \memsad{} ($\sigma=2.0$)    & 1.00 & 6    & 11   & 18 & 5   \\
+    No Defense                  & 1.00 & 5    & 14   & 23 & --- \\
+    \memsad{} ($\sigma=2.0$)    & 1.00 & 5    & 14   & 18 & 5   \\
     Composite ($\sigma=1.0$)    & 0.00 & $>$30 & $>$30 & 0  & 2  \\
     \bottomrule
   \end{tabular}
 \end{table}
 
-\noindent The tighter composite threshold quarantines 2 of 5 initial entries and all secondary entries, holding spread to zero. \memsad{} at $\sigma=2.0$ quarantines 5 total entries (1 initial, 4 secondary) but 4 initial entries already seed infection; spread reaches saturation 13 steps later than the no-defense baseline ($t_{90\%}$: 17\,vs.\,11 steps after secondary quarantine delays propagation).
+\noindent The tighter composite threshold ($\sigma=1.0$) quarantines 2 of 5 initial entries and all secondary entries, holding spread to zero. \memsad{} at $\sigma=2.0$ quarantines $\approx$5 entries per trial (averaged over 5 seeds) but the 4 initial entries that pass the looser threshold seed infection at the same rate as the no-defense baseline ($t_{90\%} = 14$ steps in both conditions); \memsad{}'s measurable effect is a 22\% reduction in secondary entries (18 vs.\ 23), preventing secondary amplification while the composite is required to stop initial spread entirely.
 
 \section{Statistical hypothesis tests}
 \label{app:hypothesis}
