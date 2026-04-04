@@ -64,7 +64,7 @@
 \newcommand{\cU}{\mathcal{U}}
 \newcommand{\cE}{\mathcal{E}}
 \newcommand{\sad}{\textsc{SAD}}
-\newcommand{\memsad}{\textsc{MemSAD}}
+\newcommand{\memsad}{\textnormal{\textsc{MemSAD}}}
 \newcommand{\agentpoison}{\textsc{AgentPoison}}
 \newcommand{\minja}{\textsc{MINJA}}
 \newcommand{\injecmem}{\textsc{InjecMEM}}
@@ -84,7 +84,7 @@
 \DeclareMathOperator{\tr}{tr}
 \DeclareMathOperator{\Regret}{Regret}
 
-\title{\memsad{}: Gradient-Coupled Anomaly Detection for Memory Poisoning in Retrieval-Augmented Agents}
+\title{\texorpdfstring{\memsad{}}{MemSAD}: Gradient-Coupled Anomaly Detection for Memory Poisoning in Retrieval-Augmented Agents}
 
 % anonymous for submission
 \author{Anonymous Author(s)}
@@ -264,7 +264,7 @@ The three attacks (Table~\ref{tab:attack_properties}) span decreasing adversary 
 \textbf{Protocol distinction:} \citet{chen2024agentpoison}'s Algorithm~2 specifies triggered queries $q \oplus \trigger^*$; evaluating with plain queries $q$ (as in prior reproductions) measures a weaker setting (cosine similarity $\approx 0.45$ vs.\ $\approx 0.78$). Following the intended protocol, $\asrr$ increases from $0.25$ to $1.00$. We note that trigger injection requires the adversary to also control the query channel (e.g., via a compromised front-end or prompt injection), placing \agentpoison{} at the highest capability tier --- a limitation acknowledged in~\citet{chen2024agentpoison}; \minja{} and \injecmem{} do not require query-side access.
 
 %% ============================================================
-\section{\memsad{}: Semantic Anomaly Detection}
+\section{\texorpdfstring{\memsad{}}{MemSAD}: Semantic Anomaly Detection}
 \label{sec:sad}
 
 \subsection{Algorithm and formal definition}
@@ -503,7 +503,8 @@ Table~\ref{tab:attack_results} reports the main results at $|\cM| = 1{,}000$.
 \injecmem{} similarly drops from $0.50$ to $0.07$, with benign accuracy improving from $0.80$ to $0.98$ as poison entries become a smaller fraction of the corpus.
 \textbf{Measured $\asra$:} GPT-2 (no safety alignment) yields $\asra = 0.90$ for \agentpoison{}, an upper bound under maximal compliance; GPT-4o-mini shows $\asra = 0.20$, reflecting production safety alignment. The resulting measured $\asrt = \asrr \times \asra^{\text{4o-mini}} = 1.00 \times 0.20 = 0.20$ is $3.4\times$ lower than the modelled $\asrt^{\dagger} = 0.68$ from~\citet{chen2024agentpoison}; this gap arises because modelled $\asra$ was estimated with an unaligned agent under jailbreak-style prompts, while GPT-4o-mini's safety training actively resists adversarial instructions. The modelled value represents a worst-case (minimally-aligned) agent; the measured value represents a production-aligned baseline. MINJA and InjecMEM show $\asra \leq 0.17$, consistent with diluted retrieval reducing action execution.
 
-% figures moved to appendix for space; see Appendix~\ref{app:additional_figures}
+% figures moved to appendix for space
+Figures~\ref{fig:measured_asr_a} and~\ref{fig:matrix} (Appendix~\ref{app:additional_figures}) visualize the modelled-vs-measured $\asra$ comparison and the full $3 \times 5$ attack-defense heatmap.
 
 \subsection{Attack-defense interaction matrix}
 
@@ -598,7 +599,7 @@ On Mem0~\citep{mem0} (LLM-mediated storage), \agentpoison{} drops to $\asrr = 0.
 \label{sec:discussion}
 
 \paragraph{Defense complementarity.}
-No single defense dominates across access models $\alpha$: watermarking fails when auto-storage bypasses ingestion control; \memsad{} needs triggered calibration for \agentpoison{}; proactive detection complements both. The defender's uncertainty about $\alpha$ motivates composite portfolios ($\asrr^* = 0$, Proposition~\ref{prop:equilibrium}). We recommend layered deployment: watermarking at ingestion, rolling \memsad{} at retrieval, composite for high-value agents ($\sim$200\,ms total; Appendix~\ref{app:complexity}).
+No single defense dominates across access models $\alpha$: watermarking fails when auto-storage bypasses ingestion control; \memsad{} needs triggered calibration for \agentpoison{}; proactive detection complements both. The defender's uncertainty about $\alpha$ motivates composite portfolios ($\asrr^* = 0$, Proposition~\ref{prop:equilibrium}). We recommend layered deployment: watermarking at ingestion, rolling \memsad{} at retrieval, composite for high-value agents ($\sim$200\,ms total; Appendix~\ref{app:complexity}). Multi-agent SIR simulations (Appendix~\ref{app:propagation}) confirm that composite defense prevents cross-agent propagation entirely, while graph memory extensions (Appendix~\ref{app:graph}) show structural attacks require analogous degree-anomaly detection.
 
 \paragraph{The synonym frontier.}
 Proposition~\ref{prop:synonym} reveals a structural limitation: paraphrase-trained encoders map synonyms to nearly identical embeddings ($\epsilon_{\text{syn}} \approx 0$). \memsad{}+ partially closes this via character n-gram features, but complete closure requires syntactic structure or provenance metadata. Meanwhile, compound exposure (Table~\ref{tab:compound_exposure}) shows even weak attacks reach 90\% compromise in 4 sessions, and tool-use evaluation (Table~\ref{tab:tool_agent}) confirms $\asra = 0.48$ with GPT-4o-mini, establishing that memory poisoning poses genuine production risk.
@@ -734,7 +735,7 @@ By Theorem~\ref{thm:gradient_coupling}, $\cD(e_c') < \cD(e_c)$ (evasion) implies
 \begin{equation}
   \cD(e_c + \epsilon\delta) - \cD(e_c) = \epsilon\|\nabla\cD\|\cos\theta + \frac{\epsilon^2}{2}\delta^\top H_{\cD}\,\delta + O(\epsilon^3),
 \end{equation}
-where $H_{\cD}$ is the Hessian of the cosine similarity on the sphere. Under L2-normalization, $H_{\cD} = -(e_c^\top \enc(q^*))(I - e_c e_c^\top)/\|e_c\|^2$, giving eigenvalues $\lambda_i = -(e_c^\top \enc(q^*))$ for directions orthogonal to $e_c$ (and $0$ in the radial direction). The evasion region $\cD(e_c') < \cD(e_c)$ requires $\cos\theta < -\epsilon\|H_{\cD}\|/(2\|\nabla\cD\|)$, which contracts as $\epsilon \to 0$, confirming the infinitesimal impossibility of evasion without retrieval degradation.
+where $H_{\cD}$ is the Hessian of the cosine similarity on the sphere. Under L2-normalization, $H_{\cD} = -(e_c^\top \enc(q^*))(I - e_c e_c^\top)/\|e_c\|^2$, giving eigenvalues $\lambda_i = -(e_c^\top \enc(q^*))$ for directions orthogonal to $e_c$ (and $0$ in the radial direction). The evasion region $\cD(e_c') < \cD(e_c)$ requires $\cos\theta < -\epsilon\|H_{\cD}\|/(2\|\nabla\cD\|)$, which contracts as $\epsilon \to 0$, confirming the infinitesimal impossibility of evasion without retrieval degradation (Figure~\ref{fig:tradeoff_curves}).
 
 \begin{figure}[ht]
 \centering
@@ -1202,7 +1203,7 @@ We compare \memsad{} against three standard OOD detection methods adapted to the
   \label{tab:ood_comparison}
   \begin{tabular}{l ccc ccc}
     \toprule
-    & \multicolumn{3}{c}{AUROC} & \multicolumn{3}{c}{TPR ($\fpr \leq 0.05$)} \\
+    & \multicolumn{3}{c}{AUROC} & \multicolumn{3}{c}{TPR (at threshold)$^\ddagger$} \\
     \cmidrule(lr){2-4} \cmidrule(lr){5-7}
     Method & AP & MJ & IM & AP & MJ & IM \\
     \midrule
@@ -1213,7 +1214,7 @@ We compare \memsad{} against three standard OOD detection methods adapted to the
     \bottomrule
   \end{tabular}
   \\[2pt]
-  {\footnotesize Mahalanobis achieves high TPR but at FPR $= 0.964$ (unusable). Bold = best AUROC per attack.}
+  {\footnotesize $^\ddagger$TPR at each method's native operating threshold ($\kappa=2.0$ for \memsad{}, $\sigma=2.0$ for Mahalanobis). Mahalanobis achieves TPR\,=\,1.00 but at FPR\,=\,0.964 (unusable); AUROC is the fairer comparison metric. Bold = best AUROC per attack.}
 \end{table}
 
 \memsad{}'s query-awareness gives it a decisive advantage for triggered attacks (\agentpoison{}: AUROC $= 1.000$ vs.\ Energy's $0.945$). Energy Score is competitive on \minja{} AUROC ($0.969$) but has lower TPR at the operating threshold. Mahalanobis distance fails catastrophically (FPR $= 0.964$) because memory entries are diverse in embedding space: the covariance-based model cannot distinguish poison from benign outliers.
