@@ -135,9 +135,9 @@ Our seven contributions span theory, algorithm design, and empirical methodology
 \citet{chen2024agentpoison} report $\asrr \geq 0.80$ via trigger optimization over DPR~\citep{karpukhin2020dense} embeddings under the triggered-query protocol, requiring write access to the memory store.
 \citet{dong2025minja} exploit auto-storage via progressive-shortening indication ($\isr = 98.2\%$) under query-only access.
 \citet{injecmem2026} achieve single-interaction injection via retriever-agnostic anchors, the weakest attacker assumption.
-\citet{memorygraft2025} demonstrate experience-grafting attacks exploiting union retrieval.
-Concurrent work includes TrojanRAG~\citep{trojanrag2024} (joint backdoor), CorruptRAG~\citep{corruptrag2025} (single-text poisoning), BadRAG~\citep{xue2024badrag} (retrieval vulnerability analysis), Phantom~\citep{chaudhari2024phantom} (general trigger attacks), and jamming attacks~\citep{shafran2025blocker} (denial-of-service). Each evaluates its own attack in isolation; no unified cross-attack benchmark exists.
-Unlike training-time backdoor attacks that embed triggers via parameter poisoning~\citep{wu2024badagent}, memory poisoning targets the retrieval index directly at inference time, requiring no access to model weights and persisting across sessions.
+\citet{memorygraft2025} demonstrate experience-grafting attacks exploiting union retrieval; \citet{xu2026memflow} show that memory retrieval can override tool-call control flow.
+Concurrent work includes TrojanRAG~\citep{trojanrag2024} (joint backdoor), CorruptRAG~\citep{corruptrag2025} (single-text poisoning), BadRAG~\citep{xue2024badrag} (retrieval vulnerability analysis), Phantom~\citep{chaudhari2024phantom} (general trigger attacks), and jamming attacks~\citep{shafran2025blocker} (denial-of-service). Agent Security Bench~\citep{zhang2025asb} provides a broad multi-scenario benchmark spanning 10 agent threat categories, but does not isolate the \emph{memory poisoning} vector or provide defense-theoretic guarantees; no prior work offers a unified evaluation framework specifically for memory poisoning across attack classes with formal detection analysis.
+Unlike training-time backdoor attacks that embed triggers via parameter poisoning~\citep{wu2024badagent}, memory poisoning targets the retrieval index directly at inference time, requiring no access to model weights and persisting across sessions. AgentHarm~\citep{andriushchenko2025agentharm} benchmarks harmful multi-step agent behavior but focuses on prompt-level jailbreaks rather than persistent memory threats.
 On the defense side, A-MemGuard~\citep{amemguard2025} proposes proactive defenses via query rewriting, RevPRAG~\citep{tan2025revprag} detects poisoning through LLM activation analysis, ReliabilityRAG~\citep{reliabilityrag2025} provides provable robustness via graph-theoretic MIS, and SeCon-RAG~\citep{seconrag2025} uses entity-intent extraction. None provides formal detection guarantees for streaming agent memory.
 
 \paragraph{RAG corpus poisoning and certified defenses.}
@@ -253,7 +253,7 @@ Under Assumption~\ref{ass:encoder}(iii), $\cosim(\enc(q), \enc(m)) = \enc(q)^\to
     \bottomrule
   \end{tabular}
   \vspace{2pt}
-  \footnotesize{$^\dagger$Triggered-query evaluation additionally requires query-channel access (e.g., front-end control or prompt injection); see Section~\ref{sec:threat}.}
+  {\footnotesize $^\dagger$Triggered-query evaluation additionally requires query-channel access (e.g., front-end control or prompt injection); see Section~\ref{sec:threat}.}
   \vspace{-6pt}
 \end{table}
 
@@ -501,7 +501,7 @@ Table~\ref{tab:attack_results} reports the main results at $|\cM| = 1{,}000$.
 \agentpoison{} achieves $\asrr = 1.00$ under the triggered-query protocol (Section~\ref{sec:threat}), confirming that trigger optimization defeats corpus dilution entirely.
 \minja{} drops from $\asrr = 0.65$ at $|\cM|=200$ to $0.14$ at $|\cM|=1{,}000$, a $4.6\times$ dilution effect demonstrating that untriggered attacks are naturally mitigated by corpus scale.\footnote{$\isr$ measures write-time injection success; $\asrr$ measures retrieval-time exposure.}
 \injecmem{} similarly drops from $0.50$ to $0.07$, with benign accuracy improving from $0.80$ to $0.98$ as poison entries become a smaller fraction of the corpus.
-\textbf{Measured $\asra$:} GPT-2 (no safety alignment) yields $\asra = 0.90$ for \agentpoison{}, an upper bound under maximal compliance; GPT-4o-mini shows $\asra = 0.20$, reflecting production safety alignment. The resulting measured $\asrt = \asrr \times \asra^{\text{4o-mini}} = 1.00 \times 0.20 = 0.20$ is $3.4\times$ lower than the modelled $\asrt^{\dagger} = 0.68$ from~\citet{chen2024agentpoison}; this gap arises because modelled $\asra$ was estimated with an unaligned agent under jailbreak-style prompts, while GPT-4o-mini's safety training actively resists adversarial instructions. The modelled value represents a worst-case (minimally-aligned) agent; the measured value represents a production-aligned baseline. MINJA and InjecMEM show $\asra \leq 0.17$, consistent with diluted retrieval reducing action execution.
+\textbf{Measured $\asra$:} GPT-2 (no safety alignment) yields $\asra = 0.90$ for \agentpoison{}, an upper bound under maximal compliance; GPT-4o-mini shows $\asra = 0.20$, reflecting production safety alignment. The resulting measured $\asrt = \asrr \times \asra^{\text{4o-mini}} = 1.00 \times 0.20 = 0.20$ is $3.4\times$ lower than the modelled $\asrt^{\dagger} = 0.68$ from~\citet{chen2024agentpoison}; this gap arises because modelled $\asra$ was estimated with an unaligned agent under jailbreak-style prompts, while GPT-4o-mini's safety training actively resists adversarial instructions. The modelled value represents a worst-case (minimally-aligned) agent; the measured value represents a production-aligned baseline. \minja{} and \injecmem{} show $\asra \leq 0.17$, consistent with diluted retrieval reducing action execution.
 
 % figures moved to appendix for space
 Figures~\ref{fig:measured_asr_a} and~\ref{fig:matrix} (Appendix~\ref{app:additional_figures}) visualize the modelled-vs-measured $\asra$ comparison and the full $3 \times 5$ attack-defense heatmap.
@@ -1010,7 +1010,7 @@ For $N$ agents sharing $\cM_{\text{shared}}$, the discrete-step SIR model~\citep
 Without defense, steady-state infection is $I_\infty/N = 1 - \gamma/\beta$ for $\beta > \gamma$. With \memsad{} quarantine ($\tpr = 1.00$ for \minja{}), $\gamma_{\text{eff}} = \gamma + \tpr \cdot \beta$; the condition $\beta > \gamma_{\text{eff}}$ is never satisfied, eliminating secondary infection.
 
 \subsection*{Empirical simulation}
-We instantiate the SIR model with $N=20$ agents, $p_{\text{re-store}}=0.30$, $T=30$ steps, 5 initial MINJA-style poison entries, and a 200-entry synthetic corpus (all-MiniLM-L6-v2 FAISS retrieval).  Each condition is run under 5 independent seeds controlling agent query-sampling trajectories (corpus held fixed); both no-defense and defended conditions use the same per-trial seed for a fair comparison.  Three conditions are evaluated: (i)~no defense; (ii)~\memsad{} with triggered calibration ($\sigma=2.0$, combined scoring); (iii)~composite defense approximated by $\sigma=1.0$.
+We instantiate the SIR model with $N=20$ agents, $p_{\text{re-store}}=0.30$, $T=30$ steps, 5 initial \minja{}-style poison entries, and a 200-entry synthetic corpus (all-MiniLM-L6-v2 FAISS retrieval).  Each condition is run under 5 independent seeds controlling agent query-sampling trajectories (corpus held fixed); both no-defense and defended conditions use the same per-trial seed for a fair comparison.  Three conditions are evaluated: (i)~no defense; (ii)~\memsad{} with triggered calibration ($\sigma=2.0$, combined scoring); (iii)~composite defense approximated by $\sigma=1.0$.
 
 \begin{figure}[ht]
   \centering
