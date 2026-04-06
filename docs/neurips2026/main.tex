@@ -257,7 +257,7 @@ Under Assumption~\ref{ass:encoder}(iii), $\cosim(\enc(q), \enc(m)) = \enc(q)^\to
   \vspace{-6pt}
 \end{table}
 
-The three attacks (Table~\ref{tab:attack_properties}) span decreasing adversary access requirements (write $\supset$ query $\supset$ single-interaction), which is the primary capability ordering; measured $\asrt$ is a secondary metric that depends on corpus scale and agent model.
+Figure~\ref{fig:threat_model} illustrates the interaction. The three attacks (Table~\ref{tab:attack_properties}) span decreasing adversary access requirements (write $\supset$ query $\supset$ single-interaction), which is the primary capability ordering; measured $\asrt$ is a secondary metric that depends on corpus scale and agent model.
 \agentpoison{} ($\alpha = \textsc{write}$) optimizes $\trigger^* = \argmax_{\trigger} \EE_{q \sim \cQ_v}[\cosim(\enc(q \oplus \trigger), \enc(\passage))]$ via HotFlip over DPR embeddings.
 \minja{} ($\alpha = \textsc{query}$) exploits auto-storage via progressive-shortening.
 \injecmem{} ($\alpha = \textsc{single}$) injects broad-vocabulary anchor passages spanning multiple domains.
@@ -296,6 +296,8 @@ The \emph{combined scoring mode} averages max-query and mean-query similarity, c
 \ENDIF
 \end{algorithmic}
 \end{algorithm}
+
+\noindent The full pre-ingestion procedure is given in Algorithm~\ref{alg:sad}.
 
 \subsection{Gradient coupling theorem}
 \label{sec:gradient}
@@ -1036,7 +1038,7 @@ We instantiate the SIR model with $N=20$ agents, $p_{\text{re-store}}=0.30$, $T=
   \end{tabular}
 \end{table}
 
-\noindent The tighter composite threshold ($\sigma=1.0$) quarantines 2 of 5 initial entries and all secondary entries, holding spread to zero. \memsad{} at $\sigma=2.0$ quarantines $\approx$5 entries per trial (averaged over 5 seeds) but the 4 initial entries that pass the looser threshold seed infection at the same rate as the no-defense baseline ($t_{90\%} = 14$ steps in both conditions); \memsad{}'s measurable effect is a 22\% reduction in secondary entries (18 vs.\ 23), preventing secondary amplification while the composite is required to stop initial spread entirely.
+\noindent Figure~\ref{fig:sir_propagation} and Table~\ref{tab:sir_propagation} summarize the results. The tighter composite threshold ($\sigma=1.0$) quarantines 2 of 5 initial entries and all secondary entries, holding spread to zero. \memsad{} at $\sigma=2.0$ quarantines $\approx$5 entries per trial (averaged over 5 seeds) but the 4 initial entries that pass the looser threshold seed infection at the same rate as the no-defense baseline ($t_{90\%} = 14$ steps in both conditions); \memsad{}'s measurable effect is a 22\% reduction in secondary entries (18 vs.\ 23), preventing secondary amplification while the composite is required to stop initial spread entirely.
 
 \section{Statistical hypothesis tests}
 \label{app:hypothesis}
@@ -1083,6 +1085,8 @@ We instantiate the SIR model with $N=20$ agents, $p_{\text{re-store}}=0.30$, $T=
 
 \section{\memsad{} detection analysis}
 \label{app:sad_analysis}
+
+Figure~\ref{fig:sad_analysis} visualizes \memsad{}'s ROC characteristics and calibration shift.
 
 \begin{figure}[ht]
   \centering
@@ -1188,7 +1192,7 @@ where $\tau^* = \mu + \kappa\sigma$ is the population-optimal threshold.
 By the DKW inequality, $\sup_t |F_N(t) - F(t)| \leq \sqrt{\log(2/\delta)/(2N)}$ w.p.\ $\geq 1-\delta$, where $F_N, F$ are empirical and population CDFs. Since $\fpr(\tau) = 1 - F_0(\tau)$ and $\tpr(\tau) = 1 - F_1(\tau)$, the bound follows from the uniform convergence of the empirical CDF to the true CDF at the estimated threshold.
 \end{proof}
 
-At $N = 200$, $\delta = 0.05$: the excess error is $\leq 0.086$, meaning \memsad{}'s empirical FPR of $0.000$ implies true FPR $\leq 0.086$ with 95\% confidence. The Clopper-Pearson validation (Table~\ref{tab:fpr_validation}) provides a tighter bound of $0.004$ by exploiting the binomial structure.
+At $N = 200$, $\delta = 0.05$: the excess error is $\leq 0.096$, meaning \memsad{}'s empirical FPR of $0.000$ implies true FPR $\leq 0.096$ with 95\% confidence. The Clopper-Pearson validation (Table~\ref{tab:fpr_validation}) provides a tighter bound of $0.004$ by exploiting the binomial structure.
 
 \section{OOD detection baseline comparison}
 \label{app:ood}
