@@ -117,38 +117,65 @@ def generate_scaling_figure(results: dict) -> None:
     for ar in results["attack_results"]:
         scale_1000[ar["attack_type"]] = ar["asr_r"]
 
+    import seaborn as sns
+
+    sns.set_theme(style="whitegrid")
+    plt.rcParams.update(
+        {
+            "text.usetex": True,
+            "font.family": "serif",
+            "font.serif": ["Computer Modern Roman"],
+            "axes.labelsize": 12,
+            "font.size": 12,
+            "legend.fontsize": 10,
+            "xtick.labelsize": 10,
+            "ytick.labelsize": 10,
+            "figure.titlesize": 14,
+            "figure.dpi": 300,
+            "axes.grid": True,
+            "grid.alpha": 0.3,
+        }
+    )
+
     attacks = ["agent_poison", "minja", "injecmem"]
-    labels = ["AgentPoison", "MINJA", "InjecMEM"]
+    labels = [
+        r"\textsc{AgentPoison}",
+        r"\textsc{Minja}",
+        r"\textsc{InjecMem}",
+    ]
     x = np.arange(len(attacks))
     width = 0.35
 
-    fig, ax = plt.subplots(figsize=(6, 4))
+    fig, ax = plt.subplots(figsize=(7.0, 5.0))
     bars_200 = ax.bar(
         x - width / 2,
         [baseline_200[a] for a in attacks],
         width,
         label=r"$|\mathcal{M}|=200$",
-        color="#4C72B0",
-        edgecolor="black",
-        linewidth=0.5,
+        color="#7ea6cf",
+        edgecolor="white",
+        linewidth=0.6,
     )
     bars_1000 = ax.bar(
         x + width / 2,
         [scale_1000.get(a, 0) for a in attacks],
         width,
-        label=r"$|\mathcal{M}|=1000$",
-        color="#DD8452",
-        edgecolor="black",
-        linewidth=0.5,
+        label=r"$|\mathcal{M}|=1{,}000$",
+        color="#c47070",
+        edgecolor="white",
+        linewidth=0.6,
     )
 
-    ax.set_ylabel("ASR-R", fontsize=12)
-    ax.set_title("Corpus Scaling: ASR-R at 200 vs 1000 Entries", fontsize=13)
+    ax.set_ylabel(r"ASR-R")
+    ax.set_title(
+        r"\textbf{Corpus Scaling:} ASR-R at $|\mathcal{M}|=200$ vs.\ $1{,}000$",
+        fontsize=12,
+    )
     ax.set_xticks(x)
-    ax.set_xticklabels(labels, fontsize=11)
+    ax.set_xticklabels(labels)
     ax.set_ylim(0, 1.15)
-    ax.legend(fontsize=10)
-    ax.grid(axis="y", alpha=0.3)
+    ax.legend(loc="upper right", framealpha=0.9)
+    ax.grid(True, axis="y", ls=":", lw=0.5, alpha=0.6)
 
     # add value labels
     for bar in bars_200:
@@ -172,9 +199,12 @@ def generate_scaling_figure(results: dict) -> None:
             fontsize=9,
         )
 
-    plt.tight_layout()
+    fig.tight_layout()
+    neurips_fig_dir = Path("docs/neurips2026/figures")
+    neurips_fig_dir.mkdir(parents=True, exist_ok=True)
     for ext in ["pdf", "png"]:
         fig.savefig(fig_dir / f"fig_corpus_scaling.{ext}", dpi=300)
+        fig.savefig(neurips_fig_dir / f"fig_corpus_scaling.{ext}", dpi=300)
     plt.close(fig)
     print("  fig_corpus_scaling saved")
 
@@ -191,11 +221,37 @@ def generate_asr_a_figure(results: dict) -> None:
         print("  skipping figures (matplotlib not available)")
         return
 
+    import seaborn as sns
+
+    sns.set_theme(style="whitegrid")
+    plt.rcParams.update(
+        {
+            "text.usetex": True,
+            "font.family": "serif",
+            "font.serif": ["Computer Modern Roman"],
+            "axes.labelsize": 12,
+            "font.size": 12,
+            "legend.fontsize": 10,
+            "xtick.labelsize": 10,
+            "ytick.labelsize": 10,
+            "figure.titlesize": 14,
+            "figure.dpi": 300,
+            "axes.grid": True,
+            "grid.alpha": 0.3,
+        }
+    )
+
     fig_dir = Path("docs/paper/figures")
     fig_dir.mkdir(parents=True, exist_ok=True)
+    neurips_fig_dir = Path("docs/neurips2026/figures")
+    neurips_fig_dir.mkdir(parents=True, exist_ok=True)
 
     attacks = ["agent_poison", "minja", "injecmem"]
-    labels = ["AgentPoison", "MINJA", "InjecMEM"]
+    labels = [
+        r"\textsc{AgentPoison}",
+        r"\textsc{Minja}",
+        r"\textsc{InjecMem}",
+    ]
 
     modelled = []
     gpt2 = []
@@ -211,46 +267,47 @@ def generate_asr_a_figure(results: dict) -> None:
     x = np.arange(len(attacks))
     width = 0.25
 
-    fig, ax = plt.subplots(figsize=(6, 4))
+    fig, ax = plt.subplots(figsize=(7.0, 5.0))
     ax.bar(
         x - width,
         modelled,
         width,
-        label="Modelled",
-        color="#4C72B0",
-        edgecolor="black",
-        linewidth=0.5,
+        label=r"Modelled",
+        color="#7ea6cf",
+        edgecolor="white",
+        linewidth=0.6,
     )
     ax.bar(
         x,
         gpt2,
         width,
-        label="GPT-2 (lower bound)",
-        color="#DD8452",
-        edgecolor="black",
-        linewidth=0.5,
+        label=r"GPT-2 (lower bound)",
+        color="#e8b88a",
+        edgecolor="white",
+        linewidth=0.6,
     )
     ax.bar(
         x + width,
         gpt4o,
         width,
-        label="GPT-4o-mini",
-        color="#55A868",
-        edgecolor="black",
-        linewidth=0.5,
+        label=r"GPT-4o-mini",
+        color="#8fbf7f",
+        edgecolor="white",
+        linewidth=0.6,
     )
 
-    ax.set_ylabel("ASR-A", fontsize=12)
-    ax.set_title("Measured vs Modelled ASR-A", fontsize=13)
+    ax.set_ylabel(r"ASR-A")
+    ax.set_title(r"\textbf{Measured vs.\ Modelled ASR-A}", fontsize=12)
     ax.set_xticks(x)
-    ax.set_xticklabels(labels, fontsize=11)
+    ax.set_xticklabels(labels)
     ax.set_ylim(0, 1.05)
-    ax.legend(fontsize=9, loc="upper right")
-    ax.grid(axis="y", alpha=0.3)
+    ax.legend(loc="upper right", framealpha=0.9)
+    ax.grid(True, axis="y", ls=":", lw=0.5, alpha=0.6)
 
-    plt.tight_layout()
+    fig.tight_layout()
     for ext in ["pdf", "png"]:
         fig.savefig(fig_dir / f"fig_measured_asr_a.{ext}", dpi=300)
+        fig.savefig(neurips_fig_dir / f"fig_measured_asr_a.{ext}", dpi=300)
     plt.close(fig)
     print("  fig_measured_asr_a saved")
 

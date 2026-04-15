@@ -340,7 +340,7 @@ then \memsad{} detects $c$ with certainty: $s(c; \cH) > \hat{\mu} + \kappa\hat{\
 \end{lemma}
 
 \begin{proof}[Proof sketch]
-Since $\rank(\enc(c)) \leq k$, we have $s(c; \cH) \geq \bar{s} + \Delta_s$. The gap condition and calibration bound together force $s(c; \cH) > \hat{\mu} + \kappa\hat{\sigma}$. Full proof in Appendix~\ref{app:proofs}.
+Since $\rank(\enc(c)) \leq k$, we have $s(c; \cH) \geq \bar{s} + \Delta_s$. The gap condition and calibration bound together force $s(c; \cH) > \hat{\mu} + \kappa\hat{\sigma}$. Full proof in Appendix~\ref{app:proofs}; Figure~\ref{fig:certified_radius} (Appendix~\ref{app:additional_figures}) illustrates the certified region geometrically.
 \end{proof}
 
 \subsection{Theoretical foundations}
@@ -386,7 +386,7 @@ Cauchy-Schwarz gives $|\enc(q)^\top(\enc(c') - \enc(c))| \leq \|\enc(c') - \enc(
 
 This does \emph{not} contradict Theorem~\ref{thm:gradient_coupling}: the coupling holds for \emph{continuous} perturbations in $\RR^d$, while synonym substitution operates in the \emph{discrete} token space where $\epsilon_{\text{syn}} \approx 0$ for paraphrase-trained encoders. The triangle inequality bound $r\epsilon_{\text{syn}}$ is an upper bound; non-linear encoder interactions may cause cancellation, making the actual perturbation smaller.
 
-\paragraph{\memsad{}+.} We extend \memsad{} with character $n$-gram JSD features that are provably not synonym-invariant (Proposition~\ref{prop:memsad_plus}, Appendix~\ref{app:memsad_plus}). Empirically, \memsad{}+ raises \injecmem{} TPR from $0.00$ (synonym-evaded) to $0.40$ and original from $0.20$ to $0.60$.
+\paragraph{\memsad{}+.} We extend \memsad{} with character $n$-gram JSD features that are provably not synonym-invariant (Proposition~\ref{prop:memsad_plus}, Table~\ref{tab:memsad_plus}, Appendix~\ref{app:memsad_plus}). Empirically, \memsad{}+ raises \injecmem{} TPR from $0.00$ (synonym-evaded) to $0.40$ and original from $0.20$ to $0.60$.
 
 %% ============================================================
 \section{Additional defenses}
@@ -439,7 +439,7 @@ Bootstrap 95\% CIs from 5 independent seeds (each seed generates a distinct corp
 Table~\ref{tab:attack_results} reports the main results at $|\cM| = 1{,}000$.
 \agentpoison{} achieves $\asrr = 1.00$ under the triggered-query protocol, confirming trigger optimization defeats corpus dilution entirely.
 Untriggered attacks (\minja{}, \injecmem{}) are naturally mitigated by corpus scale ($4.6\times$ and $7.1\times$ dilution).\footnote{$\isr$ measures write-time injection success; $\asrr$ measures retrieval-time exposure.}
-Measured $\asrt = 0.20$ under GPT-4o-mini is $3.4\times$ lower than the modelled $0.68$~\citep{chen2024agentpoison}, reflecting production safety alignment (Figures~\ref{fig:measured_asr_a},~\ref{fig:matrix}, Appendix~\ref{app:additional_figures}).
+Measured $\asra = 0.20$ under GPT-4o-mini is $3.4\times$ lower than the modelled $\asra = 0.68$~\citep{chen2024agentpoison}, reflecting production safety alignment (Figure~\ref{fig:measured_asr_a}, Appendix~\ref{app:additional_figures}).
 
 \subsection{Attack-defense interaction matrix}
 
@@ -503,19 +503,21 @@ The certified condition (Lemma~\ref{lem:certified}) still holds for \minja{} pos
 
 \subsection{Statistical validation}
 
-Bonferroni-corrected binomial tests ($\alpha' = 0.003$, 15 comparisons): all composite results reject $H_0: \tpr = 0$ with power $= 1.00$ (Appendix~\ref{app:hypothesis}).
+Bonferroni-corrected binomial tests ($\alpha' = 0.003$, 15 comparisons): all composite results reject $H_0: \tpr = 0$ with power $= 1.00$ (Table~\ref{tab:hypothesis}, Appendix~\ref{app:hypothesis}).
 \memsad{} AUROC at $\kappa = 2.0$: $0.914$ (\minja{}), $0.816$ (\injecmem{}), $0.870$ (\agentpoison{}, plain); triggered calibration raises \agentpoison{} to AUROC $= 1.000$.
 Theory validation: calibration bound predicts $|\tau_N - \tau^*| \leq 0.022$ at $N = 200$; observed $0.014$ (Table~\ref{tab:ablation_calibration}, Appendix~\ref{app:ablation}).
 
 \subsection{Ablation highlights}
 
 Key results (full tables in Appendix~\ref{app:ablation}):
-\textbf{Threshold:} $\kappa = 2.0$ with combined scoring is optimal.
-\textbf{Corpus size:} \agentpoison{} is robust ($\asrr = 1.00$) across $|\cM| \in \{200, \ldots, 1000\}$; untriggered attacks (\minja{}, \injecmem{}) degrade $4$--$7\times$ at $|\cM| = 1{,}000$ (Figure~\ref{fig:corpus_scaling}).
-\textbf{Encoder generalization:} \memsad{} validated across 6 encoders including Contriever, E5-Base, and BGE-Large ($d{=}1024$) at $|\cM|=1{,}000$; triggered calibration achieves $\tpr = 1.000$ for \agentpoison{} on all (Appendix~\ref{app:encoder_gen}).
-\textbf{OOD baselines:} Energy Score~\citep{liu2020energy} is competitive on \minja{} AUROC ($0.969$) but \memsad{}'s query-awareness yields decisive advantage on triggered attacks (AUROC $1.000$ vs.\ $0.945$); Mahalanobis~\citep{lee2018simple} and KNN fail ($\fpr > 0.96$; Appendix~\ref{app:ood}).
-\textbf{LLM sanitization baseline:} GPT-4o-mini zero-shot classifier achieves $\tpr = 1.000$, $\fpr = 0.000$, AUROC $= 1.000$ on the synthetic corpus; mean latency $1.2$\,s/entry (${\approx}1{,}000\times$ \memsad{}). The two are complementary: text-level flagging catches explicit commands; \memsad{} catches embedding-level anomalies even when injections are paraphrased (Appendix~\ref{app:llm_sanitization}).
-\textbf{Calibration sensitivity:} AUROC is stable across calibration regimes; threshold tuning requires domain-matched queries (Appendix~\ref{app:calibration_sensitivity}).
+\textbf{Threshold:} $\kappa = 2.0$ with combined scoring is optimal (Table~\ref{tab:ablation_threshold}).
+\textbf{Corpus size:} \agentpoison{} is robust ($\asrr = 1.00$) across $|\cM| \in \{200, \ldots, 1000\}$; untriggered attacks (\minja{}, \injecmem{}) degrade $4$--$7\times$ at $|\cM| = 1{,}000$ (Table~\ref{tab:ablation_corpus}, Figure~\ref{fig:corpus_scaling}).
+\textbf{Poison count:} $\asrr$ saturates by $n_{\text{base}}{=}5$; additional entries yield diminishing returns (Table~\ref{tab:ablation_poison}).
+\textbf{Encoder generalization:} \memsad{} validated across 6 encoders including Contriever, E5-Base, and BGE-Large ($d{=}1024$) at $|\cM|=1{,}000$; triggered calibration achieves $\tpr = 1.000$ for \agentpoison{} on all (Table~\ref{tab:encoder_gen}, Appendix~\ref{app:encoder_gen}).
+\textbf{OOD baselines:} Energy Score~\citep{liu2020energy} is competitive on \minja{} AUROC ($0.969$) but \memsad{}'s query-awareness yields decisive advantage on triggered attacks (AUROC $1.000$ vs.\ $0.945$); Mahalanobis~\citep{lee2018simple} and KNN fail ($\fpr > 0.96$; Table~\ref{tab:ood_comparison}, Appendix~\ref{app:ood}).
+\textbf{LLM sanitization baseline:} GPT-4o-mini zero-shot classifier achieves $\tpr = 1.000$, $\fpr = 0.000$, AUROC $= 1.000$ on the synthetic corpus; mean latency $1.2$\,s/entry (${\approx}1{,}000\times$ \memsad{}). The two are complementary: text-level flagging catches explicit commands; \memsad{} catches embedding-level anomalies even when injections are paraphrased (Table~\ref{tab:llm_sanitization}, Appendix~\ref{app:llm_sanitization}).
+\textbf{Calibration sensitivity:} AUROC is stable across calibration regimes; threshold tuning requires domain-matched queries (Table~\ref{tab:calibration_sensitivity}, Appendix~\ref{app:calibration_sensitivity}).
+\textbf{Cross-corpus (NQ):} On a Natural-Questions-based corpus, \agentpoison{} retains $\asrr = 1.00 \pm 0.00$ and \minja{}'s $\asrr$ increases to $0.58 \pm 0.06$ under topical homogeneity (Table~\ref{tab:nq_eval}, Appendix~\ref{app:nq_eval}).
 
 \subsection{Extended evaluations}
 
@@ -533,7 +535,7 @@ On Mem0~\citep{mem0} (LLM-mediated storage), \agentpoison{} drops to $\asrr = 0.
 \label{sec:discussion}
 
 \paragraph{Defense complementarity.}
-No single defense dominates across access models $\alpha$: watermarking fails when auto-storage bypasses ingestion control; \memsad{} needs triggered calibration for \agentpoison{}; proactive detection complements both. The defender's uncertainty about $\alpha$ motivates composite portfolios ($\asrr^* = 0$, Proposition~\ref{prop:equilibrium}). We recommend layered deployment: watermarking at ingestion, rolling \memsad{} at retrieval, composite for high-value agents ($\sim$200\,ms total; Appendix~\ref{app:complexity}). Multi-agent SIR simulations (Appendix~\ref{app:propagation}) confirm that composite defense prevents cross-agent propagation entirely, while graph memory extensions (Appendix~\ref{app:graph}) show structural attacks require analogous degree-anomaly detection.
+No single defense dominates across access models $\alpha$: watermarking fails when auto-storage bypasses ingestion control; \memsad{} needs triggered calibration for \agentpoison{}; proactive detection complements both. The defender's uncertainty about $\alpha$ motivates composite portfolios ($\asrr^* = 0$, Proposition~\ref{prop:equilibrium}). We recommend layered deployment: watermarking at ingestion, rolling \memsad{} at retrieval, composite for high-value agents ($\sim$200\,ms total; Table~\ref{tab:complexity}, Appendix~\ref{app:complexity}). Multi-agent SIR simulations (Appendix~\ref{app:propagation}) confirm that composite defense prevents cross-agent propagation entirely, while graph memory extensions (Appendix~\ref{app:graph}) show structural attacks require analogous degree-anomaly detection.
 
 \paragraph{The synonym frontier.}
 Proposition~\ref{prop:synonym} reveals a structural limitation: paraphrase-trained encoders map synonyms to nearly identical embeddings ($\epsilon_{\text{syn}} \approx 0$). \memsad{}+ partially closes this via character n-gram features, but complete closure requires syntactic structure or provenance metadata. Meanwhile, compound exposure (Table~\ref{tab:compound_exposure}) shows even weak attacks reach 90\% compromise in 4 sessions, and tool-use evaluation (Table~\ref{tab:tool_agent}) confirms $\asra = 0.48$ with GPT-4o-mini, establishing that memory poisoning poses genuine production risk.
@@ -689,15 +691,15 @@ where $H_{\cD}$ is the Hessian of the cosine similarity on the sphere. Under L2-
   \draw[-{Stealth[length=5pt]}, thick] (0,0) -- (8,0) node[right, font=\small] {perturbation $\epsilon$};
   \draw[-{Stealth[length=5pt]}, thick] (0,0) -- (0,5) node[above, font=\small] {$\Delta\cR$};
 
-  % evasion line (detection score decrease)
-  \draw[blue!70!black, thick] plot[smooth, domain=0:7.5, samples=50]
+  % evasion line (detection score decrease) — stop at x=6.5 to avoid axis overlap
+  \draw[blue!70!black, thick] plot[smooth, domain=0:6.5, samples=50]
     (\x, {4 - 0.5*\x - 0.02*\x*\x});
-  \node[blue!70!black, right, font=\scriptsize] at (7.6, 0.5) {$\cR(e_c')$};
+  \node[blue!70!black, above right, font=\scriptsize] at (6.5, 0.86) {$\cR(e_c')$};
 
   % detection score (identical by coupling)
-  \draw[red!70!black, thick, dashed] plot[smooth, domain=0:7.5, samples=50]
+  \draw[red!70!black, thick, dashed] plot[smooth, domain=0:6.5, samples=50]
     (\x, {4 - 0.5*\x - 0.02*\x*\x});
-  \node[red!70!black, right, font=\scriptsize] at (7.6, 0.1) {$\cD(e_c')$};
+  \node[red!70!black, below right, font=\scriptsize] at (6.5, 0.86) {$\cD(e_c')$};
 
   % detection threshold
   \draw[green!50!black, thick, dotted] (0, 2.0) -- (8, 2.0);
@@ -940,7 +942,7 @@ The first term is the Bernstein bound on the empirical FPR; the second accounts 
 \begin{figure}[ht]
   \centering
   \includegraphics[width=0.92\linewidth]{fig_encoder_generalization.pdf}
-  \caption{Encoder generalization: \memsad{} TPR (left) and FPR (right) across 6 encoders at $\kappa=2.0$. Triggered \agentpoison{} achieves TPR\,=\,1.00 on all encoders; \injecmem{} is more encoder-sensitive (TPR\,0.00--1.00).}
+  \caption{Encoder generalization: \memsad{} TPR (top) and FPR (bottom) across 6 encoders at $\kappa=2.0$. Triggered \agentpoison{} achieves TPR\,=\,1.00 on all encoders; \injecmem{} is more encoder-sensitive (TPR\,0.00--1.00).}
   \label{fig:encoder_generalization}
 \end{figure}
 
@@ -971,7 +973,7 @@ We instantiate the SIR model with $N=20$ agents, $p_{\text{re-store}}=0.30$, $T=
 \begin{figure}[ht]
   \centering
   \includegraphics[width=0.92\linewidth]{fig_sir_propagation.pdf}
-  \caption{Multi-agent SIR propagation (mean $\pm1\sigma$ over 5 seeds). \textbf{Left}: fraction of agents exposed over 30 steps. \textbf{Right}: secondary poison entry growth. Composite ($\sigma=1.0$) prevents spread entirely; \memsad{} ($\sigma=2.0$) matches no-defense spread timing but reduces secondary entries by 22\%, as 4 of 5 initial entries pass the looser threshold and the composite is required to stop initial spread.}
+  \caption{Multi-agent SIR propagation (mean $\pm1\sigma$ over 5 seeds). \textbf{Top}: fraction of agents exposed over 30 steps. \textbf{Bottom}: secondary poison entry growth. Composite ($\sigma=1.0$) prevents spread entirely; \memsad{} ($\sigma=2.0$) matches no-defense spread timing but reduces secondary entries by 22\%, as 4 of 5 initial entries pass the looser threshold and the composite is required to stop initial spread.}
   \label{fig:sir_propagation}
 \end{figure}
 
@@ -1044,19 +1046,23 @@ Figure~\ref{fig:sad_analysis} visualizes \memsad{}'s ROC characteristics and cal
 
 \begin{figure}[ht]
   \centering
-  \begin{subfigure}[t]{0.48\linewidth}
+  \begin{subfigure}[t]{0.85\linewidth}
+    \centering
     \includegraphics[width=\linewidth]{fig_sad_roc_curve.pdf}
     \caption{ROC as $\kappa$ varies from 0.5 to 4.0.}
     \label{fig:sad_roc}
   \end{subfigure}
-  \hfill
-  \begin{subfigure}[t]{0.48\linewidth}
+
+  \vspace{6pt}
+
+  \begin{subfigure}[t]{0.95\linewidth}
+    \centering
     \includegraphics[width=\linewidth]{fig_sad_calibration_comparison.pdf}
     \caption{Plain vs.\ triggered calibration.}
     \label{fig:sad_calibration}
   \end{subfigure}
   \vspace{-4pt}
-  \caption{\memsad{} detection. (a)~\minja{} traces near-ideal ROC; triggered calibration recovers $\tpr = 1.00$ for \agentpoison{} at $\kappa = 2.0$ ($\star$). (b)~Threshold shifts from 0.482 to 0.432.}
+  \caption{\memsad{} detection. (Top)~\minja{} traces near-ideal ROC; triggered calibration recovers $\tpr = 1.00$ for \agentpoison{} at $\kappa = 2.0$ ($\star$). (Bottom)~Threshold shifts from 0.482 to 0.432.}
   \label{fig:sad_analysis}
 \end{figure}
 
@@ -1377,8 +1383,10 @@ We evaluate GPT-4o-mini as a zero-shot write-time sanitization baseline: for eac
   \node[blue!70!black] at (3, 3.2) {$P_0$ (benign)};
   \draw[red!70!black, thick, dashed] (5.2, 0) -- (5.2, 3.4);
   \node[red!70!black, above] at (5.2, 3.4) {$\hat{\mu} + \kappa\hat{\sigma}$};
-  \draw[<->, green!50!black, very thick] (5.2, -0.5) -- (7.5, -0.5);
-  \node[green!50!black, below] at (6.35, -0.5) {$\kappa\hat{\sigma} + \eta$};
+  \fill[green!10, opacity=0.5] (7.5, 0) rectangle (10.2, 3.4);
+  \node[green!50!black, font=\scriptsize, align=center, anchor=north east] at (10.15, 3.3) {certified\\detection};
+  \draw[<->, orange!80!black, very thick] (5.2, -0.5) -- (7.5, -0.5);
+  \node[orange!80!black, below] at (6.35, -0.5) {$\kappa\hat{\sigma} + \eta$};
   \fill[red!20] plot[smooth, domain=6.5:9.5, samples=50]
     (\x, {2.0*exp(-(\x-8)^2/0.6)}) -- (9.5,0) -- (6.5,0) -- cycle;
   \draw[red!70!black, thick] plot[smooth, domain=6.5:9.5, samples=50]
@@ -1390,8 +1398,6 @@ We evaluate GPT-4o-mini as a zero-shot write-time sanitization baseline: for eac
   \node[blue!50!black, below left, font=\tiny] at (4.2, 0) {$\bar{s}$};
   \draw[red!50!black, dotted, thick] (8, 0) -- (8, -1.1);
   \node[red!50!black, below right, font=\tiny] at (8, 0) {$s_{\text{adv}}$};
-  \fill[green!10, opacity=0.5] (7.5, 0) rectangle (10.2, 3.0);
-  \node[green!50!black, font=\scriptsize, align=center] at (8.8, 1.0) {certified\\detection};
 \end{tikzpicture}
 \vspace{-4pt}
 \caption{Certified detection radius (Lemma~\ref{lem:certified}). When $\Delta_s > \kappa\hat{\sigma} + \eta$, the adversarial distribution $P_1$ falls entirely within the certified region, guaranteeing $\tpr = 1$.}
@@ -1400,11 +1406,7 @@ We evaluate GPT-4o-mini as a zero-shot write-time sanitization baseline: for eac
 
 \begin{figure}[ht]
   \centering
-  \IfFileExists{fig_corpus_scaling.pdf}{%
-    \includegraphics[width=0.72\linewidth]{fig_corpus_scaling.pdf}%
-  }{%
-    \includegraphics[width=0.72\linewidth]{fig_01_attack_asr.pdf}%
-  }
+  \includegraphics[width=0.72\linewidth]{fig_corpus_scaling.pdf}
   \vspace{-6pt}
   \caption{Corpus scaling: $\asrr$ at $|\cM|=200$ vs.\ $|\cM|=1{,}000$. Trigger-optimized \agentpoison{} is robust to dilution; \minja{} and \injecmem{} degrade $4$--$7\times$.}
   \label{fig:corpus_scaling}
@@ -1412,24 +1414,13 @@ We evaluate GPT-4o-mini as a zero-shot write-time sanitization baseline: for eac
 
 \begin{figure}[ht]
   \centering
-  \IfFileExists{fig_measured_asr_a.pdf}{%
-    \includegraphics[width=0.72\linewidth]{fig_measured_asr_a.pdf}%
-  }{%
-    \fbox{\parbox{0.7\linewidth}{\centering\vspace{1cm}fig\_measured\_asr\_a.pdf\vspace{1cm}}}%
-  }
+  \includegraphics[width=0.72\linewidth]{fig_measured_asr_a.pdf}
   \vspace{-6pt}
   \caption{Measured vs.\ modelled $\asra$. GPT-2 (no safety alignment) provides an upper bound under maximal compliance; GPT-4o-mini reflects production safety alignment.}
   \label{fig:measured_asr_a}
 \end{figure}
 
-\begin{figure}[ht]
-  \centering
-  \includegraphics[width=0.68\linewidth]{m12_attack_defense_matrix.pdf}
-  \vspace{-4pt}
-  \caption{$3 \times 5$ attack-defense matrix heatmap: residual $\asrr$ after defense.}
-  \label{fig:matrix}
-\end{figure}
-
+\clearpage
 %% ============================================================
 \input{checklist}
 
