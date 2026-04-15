@@ -5,12 +5,12 @@
 \item {\bf Claims}
     \item[] Question: Do the main claims made in the abstract and introduction accurately reflect the paper's contributions and scope?
     \item[] Answer: \answerYes{}
-    \item[] Justification: All seven contributions listed in Section~\ref{sec:intro} are supported by theoretical results (Theorems~\ref{thm:gradient_coupling}--\ref{thm:generalization}, Lemma~\ref{lem:certified}, Propositions~\ref{prop:hardness}--\ref{prop:memsad_plus}) and experimental validation in Section~\ref{sec:experiments}.
+    \item[] Justification: All four contributions listed in Section~\ref{sec:intro} are supported by theoretical results (Theorems~\ref{thm:gradient_coupling}--\ref{thm:generalization}, Lemma~\ref{lem:certified}, Propositions~\ref{prop:hardness}--\ref{prop:memsad_plus}) and experimental validation in Section~\ref{sec:experiments}.
 
 \item {\bf Limitations}
     \item[] Question: Does the paper discuss the limitations of the work performed by the authors?
     \item[] Answer: \answerYes{}
-    \item[] Justification: Section~\ref{sec:discussion} includes a dedicated limitations paragraph covering corpus size, query distribution stationarity, the synonym loophole, encoder sensitivity, and compound exposure independence assumptions.
+    \item[] Justification: Section~\ref{sec:discussion} includes a dedicated limitations paragraph covering (i)~corpus scale, (ii)~regret bound drift assumptions, (iii)~piecewise-linear encoder scope of the hardness result, and (iv)~the residual synonym loophole in \memsad{}+.
 
 \item {\bf Theory assumptions and proofs}
     \item[] Question: For each theoretical result, does the paper provide the full set of assumptions and a complete (and correct) proof?
@@ -50,7 +50,7 @@
 \item {\bf Broader impacts}
     \item[] Question: Does the paper discuss both potential positive societal impacts and negative societal impacts of the work performed?
     \item[] Answer: \answerYes{}
-    \item[] Justification: Section~\ref{sec:discussion} discusses positive impacts (improved agent security) and potential negative impacts (attack implementations could be misused, though all attacks are previously published). Defenses are provided alongside attacks.
+    \item[] Justification: Positive impact: the \memsad{} defense, certified detection radius, and composite portfolio directly improve the security of production memory-augmented agents. Negative impact: the attack reproductions (\agentpoison{}, \minja{}, \injecmem{}) could be misused, though each attack is already published in prior work and we do not introduce new attack capabilities. Every attack is paired with a working defense in Section~\ref{sec:experiments}, and the synonym loophole (Proposition~\ref{prop:synonym}) is disclosed transparently so the community can investigate mitigations rather than be surprised by it.
 
 \item {\bf Safeguards}
     \item[] Question: Does the paper describe safeguards that have been put in place for responsible release of data or models that have a high risk for misuse (e.g., pre-trained language models, image generators, or scraped datasets)?

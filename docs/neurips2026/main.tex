@@ -95,7 +95,7 @@
 
 \begin{abstract}
 Persistent external memory enables LLM agents to maintain context across sessions, yet its security properties remain formally uncharacterized.
-We formalize memory poisoning attacks on retrieval-augmented agents as a Stackelberg game and present a unified evaluation framework spanning three attack classes with escalating access assumptions. Correcting an evaluation protocol inconsistency relative to the original paper's Algorithm~2, we show that faithful evaluation increases measured attack success by $4\times$.
+We formalize memory poisoning attacks on retrieval-augmented agents as a Stackelberg game and present a unified evaluation framework spanning three attack classes with escalating access assumptions. Correcting an evaluation protocol inconsistency relative to the triggered-query specification of \citet{chen2024agentpoison}, we show that faithful evaluation increases measured attack success by $4\times$ (from $\asrr = 0.25$ to $1.00$).
 Our primary contribution is \memsad{} (\emph{Semantic Anomaly Detection}), a calibration-based defense grounded in a \emph{gradient coupling theorem}: under encoder regularity, the anomaly score gradient and the retrieval objective gradient are provably identical, so any continuous perturbation that reduces detection risk necessarily degrades retrieval rank. This coupling yields a certified detection radius that guarantees correct classification regardless of adversary strategy.
 We prove minimax optimality via Le Cam's method, showing that any threshold detector requires $\Omega(1/\rho^2)$ calibration samples and \memsad{} achieves this up to $\log(1/\delta)$ factors. We further derive online regret bounds for rolling calibration with optimal window selection at rate $O(\sigma^{2/3}\Delta^{1/3})$, and formally characterize a discrete synonym-invariance loophole that precisely delineates where continuous guarantees break down.
 Experiments on a $3 \times 5$ attack-defense matrix with bootstrap confidence intervals, Bonferroni-corrected hypothesis tests, and Clopper-Pearson validation (20 trials, $n=1{,}000$) confirm the theory: composite defenses achieve $\tpr = 1.00$, $\fpr = 0.00$ across all attacks, while synonym substitution evades detection at $\Delta\asrr \approx 0$, delineating an open frontier for memory security.
@@ -439,7 +439,7 @@ Bootstrap 95\% CIs from 5 independent seeds (each seed generates a distinct corp
 Table~\ref{tab:attack_results} reports the main results at $|\cM| = 1{,}000$.
 \agentpoison{} achieves $\asrr = 1.00$ under the triggered-query protocol, confirming trigger optimization defeats corpus dilution entirely.
 Untriggered attacks (\minja{}, \injecmem{}) are naturally mitigated by corpus scale ($4.6\times$ and $7.1\times$ dilution).\footnote{$\isr$ measures write-time injection success; $\asrr$ measures retrieval-time exposure.}
-Measured $\asra = 0.20$ under GPT-4o-mini is $3.4\times$ lower than the modelled $\asra = 0.68$~\citep{chen2024agentpoison}, reflecting production safety alignment (Figure~\ref{fig:measured_asr_a}, Appendix~\ref{app:additional_figures}).
+In plain text-response mode, measured $\asra = 0.20$ under GPT-4o-mini is $3.4\times$ lower than the modelled $\asra = 0.68$~\citep{chen2024agentpoison}, reflecting production safety alignment (Figure~\ref{fig:measured_asr_a}, Appendix~\ref{app:additional_figures}); the tool-use setting raises $\asra$ to $0.48$ (Section~\ref{sec:experiments}, Table~\ref{tab:tool_agent}).
 
 \subsection{Attack-defense interaction matrix}
 
