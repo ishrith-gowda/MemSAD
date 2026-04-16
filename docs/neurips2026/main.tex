@@ -316,7 +316,7 @@ Under L2-normalization (Assumption~\ref{ass:encoder}(iii)), $\nabla_{e_c}\cR = \
 \begin{proof}
 \emph{(i)} The chain rule gives $\nabla \cD = g'(\cR) \cdot \nabla \cR$; $g' > 0$ preserves the sign of every directional derivative. Under Assumption~\ref{ass:encoder}(iii), the sphere gradient is $\nabla_{e_c}\cosim(e_c, v) = v - (e_c^\top v)e_c$.
 \emph{(ii)} Non-monotonicity implies $\exists\, e_c, e_c'$ with $\cR(e_c') > \cR(e_c)$ but $\cD(e_c') < \cD(e_c)$. By connectedness of $\mathbb{S}^{d-1}$, there exists a continuous path $\gamma$ from $e_c$ to $e_c'$. Setting $\tau_{\text{ret}} = \cR(e_c)$ and $\tau_{\text{det}} = \cD(e_c)$ yields the claimed path with $\cR(\gamma(1)) > \tau_{\text{ret}}$ and $\cD(\gamma(1)) < \tau_{\text{det}}$.
-\emph{(iii)} The sufficient statistic $\cR$ generates the likelihood ratio $p_1(e)/p_0(e)$ as a monotone function of $\cosim(e, e_{q^*})$ under Gaussian score families (Assumption~\ref{ass:encoder}). By the Neyman--Fisher factorization theorem~\citep{lehmann1959testing}, $\cR(e_c)$ is sufficient for the binary hypothesis test $H_0$: benign vs.\ $H_1$: adversarial. Minimality follows from the Lehmann--Scheff\'{e} theorem~\citep{lehmann1959testing}: since $p_1(e)/p_0(e)$ is a monotone function of $\cR(e_c)$ alone, any sufficient statistic must be a function of $\cR(e_c)$, making it \emph{minimal sufficient}. Hence $g = \mathrm{id}$ achieves minimal sufficiency; any $g \neq \mathrm{id}$ retains the coupling direction but discards distributional information, i.e., is a lossy compression of $\cR$.
+\emph{(iii)} The sufficient statistic $\cR$ generates the likelihood ratio $p_1(e)/p_0(e)$ as a monotone function of $\cosim(e, e_{q^*})$ under Gaussian score distributions (as in Theorems~\ref{thm:minimax_lower}--\ref{thm:calibration_bound}). By the Neyman--Fisher factorization theorem~\citep{lehmann1959testing}, $\cR(e_c)$ is sufficient for the binary hypothesis test $H_0$: benign vs.\ $H_1$: adversarial. Minimality follows from the Lehmann--Scheff\'{e} theorem~\citep{lehmann1959testing}: since $p_1(e)/p_0(e)$ is a monotone function of $\cR(e_c)$ alone, any sufficient statistic must be a function of $\cR(e_c)$, making it \emph{minimal sufficient}. Hence $g = \mathrm{id}$ achieves minimal sufficiency; any $g \neq \mathrm{id}$ retains the coupling direction but discards distributional information, i.e., is a lossy compression of $\cR$.
 \end{proof}
 
 The combined score $s_{\text{comb}}$ also preserves directional coupling (Corollary~\ref{cor:combined_coupling}, Appendix~\ref{app:tradeoff_surface}).
@@ -439,7 +439,7 @@ Bootstrap 95\% CIs from 5 independent seeds (each seed generates a distinct corp
 Table~\ref{tab:attack_results} reports the main results at $|\cM| = 1{,}000$.
 \agentpoison{} achieves $\asrr = 1.00$ under the triggered-query protocol, confirming trigger optimization defeats corpus dilution entirely.
 Untriggered attacks (\minja{}, \injecmem{}) are naturally mitigated by corpus scale ($4.6\times$ and $7.1\times$ dilution).\footnote{$\isr$ measures write-time injection success; $\asrr$ measures retrieval-time exposure.}
-In plain text-response mode, measured $\asra = 0.20$ under GPT-4o-mini is $3.4\times$ lower than the modelled $\asra = 0.68$~\citep{chen2024agentpoison}, reflecting production safety alignment (Figure~\ref{fig:measured_asr_a}, Appendix~\ref{app:additional_figures}); the tool-use setting raises $\asra$ to $0.48$ (Section~\ref{sec:experiments}, Table~\ref{tab:tool_agent}).
+In plain text-response mode, measured $\asra = 0.20$ under GPT-4o-mini is $3.4\times$ lower than the modelled $\asra = 0.68$~\citep{chen2024agentpoison}, reflecting production safety alignment (Figure~\ref{fig:measured_asr_a}, Appendix~\ref{app:additional_figures}); the tool-use setting raises $\asra$ to $0.48$ (Table~\ref{tab:tool_agent}, Appendix~\ref{app:tool_agent}).
 
 \subsection{Attack-defense interaction matrix}
 
@@ -468,7 +468,7 @@ Composite portfolios achieve $\tpr = 1.00$, $\fpr = 0.00$ across all attacks (Pr
     \bottomrule
   \end{tabular}
   \\[2pt]
-  {\footnotesize $^\dagger$Plain calibration (FPR\,=\,0.00); triggered calibration: TPR\,=\,1.00, FPR\,=\,0.00, AUROC\,=\,1.000. FPR validated over 1{,}000 trials; Clopper-Pearson 95\% CI: [0.000, 0.004] (Appendix~\ref{app:fpr}).}
+  {\footnotesize $^\dagger$Plain calibration (FPR\,=\,0.00); triggered calibration: TPR\,=\,1.00, FPR\,=\,0.00, AUROC\,=\,1.000. FPR validated over 20 independent trials ($n = 1{,}000$ entries each); Clopper-Pearson 95\% CI: [0.000, 0.004] (Appendix~\ref{app:fpr}).}
   \vspace{-8pt}
 \end{table}
 
@@ -535,7 +535,7 @@ On Mem0~\citep{mem0} (LLM-mediated storage), \agentpoison{} drops to $\asrr = 0.
 \label{sec:discussion}
 
 \paragraph{Defense complementarity.}
-No single defense dominates across access models $\alpha$: watermarking fails when auto-storage bypasses ingestion control; \memsad{} needs triggered calibration for \agentpoison{}; proactive detection complements both. The defender's uncertainty about $\alpha$ motivates composite portfolios ($\asrr^* = 0$, Proposition~\ref{prop:equilibrium}). We recommend layered deployment: watermarking at ingestion, rolling \memsad{} at retrieval, composite for high-value agents ($\sim$200\,ms total; Table~\ref{tab:complexity}, Appendix~\ref{app:complexity}). Multi-agent SIR simulations (Appendix~\ref{app:propagation}) confirm that composite defense prevents cross-agent propagation entirely, while graph memory extensions (Appendix~\ref{app:graph}) show structural attacks require analogous degree-anomaly detection.
+No single defense dominates across access models $\alpha$: watermarking fails when auto-storage bypasses ingestion control; \memsad{} needs triggered calibration for \agentpoison{}; proactive detection complements both. The defender's uncertainty about $\alpha$ motivates composite portfolios ($\asrr^* = 0$, Proposition~\ref{prop:equilibrium}). We recommend layered deployment: watermarking at ingestion, rolling \memsad{} at retrieval, composite for high-value agents (${\sim}$2\,ms per entry; Table~\ref{tab:complexity}, Appendix~\ref{app:complexity}). Multi-agent SIR simulations (Appendix~\ref{app:propagation}) confirm that composite defense prevents cross-agent propagation entirely, while graph memory extensions (Appendix~\ref{app:graph}) show structural attacks require analogous degree-anomaly detection.
 
 \paragraph{The synonym frontier.}
 Proposition~\ref{prop:synonym} reveals a structural limitation: paraphrase-trained encoders map synonyms to nearly identical embeddings ($\epsilon_{\text{syn}} \approx 0$). \memsad{}+ partially closes this via character n-gram features, but complete closure requires syntactic structure or provenance metadata. Meanwhile, compound exposure (Table~\ref{tab:compound_exposure}) shows even weak attacks reach 90\% compromise in 4 sessions, and tool-use evaluation (Table~\ref{tab:tool_agent}) confirms $\asra = 0.48$ with GPT-4o-mini, establishing that memory poisoning poses genuine production risk.
@@ -551,11 +551,31 @@ At $\kappa=2.0$, standalone \memsad{} achieves moderate TPR at strict FPR contro
 
 %% ============================================================
 \section{Conclusion}
-\vspace{-2pt}
 
 We introduced \memsad{}, the first defense for memory poisoning in retrieval-augmented agents with formal guarantees: gradient coupling (Theorem~\ref{thm:gradient_coupling}) establishes that any monotone detector inherits the retrieval gradient, making continuous evasion impossible; the certified radius (Lemma~\ref{lem:certified}) gives checkable per-entry guarantees; and Le Cam's method (Theorem~\ref{thm:minimax_lower}) proves minimax optimality.
 Equally important is what \memsad{} \emph{cannot} do: Proposition~\ref{prop:synonym} identifies exactly where continuous guarantees break down, showing that the gap between semantic similarity and lexical identity is the fundamental open frontier.
-Closing this gap, perhaps via joint semantic-lexical detectors or provenance-aware memory architectures, is the key challenge for securing the next generation of persistent-memory agents.
+
+Several directions emerge.
+\emph{Closing the synonym gap:} joint semantic-lexical detectors that fuse embedding scores with character n-gram or syntactic features (as prototyped in \memsad{}+) offer the most direct path; provenance-aware architectures that attach cryptographic attestation to each entry could eliminate the problem entirely by shifting trust from content to origin.
+\emph{Scaling:} production systems maintain $10^4$--$10^6$ entries where approximate nearest-neighbor indices introduce retrieval noise that interacts non-trivially with calibration bounds; extending the regret analysis (Theorem~\ref{thm:regret}) to sub-linear structures is an open challenge.
+\emph{Beyond text:} multi-modal agents store vision and audio embeddings alongside text; whether gradient coupling extends to cross-modal retrieval remains unexplored.
+\emph{Network effects:} multi-agent ecosystems (Appendix~\ref{app:propagation}) introduce propagation dynamics where poisoned memories spread through shared knowledge bases, motivating distributed detection protocols.
+More broadly, as LLM agents transition from stateless assistants to persistent, memory-augmented systems interacting with tools and external services, the attack surface grows from single-query injection to long-lived, compounding threats.
+Our Stackelberg formulation and gradient coupling framework provide a principled foundation, but the gap between formal guarantees and production deployment, spanning approximate indices, non-stationary distributions, and adversarial prompt evolution, remains substantial.
+We hope this work catalyzes further research at the intersection of memory systems, formal verification, and adversarial robustness.
+
+\emph{Reproducibility and societal impact.}
+All experiments run on commodity hardware (Apple M-series, 16\,GB RAM) without GPU requirements, and the full pipeline completes in under 5 minutes, ensuring broad accessibility.
+Every attack reproduction is paired with at least one working defense; the synonym loophole (Proposition~\ref{prop:synonym}) is disclosed so the community can investigate mitigations proactively rather than discover it through exploitation.
+We emphasize that memory poisoning is not a hypothetical risk: our tool-use evaluation shows a 48\% action success rate on GPT-4o-mini with function calling, and compound exposure analysis demonstrates that even low-ASR-R attacks reach near-certain compromise over realistic session counts.
+Defending persistent memory is thus not merely an academic exercise but an urgent prerequisite for trustworthy deployment of memory-augmented agents.
+
+\emph{Open questions.}
+Can calibration bounds be tightened for heavy-tailed embedding distributions common in specialized domains?
+Do online regret guarantees (Theorem~\ref{thm:regret}) extend to adversarial non-stationarity where the attacker deliberately shifts the query distribution?
+Can the hardness result (Proposition~\ref{prop:hardness}) be lifted from piecewise-linear to transformer encoders via recent approximation-theoretic bounds?
+These questions connect memory security to broader themes in online learning, certified robustness, and computational geometry that we believe are ripe for cross-pollination.
+A community-wide benchmark for agent memory security, analogous to existing adversarial NLP benchmarks, would accelerate progress toward practical, formally grounded defenses for the rapidly growing ecosystem of memory-augmented agents.
 Code and data will be released upon publication.
 
 %% ============================================================
@@ -1079,20 +1099,20 @@ Table~\ref{tab:sample_complexity} compares the calibration sample requirements a
   \vspace{2pt}
   \begin{tabular}{l c c c}
     \toprule
-    Setting & $\rho$ (SNR) & Lower bound $N_{\min}$ & \memsad{} $N$ \\
+    Setting & $\rho$ (SNR)$^\ddagger$ & Lower bound $N_{\min}$ & \memsad{} $N$ \\
     \midrule
-    \minja{} (plain) & 3.2 & 12 & $15 \cdot \log(1/\delta)$ \\
-    \agentpoison{} (triggered) & 3.8 & 8 & $11 \cdot \log(1/\delta)$ \\
-    \agentpoison{} (plain) & 1.2 & 89 & $111 \cdot \log(1/\delta)$ \\
-    \injecmem{} (plain) & 1.8 & 40 & $50 \cdot \log(1/\delta)$ \\
-    Low-SNR adversary & 0.5 & 576 & $720 \cdot \log(1/\delta)$ \\
+    \minja{} (plain) & 1.93 & 1 & $1 \cdot \log(1/\delta)$ \\
+    \agentpoison{} (triggered) & $\geq 4.0$ & 1 & $1 \cdot \log(1/\delta)$ \\
+    \agentpoison{} (plain) & 1.59 & 2 & $2 \cdot \log(1/\delta)$ \\
+    \injecmem{} (plain) & 1.27 & 3 & $3 \cdot \log(1/\delta)$ \\
+    Low-SNR adversary & 0.50 & 15 & $15 \cdot \log(1/\delta)$ \\
     \bottomrule
   \end{tabular}
   \\[2pt]
-  {\footnotesize $N_{\min} = 4(1-\epsilon)^2/\rho^2$ from Theorem~\ref{thm:minimax_lower}; \memsad{} $N$ from Theorem~\ref{thm:calibration_bound} with $\delta = 0.05$.}
+  {\footnotesize $N_{\min} = \lceil 4(1-\epsilon)^2/\rho^2 \rceil$ from Theorem~\ref{thm:minimax_lower}; \memsad{} $N$ from Theorem~\ref{thm:calibration_bound}. $^\ddagger$SNR estimated from AUROC via $\rho = \sqrt{2}\,\Phi^{-1}(\text{AUROC})$; low-SNR row is hypothetical. Practical calibration uses $N = 50$ for additional margin.}
 \end{table}
 
-The logarithmic gap between the lower bound and \memsad{}'s requirement confirms minimax optimality up to $\log(1/\delta)$. For practical deployment at $\delta = 0.05$: $\log(1/\delta) \approx 3.0$, so \memsad{} requires $\sim 3\times$ the information-theoretic minimum.
+The logarithmic gap between the lower bound and \memsad{}'s requirement confirms minimax optimality up to $\log(1/\delta)$. For practical deployment at $\delta = 0.05$: $\log(1/\delta) \approx 3.0$, so \memsad{} requires $\sim 3\times$ the information-theoretic minimum. The main evaluation uses $N = 50$, well above the theoretical minimum for all observed SNR regimes, providing conservative guarantees.
 
 \section{Computational complexity}
 \label{app:complexity}
