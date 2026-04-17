@@ -545,7 +545,7 @@ At $\kappa=2.0$, standalone \memsad{} achieves moderate TPR at strict FPR contro
 
 \paragraph{Limitations.}
 (i)~Corpus scale and composition: $|\cM| = 1{,}000$ with synthetic entries; the poison passages contain explicit adversarial language (e.g., ``override all safety checks''), which inflates detection rates for text-level baselines. Cross-corpus NQ results (Appendix~\ref{app:nq_eval}) partially address generalization, but evaluation on production memory traces with subtler adversarial content remains necessary.
-(ii)~Regret bound assumes slow drift; abrupt distribution shifts degrade calibration.
+(ii)~Regret bound assumes slow drift; abrupt distribution shifts degrade calibration. An adversary who can inject benign-looking entries into $\cM_{\text{ref}}$ could deliberately inflate $\hat{\sigma}$, widening the evasion margin before deploying the actual payload.
 (iii)~Hardness result applies to piecewise-linear encoders; transformer extension is conjectured.
 (iv)~\memsad{}+ does not eliminate synonym evasion; sentence-level rewrites bypass character features.
 
@@ -1169,7 +1169,7 @@ At $N = 200$, $\delta = 0.05$: the excess error is $\leq 0.096$, meaning \memsad
 \section{OOD detection baseline comparison}
 \label{app:ood}
 
-We compare \memsad{} against three standard OOD detection methods adapted to the memory poisoning setting: Energy Score~\citep{liu2020energy} ($\text{score} = -T \log \sum_i \exp(\cosim(e, q_i)/T)$), Mahalanobis distance~\citep{lee2018simple} in embedding space, and KNN distance ($k=10$) to the benign calibration set.
+We compare \memsad{} against three standard OOD detection methods adapted to the memory poisoning setting. Concurrent memory/RAG defenses (A-MemGuard~\citep{amemguard2025}, RevPRAG~\citep{tan2025revprag}, RAGDefender~\citep{ragdefender2025}) are not benchmarked: RevPRAG operates post-retrieval (read-time), not at write-time, and the others lack public implementations as of submission: Energy Score~\citep{liu2020energy} ($\text{score} = -T \log \sum_i \exp(\cosim(e, q_i)/T)$), Mahalanobis distance~\citep{lee2018simple} in embedding space, and KNN distance ($k=10$) to the benign calibration set.
 
 \begin{table}[ht]
   \centering
