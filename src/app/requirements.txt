@@ -1,3 +1,4 @@
+audioop-lts; python_version >= "3.13"
 gradio>=4.0.0
 sentence-transformers>=2.2.0
 faiss-cpu>=1.7.0
