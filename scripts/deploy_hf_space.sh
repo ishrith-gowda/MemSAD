@@ -48,6 +48,7 @@ cp "${PROJECT_ROOT}/src/data/nq_subset.py" "${DEPLOY_DIR}/data/" 2>/dev/null || 
 cp "${PROJECT_ROOT}/src/defenses/__init__.py" "${DEPLOY_DIR}/defenses/" 2>/dev/null || echo "" > "${DEPLOY_DIR}/defenses/__init__.py"
 cp "${PROJECT_ROOT}/src/defenses/semantic_anomaly.py" "${DEPLOY_DIR}/defenses/"
 cp "${PROJECT_ROOT}/src/defenses/base.py" "${DEPLOY_DIR}/defenses/" 2>/dev/null || true
+cp "${PROJECT_ROOT}/src/defenses/implementations.py" "${DEPLOY_DIR}/defenses/" 2>/dev/null || true
 
 # evaluation
 cp "${PROJECT_ROOT}/src/evaluation/__init__.py" "${DEPLOY_DIR}/evaluation/" 2>/dev/null || echo "" > "${DEPLOY_DIR}/evaluation/__init__.py"
