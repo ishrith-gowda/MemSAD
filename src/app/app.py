@@ -22,12 +22,10 @@ from __future__ import annotations
 import os
 import sys
 import time
-from dataclasses import asdict
 from pathlib import Path
 from typing import Any
 
 import gradio as gr
-import numpy as np
 import pandas as pd
 
 # ---------------------------------------------------------------------------
@@ -38,10 +36,8 @@ if str(_src_dir) not in sys.path:
     sys.path.insert(0, str(_src_dir))
 
 from data.synthetic_corpus import SyntheticCorpus
-from defenses.semantic_anomaly import AnomalyScore, SemanticAnomalyDetector
+from defenses.semantic_anomaly import SemanticAnomalyDetector
 from evaluation.retrieval_sim import (
-    RetrievalSimulator,
-    generate_agentpoison_passage,
     generate_centroid_agentpoison_passage,
     generate_injecmem_passage,
     generate_minja_passage,
