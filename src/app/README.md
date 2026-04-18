@@ -1,6 +1,6 @@
 ---
 title: MemSAD Memory Agent Security Demo
-emoji: null
+emoji: "\U0001F6E1"
 colorFrom: blue
 colorTo: gray
 sdk: gradio
