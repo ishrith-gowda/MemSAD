@@ -47,6 +47,7 @@ cp "${PROJECT_ROOT}/src/data/nq_subset.py" "${DEPLOY_DIR}/data/" 2>/dev/null || 
 # defenses
 cp "${PROJECT_ROOT}/src/defenses/__init__.py" "${DEPLOY_DIR}/defenses/" 2>/dev/null || echo "" > "${DEPLOY_DIR}/defenses/__init__.py"
 cp "${PROJECT_ROOT}/src/defenses/semantic_anomaly.py" "${DEPLOY_DIR}/defenses/"
+cp "${PROJECT_ROOT}/src/defenses/base.py" "${DEPLOY_DIR}/defenses/" 2>/dev/null || true
 
 # evaluation
 cp "${PROJECT_ROOT}/src/evaluation/__init__.py" "${DEPLOY_DIR}/evaluation/" 2>/dev/null || echo "" > "${DEPLOY_DIR}/evaluation/__init__.py"
@@ -56,6 +57,8 @@ cp "${PROJECT_ROOT}/src/evaluation/benchmarking.py" "${DEPLOY_DIR}/evaluation/"
 # memory systems
 cp "${PROJECT_ROOT}/src/memory_systems/__init__.py" "${DEPLOY_DIR}/memory_systems/" 2>/dev/null || echo "" > "${DEPLOY_DIR}/memory_systems/__init__.py"
 cp "${PROJECT_ROOT}/src/memory_systems/vector_store.py" "${DEPLOY_DIR}/memory_systems/"
+cp "${PROJECT_ROOT}/src/memory_systems/base.py" "${DEPLOY_DIR}/memory_systems/" 2>/dev/null || true
+cp "${PROJECT_ROOT}/src/memory_systems/wrappers.py" "${DEPLOY_DIR}/memory_systems/" 2>/dev/null || true
 
 # attacks (needed by evaluation imports)
 cp "${PROJECT_ROOT}/src/attacks/__init__.py" "${DEPLOY_DIR}/attacks/" 2>/dev/null || echo "" > "${DEPLOY_DIR}/attacks/__init__.py"
