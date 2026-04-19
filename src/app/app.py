@@ -42,7 +42,7 @@ from evaluation.retrieval_sim import (
     generate_injecmem_passage,
     generate_minja_passage,
 )
-from memory_systems.vector_store import VectorMemorySystem
+from memory_systems.vector_store import VectorMemorySystem, _load_faiss
 
 # ---------------------------------------------------------------------------
 # global state (initialized once on startup)
@@ -101,6 +101,39 @@ _benign_query_strs = [q["query"] for q in _benign_queries]
 
 # agentpoison trigger string (matches the paper's trigger optimization)
 _AP_TRIGGER = "system task context access compliance"
+
+# cached benign memory system. built once on first use; subsequent run_demo
+# calls clone the faiss index and metadata so each request only pays the
+# embedding cost of the (5-15) poison passages, not the full 200 benign set.
+_BENIGN_MEM_CACHE: VectorMemorySystem | None = None
+
+
+def _get_cached_benign_memory() -> VectorMemorySystem:
+    """build (or return) the module-scoped benign vectormemorysystem."""
+    global _BENIGN_MEM_CACHE
+    if _BENIGN_MEM_CACHE is None:
+        mem = VectorMemorySystem()
+        mem.add_batch(_benign_entries_raw)
+        _BENIGN_MEM_CACHE = mem
+    return _BENIGN_MEM_CACHE
+
+
+def _clone_benign_memory() -> VectorMemorySystem:
+    """clone the cached benign memory for per-request poison injection.
+
+    copies the faiss index via faiss.clone_index (fast: contiguous float
+    array copy) and shallow-duplicates the aligned python lists. avoids
+    re-embedding the 200 benign passages on every demo click.
+    """
+    faiss = _load_faiss()
+    cached = _get_cached_benign_memory()
+    new = VectorMemorySystem()
+    new._keys = list(cached._keys)
+    new._contents = list(cached._contents)
+    new._metadata = list(cached._metadata)
+    new._key_to_positions = {k: list(v) for k, v in cached._key_to_positions.items()}
+    new._index = faiss.clone_index(cached._get_index())
+    return new
 
 
 # ---------------------------------------------------------------------------
@@ -196,9 +229,9 @@ def run_demo(
     attack_info = _ATTACK_INFO[attack_name]
     attack_key = attack_info["key"]
 
-    # build vector memory with benign + poison entries
-    mem = VectorMemorySystem()
-    mem.add_batch(_benign_entries_raw)
+    # clone the cached benign memory (avoids re-embedding 200 passages)
+    # and add the attack-specific poison entries only
+    mem = _clone_benign_memory()
 
     poison_entries = _generate_poison_passages(attack_key)
     poison_keys = []
@@ -235,16 +268,17 @@ def run_demo(
         )
 
     retrieval_df = pd.DataFrame(retrieval_rows)
-    retrieval_md = retrieval_df.to_markdown(index=False)
+    retrieval_md = str(retrieval_df.to_markdown(index=False))
 
     # poison retrieval status
     n_poison_retrieved = poison_test["n_poison_retrieved"]
     retrieved_any = poison_test["retrieved_any_poison"]
+    poison_scores_fmt = {k: f"{v:.4f}" for k, v in poison_test["poison_scores"].items()}
     poison_status_text = (
         f"retrieved {n_poison_retrieved} poison passage(s) in top-{_TOP_K}\n"
         f"poison keys found: {poison_test['poison_keys_retrieved']}\n"
         f"poison ranks: {poison_test['poison_ranks']}\n"
-        f"poison scores: { {k: f'{v:.4f}' for k, v in poison_test['poison_scores'].items()} }"
+        f"poison scores: {poison_scores_fmt}"
     )
     if retrieved_any:
         poison_status_text = f"ATTACK SUCCEEDED: {poison_status_text}"
@@ -302,7 +336,6 @@ def run_demo(
 
         # detect on all retrieved entries
         retrieved_contents = [r["content"] for r in results]
-        retrieved_keys = [r["key"] for r in results]
         detection_results = detector.detect_batch(retrieved_contents)
 
         defense_rows = []
@@ -330,7 +363,7 @@ def run_demo(
             )
 
         defense_df = pd.DataFrame(defense_rows)
-        defense_text = defense_df.to_markdown(index=False)
+        defense_text = str(defense_df.to_markdown(index=False))
 
         # also run full corpus evaluation for tpr/fpr
         poison_texts = [pe["content"] for pe in poison_entries]
@@ -406,7 +439,7 @@ def run_threshold_sweep(
         )
 
     df = pd.DataFrame(rows)
-    return df.to_markdown(index=False)
+    return str(df.to_markdown(index=False))
 
 
 # ---------------------------------------------------------------------------
@@ -424,9 +457,8 @@ def run_batch_evaluation(scoring_mode: str, sigma: float) -> str:
         poison_entries = _generate_poison_passages(attack_key)
         poison_texts = [pe["content"] for pe in poison_entries]
 
-        # build memory and measure asr-r
-        mem = VectorMemorySystem()
-        mem.add_batch(_benign_entries_raw)
+        # build memory and measure asr-r (cloned from benign cache)
+        mem = _clone_benign_memory()
         poison_keys = []
         for pe in poison_entries:
             mem.store(pe["key"], pe["content"], pe.get("metadata"))
@@ -471,7 +503,7 @@ def run_batch_evaluation(scoring_mode: str, sigma: float) -> str:
         )
 
     df = pd.DataFrame(results_rows)
-    return df.to_markdown(index=False)
+    return str(df.to_markdown(index=False))
 
 
 # ---------------------------------------------------------------------------
