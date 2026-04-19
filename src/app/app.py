@@ -23,10 +23,17 @@ import os
 import sys
 import time
 from pathlib import Path
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 import gradio as gr
+import matplotlib
 import pandas as pd
+
+matplotlib.use("Agg")
+import matplotlib.pyplot as plt  # noqa: E402
+
+if TYPE_CHECKING:
+    from matplotlib.figure import Figure
 
 # ---------------------------------------------------------------------------
 # path setup: ensure src/ is importable
@@ -448,10 +455,8 @@ def run_demo(
 def run_threshold_sweep(
     attack_name: str,
     scoring_mode: str,
-) -> str:
-    """
-    run a threshold sigma sweep for the selected attack and return results.
-    """
+) -> tuple[str, Figure]:
+    """run a threshold sigma sweep and return markdown table + matplotlib figure."""
     attack_key = _ATTACK_INFO[attack_name]["key"]
     poison_entries = _generate_poison_passages(attack_key)
     poison_texts = [pe["content"] for pe in poison_entries]
@@ -461,7 +466,10 @@ def run_threshold_sweep(
         threshold_sigma=2.0,
         scoring_mode=scoring_mode,
     )
-    detector.calibrate(benign_texts, _victim_query_strs)
+    if attack_key == "agent_poison":
+        detector.calibrate_triggered(benign_texts, _victim_query_strs, _AP_TRIGGER)
+    else:
+        detector.calibrate(benign_texts, _victim_query_strs)
 
     sigma_values = [0.5, 1.0, 1.5, 2.0, 2.5, 3.0, 3.5, 4.0]
     sweep = detector.threshold_sweep(poison_texts, benign_texts, sigma_values)
@@ -482,7 +490,48 @@ def run_threshold_sweep(
         )
 
     df = pd.DataFrame(rows)
-    return str(df.to_markdown(index=False))
+    table_md = str(df.to_markdown(index=False))
+
+    fig = _plot_threshold_sweep(sweep, attack_name, scoring_mode)
+    return table_md, fig
+
+
+def _plot_threshold_sweep(
+    sweep: list[dict[str, Any]],
+    attack_name: str,
+    scoring_mode: str,
+) -> Figure:
+    """render tpr/fpr/f1 vs sigma with auroc reference line."""
+    sigmas = [row["threshold_sigma"] for row in sweep]
+    tpr = [row["tpr"] for row in sweep]
+    fpr = [row["fpr"] for row in sweep]
+    f1 = [row["f1"] for row in sweep]
+    auroc_vals = [row["auroc"] for row in sweep]
+
+    fig, ax = plt.subplots(figsize=(7.0, 4.5), dpi=110)
+    ax.plot(sigmas, tpr, "o-", color="#1f77b4", label="TPR", linewidth=2)
+    ax.plot(sigmas, fpr, "s-", color="#d62728", label="FPR", linewidth=2)
+    ax.plot(sigmas, f1, "^-", color="#2ca02c", label="F1", linewidth=2)
+    # auroc is threshold-independent; plot as dashed reference
+    auroc_mean = sum(auroc_vals) / len(auroc_vals) if auroc_vals else 0.0
+    ax.axhline(
+        auroc_mean,
+        linestyle="--",
+        color="#9467bd",
+        alpha=0.75,
+        label=f"AUROC = {auroc_mean:.3f}",
+    )
+    ax.set_xlabel(r"Sigma Multiplier $k$ (threshold = $\mu + k\sigma$)")
+    ax.set_ylabel("Metric Value")
+    ax.set_title(
+        f"MemSAD Threshold Sweep: {attack_name} " f"(scoring = {scoring_mode})"
+    )
+    ax.set_ylim(-0.05, 1.05)
+    ax.set_xlim(min(sigmas) - 0.2, max(sigmas) + 0.2)
+    ax.grid(True, linestyle=":", alpha=0.5)
+    ax.legend(loc="best", frameon=True)
+    fig.tight_layout()
+    return fig
 
 
 # ---------------------------------------------------------------------------
@@ -697,12 +746,13 @@ def build_app() -> gr.Blocks:
                     )
                     sweep_btn = gr.Button("Run Sweep", variant="primary")
 
+                sweep_plot = gr.Plot(label="Threshold Sweep Curves")
                 sweep_output = gr.Markdown(label="Sweep Results")
 
                 sweep_btn.click(
                     fn=run_threshold_sweep,
                     inputs=[sweep_attack, sweep_scoring],
-                    outputs=[sweep_output],
+                    outputs=[sweep_output, sweep_plot],
                 )
 
             # ---------------------------------------------------------------
