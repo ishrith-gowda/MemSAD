@@ -102,6 +102,49 @@ _benign_query_strs = [q["query"] for q in _benign_queries]
 # agentpoison trigger string (matches the paper's trigger optimization)
 _AP_TRIGGER = "system task context access compliance"
 
+# glossary content shown in the "What am I looking at?" accordion.
+# targets a reader familiar with llms but not ml-security jargon.
+_GLOSSARY_MD = """
+**Memory poisoning attack.** An adversary injects crafted text into an LLM
+agent's long-term memory so that, when the agent later retrieves context
+for a query, the poisoned entry surfaces and steers the response.
+
+**Victim query.** The legitimate user query the attacker wants to
+compromise (e.g. *"what's on my calendar today?"*). The attack succeeds if
+the poison is retrieved in the top-K for this query.
+
+**Top-K retrieval.** The agent embeds the query, looks up the K nearest
+neighbours in a vector index (here: FAISS IndexFlatIP with cosine
+similarity over 384-d MiniLM embeddings), and returns those entries as
+context.
+
+**ASR-R (Attack Success Rate, Retrieval).** The fraction of victim
+queries for which at least one poison entry enters the top-K. This is the
+write-time attack metric the paper focuses on: if the poison never gets
+retrieved, it can't corrupt the agent.
+
+**MemSAD defense.** A write-time detector: for each candidate memory
+entry, compute its max cosine similarity to a held-out set of observed
+victim queries, and flag it if that score exceeds $\\mu + k\\sigma$,
+where $\\mu, \\sigma$ are the mean and std of the same score over known
+benign entries.
+
+**Sigma threshold ($k$).** The multiplier on the calibrated std. Higher
+$k$ = stricter threshold = fewer false positives, but risks missing
+subtler poisons. $k = 2$ gives a theoretical $\\approx 2.3\\%$ FPR under
+normality; $k = 3$ gives $\\approx 0.1\\%$.
+
+**Scoring mode.** *max*: take the single highest similarity over victim
+queries (good for targeted attacks that peak at one query).  *combined*:
+$0.5 \\cdot \\text{max} + 0.5 \\cdot \\text{mean}$ (better for broad-recall
+attacks like InjecMEM that spread similarity across many queries).
+
+**TPR / FPR / AUROC.** True / false positive rate and area under the ROC
+curve on the detection task. TPR = poison correctly flagged; FPR = benign
+incorrectly flagged; AUROC summarises ranking quality independent of
+threshold.
+""".strip()
+
 # cached benign memory system. built once on first use; subsequent run_demo
 # calls clone the faiss index and metadata so each request only pays the
 # embedding cost of the (5-15) poison passages, not the full 200 benign set.
@@ -537,6 +580,12 @@ def build_app() -> gr.Blocks:
             # tab 1: interactive single-query demo
             # ---------------------------------------------------------------
             with gr.TabItem("Interactive Demo"):
+                with gr.Accordion(
+                    "What am I looking at? (click to expand)",
+                    open=False,
+                ):
+                    gr.Markdown(_GLOSSARY_MD)
+
                 with gr.Row():
                     with gr.Column(scale=1):
                         attack_dropdown = gr.Dropdown(
