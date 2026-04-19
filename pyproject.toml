@@ -291,6 +291,7 @@ source = ["src"]
 omit = [
     "src/tests/*",
     "src/scripts/*",
+    "src/app/*",
     "*/conftest.py",
     "*/setup.py",
 ]
