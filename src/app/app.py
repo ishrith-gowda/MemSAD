@@ -545,17 +545,15 @@ def build_app() -> gr.Blocks:
                             label="Attack Type",
                             info="select the memory poisoning attack to simulate",
                         )
-                        query_input = gr.Textbox(
-                            value=_victim_query_strs[0],
-                            label="Victim Query",
-                            info="the query issued to the agent's memory retrieval system",
-                            lines=2,
-                        )
-                        query_preset = gr.Dropdown(
+                        query_input = gr.Dropdown(
                             choices=_victim_query_strs,
                             value=_victim_query_strs[0],
-                            label="Preset Victim Queries",
-                            info="select a preset victim query from the evaluation set",
+                            label="Victim Query",
+                            info=(
+                                "pick a preset from the evaluation set or type "
+                                "a custom query (free text is allowed)"
+                            ),
+                            allow_custom_value=True,
                         )
                         enable_defense = gr.Checkbox(
                             value=False,
@@ -604,13 +602,6 @@ def build_app() -> gr.Blocks:
                     label="Calibration",
                     lines=9,
                     interactive=False,
-                )
-
-                # wire up preset query selector
-                query_preset.change(
-                    fn=lambda q: q,
-                    inputs=[query_preset],
-                    outputs=[query_input],
                 )
 
                 # wire up main button
