@@ -199,6 +199,7 @@ ignore = [
 "src/tests/*" = ["E402", "B011", "SIM300"]
 "tests/*" = ["E402", "B011", "SIM300"]
 "src/scripts/*" = ["E402"]
+"src/app/*" = ["E402"]
 "conftest.py" = ["E402"]
 
 [tool.ruff.lint.isort]
@@ -290,6 +291,14 @@ source = ["src"]
 omit = [
     "src/tests/*",
     "src/scripts/*",
+    "src/app/*",
+    # integration-only modules that require services/models ci does not install
+    # (openai api, transformers+torch gpt2, external memory libs like mem0/amem)
+    "src/evaluation/tool_agent_eval.py",
+    "src/evaluation/multi_encoder_eval.py",
+    "src/evaluation/agent_eval.py",
+    "src/watermark/token_watermark.py",
+    "src/memory_systems/wrappers.py",
     "*/conftest.py",
     "*/setup.py",
 ]

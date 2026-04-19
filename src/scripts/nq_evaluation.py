@@ -156,7 +156,7 @@ def evaluate_nq_defenses(
         sim._victim_queries = victim_qs_50
         sim._benign_queries = victim_qs_50
 
-        poison_entries = sim._generate_poison_entries(attack_type, victim_qs_50)  # type: ignore[attr-defined]
+        poison_entries = sim._generate_poison_entries(attack_type, victim_qs_50)
 
         # calibrate memsad on nq benign entries
         detector = SemanticAnomalyDetector(threshold_sigma=2.0, scoring_mode="combined")

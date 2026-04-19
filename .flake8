@@ -17,6 +17,7 @@ per-file-ignores =
     src/tests/*.py: E402, B011
     tests/*.py: E402, B011
     src/scripts/*.py: E402
+    src/app/*.py: E402
     conftest.py: E402
 max-complexity = 35
 exclude =

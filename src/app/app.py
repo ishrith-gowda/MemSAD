@@ -23,10 +23,17 @@ import os
 import sys
 import time
 from pathlib import Path
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 import gradio as gr
+import matplotlib
 import pandas as pd
+
+matplotlib.use("Agg")
+import matplotlib.pyplot as plt  # noqa: E402
+
+if TYPE_CHECKING:
+    from matplotlib.figure import Figure
 
 # ---------------------------------------------------------------------------
 # path setup: ensure src/ is importable
@@ -42,7 +49,7 @@ from evaluation.retrieval_sim import (
     generate_injecmem_passage,
     generate_minja_passage,
 )
-from memory_systems.vector_store import VectorMemorySystem
+from memory_systems.vector_store import VectorMemorySystem, _load_faiss
 
 # ---------------------------------------------------------------------------
 # global state (initialized once on startup)
@@ -101,6 +108,88 @@ _benign_query_strs = [q["query"] for q in _benign_queries]
 
 # agentpoison trigger string (matches the paper's trigger optimization)
 _AP_TRIGGER = "system task context access compliance"
+
+# glossary content shown in the "What am I looking at?" accordion.
+# targets a reader familiar with llms but not ml-security jargon.
+_GLOSSARY_MD = """
+**Memory poisoning attack.** An adversary injects crafted text into an LLM
+agent's long-term memory so that, when the agent later retrieves context
+for a query, the poisoned entry surfaces and steers the response.
+
+**Victim query.** The legitimate user query the attacker wants to
+compromise (e.g. *"what's on my calendar today?"*). The attack succeeds if
+the poison is retrieved in the top-K for this query.
+
+**Top-K retrieval.** The agent embeds the query, looks up the K nearest
+neighbours in a vector index (here: FAISS IndexFlatIP with cosine
+similarity over 384-d MiniLM embeddings), and returns those entries as
+context.
+
+**ASR-R (Attack Success Rate, Retrieval).** The fraction of victim
+queries for which at least one poison entry enters the top-K. This is the
+write-time attack metric the paper focuses on: if the poison never gets
+retrieved, it can't corrupt the agent.
+
+**MemSAD defense.** A write-time detector: for each candidate memory
+entry, compute its max cosine similarity to a held-out set of observed
+victim queries, and flag it if that score exceeds $\\mu + k\\sigma$,
+where $\\mu, \\sigma$ are the mean and std of the same score over known
+benign entries.
+
+**Sigma threshold ($k$).** The multiplier on the calibrated std. Higher
+$k$ = stricter threshold = fewer false positives, but risks missing
+subtler poisons. $k = 2$ gives a theoretical $\\approx 2.3\\%$ FPR under
+normality; $k = 3$ gives $\\approx 0.1\\%$.
+
+**Scoring mode.** *max*: take the single highest similarity over victim
+queries (good for targeted attacks that peak at one query).  *combined*:
+$0.5 \\cdot \\text{max} + 0.5 \\cdot \\text{mean}$ (better for broad-recall
+attacks like InjecMEM that spread similarity across many queries).
+
+**TPR / FPR / AUROC.** True / false positive rate and area under the ROC
+curve on the detection task. TPR = poison correctly flagged; FPR = benign
+incorrectly flagged; AUROC summarises ranking quality independent of
+threshold.
+""".strip()
+
+# cached benign memory system. built once on first use; subsequent run_demo
+# calls clone the faiss index and metadata so each request only pays the
+# embedding cost of the (5-15) poison passages, not the full 200 benign set.
+_BENIGN_MEM_CACHE: VectorMemorySystem | None = None
+
+
+def _get_cached_benign_memory() -> VectorMemorySystem:
+    """build (or return) the module-scoped benign vectormemorysystem."""
+    global _BENIGN_MEM_CACHE
+    if _BENIGN_MEM_CACHE is None:
+        mem = VectorMemorySystem()
+        mem.add_batch(_benign_entries_raw)
+        _BENIGN_MEM_CACHE = mem
+    return _BENIGN_MEM_CACHE
+
+
+def _clone_benign_memory() -> VectorMemorySystem:
+    """clone the cached benign memory for per-request poison injection.
+
+    copies the faiss index via faiss.clone_index (fast: contiguous float
+    array copy) and shallow-duplicates the aligned python lists. avoids
+    re-embedding the 200 benign passages on every demo click.
+    """
+    faiss = _load_faiss()
+    cached = _get_cached_benign_memory()
+    new = VectorMemorySystem()
+    new._keys = list(cached._keys)
+    new._contents = list(cached._contents)
+    new._metadata = list(cached._metadata)
+    new._key_to_positions = {k: list(v) for k, v in cached._key_to_positions.items()}
+    new._index = faiss.clone_index(cached._get_index())
+    return new
+
+
+# eagerly prime the benign-memory cache at module import so the first
+# request (either the on-load run or the first user click) does not pay
+# the ~15s sentence-transformer download + embedding cost.
+_get_cached_benign_memory()
 
 
 # ---------------------------------------------------------------------------
@@ -196,9 +285,9 @@ def run_demo(
     attack_info = _ATTACK_INFO[attack_name]
     attack_key = attack_info["key"]
 
-    # build vector memory with benign + poison entries
-    mem = VectorMemorySystem()
-    mem.add_batch(_benign_entries_raw)
+    # clone the cached benign memory (avoids re-embedding 200 passages)
+    # and add the attack-specific poison entries only
+    mem = _clone_benign_memory()
 
     poison_entries = _generate_poison_passages(attack_key)
     poison_keys = []
@@ -235,16 +324,17 @@ def run_demo(
         )
 
     retrieval_df = pd.DataFrame(retrieval_rows)
-    retrieval_md = retrieval_df.to_markdown(index=False)
+    retrieval_md = str(retrieval_df.to_markdown(index=False))
 
     # poison retrieval status
     n_poison_retrieved = poison_test["n_poison_retrieved"]
     retrieved_any = poison_test["retrieved_any_poison"]
+    poison_scores_fmt = {k: f"{v:.4f}" for k, v in poison_test["poison_scores"].items()}
     poison_status_text = (
         f"retrieved {n_poison_retrieved} poison passage(s) in top-{_TOP_K}\n"
         f"poison keys found: {poison_test['poison_keys_retrieved']}\n"
         f"poison ranks: {poison_test['poison_ranks']}\n"
-        f"poison scores: { {k: f'{v:.4f}' for k, v in poison_test['poison_scores'].items()} }"
+        f"poison scores: {poison_scores_fmt}"
     )
     if retrieved_any:
         poison_status_text = f"ATTACK SUCCEEDED: {poison_status_text}"
@@ -302,7 +392,6 @@ def run_demo(
 
         # detect on all retrieved entries
         retrieved_contents = [r["content"] for r in results]
-        retrieved_keys = [r["key"] for r in results]
         detection_results = detector.detect_batch(retrieved_contents)
 
         defense_rows = []
@@ -330,7 +419,7 @@ def run_demo(
             )
 
         defense_df = pd.DataFrame(defense_rows)
-        defense_text = defense_df.to_markdown(index=False)
+        defense_text = str(defense_df.to_markdown(index=False))
 
         # also run full corpus evaluation for tpr/fpr
         poison_texts = [pe["content"] for pe in poison_entries]
@@ -372,10 +461,8 @@ def run_demo(
 def run_threshold_sweep(
     attack_name: str,
     scoring_mode: str,
-) -> str:
-    """
-    run a threshold sigma sweep for the selected attack and return results.
-    """
+) -> tuple[str, Figure]:
+    """run a threshold sigma sweep and return markdown table + matplotlib figure."""
     attack_key = _ATTACK_INFO[attack_name]["key"]
     poison_entries = _generate_poison_passages(attack_key)
     poison_texts = [pe["content"] for pe in poison_entries]
@@ -385,7 +472,10 @@ def run_threshold_sweep(
         threshold_sigma=2.0,
         scoring_mode=scoring_mode,
     )
-    detector.calibrate(benign_texts, _victim_query_strs)
+    if attack_key == "agent_poison":
+        detector.calibrate_triggered(benign_texts, _victim_query_strs, _AP_TRIGGER)
+    else:
+        detector.calibrate(benign_texts, _victim_query_strs)
 
     sigma_values = [0.5, 1.0, 1.5, 2.0, 2.5, 3.0, 3.5, 4.0]
     sweep = detector.threshold_sweep(poison_texts, benign_texts, sigma_values)
@@ -406,7 +496,48 @@ def run_threshold_sweep(
         )
 
     df = pd.DataFrame(rows)
-    return df.to_markdown(index=False)
+    table_md = str(df.to_markdown(index=False))
+
+    fig = _plot_threshold_sweep(sweep, attack_name, scoring_mode)
+    return table_md, fig
+
+
+def _plot_threshold_sweep(
+    sweep: list[dict[str, Any]],
+    attack_name: str,
+    scoring_mode: str,
+) -> Figure:
+    """render tpr/fpr/f1 vs sigma with auroc reference line."""
+    sigmas = [row["threshold_sigma"] for row in sweep]
+    tpr = [row["tpr"] for row in sweep]
+    fpr = [row["fpr"] for row in sweep]
+    f1 = [row["f1"] for row in sweep]
+    auroc_vals = [row["auroc"] for row in sweep]
+
+    fig, ax = plt.subplots(figsize=(7.0, 4.5), dpi=110)
+    ax.plot(sigmas, tpr, "o-", color="#1f77b4", label="TPR", linewidth=2)
+    ax.plot(sigmas, fpr, "s-", color="#d62728", label="FPR", linewidth=2)
+    ax.plot(sigmas, f1, "^-", color="#2ca02c", label="F1", linewidth=2)
+    # auroc is threshold-independent; plot as dashed reference
+    auroc_mean = sum(auroc_vals) / len(auroc_vals) if auroc_vals else 0.0
+    ax.axhline(
+        auroc_mean,
+        linestyle="--",
+        color="#9467bd",
+        alpha=0.75,
+        label=f"AUROC = {auroc_mean:.3f}",
+    )
+    ax.set_xlabel(r"Sigma Multiplier $k$ (threshold = $\mu + k\sigma$)")
+    ax.set_ylabel("Metric Value")
+    ax.set_title(
+        f"MemSAD Threshold Sweep: {attack_name} " f"(scoring = {scoring_mode})"
+    )
+    ax.set_ylim(-0.05, 1.05)
+    ax.set_xlim(min(sigmas) - 0.2, max(sigmas) + 0.2)
+    ax.grid(True, linestyle=":", alpha=0.5)
+    ax.legend(loc="best", frameon=True)
+    fig.tight_layout()
+    return fig
 
 
 # ---------------------------------------------------------------------------
@@ -414,8 +545,11 @@ def run_threshold_sweep(
 # ---------------------------------------------------------------------------
 
 
-def run_batch_evaluation(scoring_mode: str, sigma: float) -> str:
-    """evaluate all three attacks and return comparative results."""
+def run_batch_evaluation(
+    scoring_mode: str,
+    sigma: float,
+) -> tuple[str, Figure]:
+    """evaluate all three attacks and return comparative table + bar plot."""
     benign_texts = [e["content"] for e in _benign_entries_raw]
     results_rows = []
 
@@ -424,9 +558,8 @@ def run_batch_evaluation(scoring_mode: str, sigma: float) -> str:
         poison_entries = _generate_poison_passages(attack_key)
         poison_texts = [pe["content"] for pe in poison_entries]
 
-        # build memory and measure asr-r
-        mem = VectorMemorySystem()
-        mem.add_batch(_benign_entries_raw)
+        # build memory and measure asr-r (cloned from benign cache)
+        mem = _clone_benign_memory()
         poison_keys = []
         for pe in poison_entries:
             mem.store(pe["key"], pe["content"], pe.get("metadata"))
@@ -471,7 +604,72 @@ def run_batch_evaluation(scoring_mode: str, sigma: float) -> str:
         )
 
     df = pd.DataFrame(results_rows)
-    return df.to_markdown(index=False)
+    table_md = str(df.to_markdown(index=False))
+    fig = _plot_batch_comparison(results_rows, scoring_mode, sigma)
+    return table_md, fig
+
+
+def _plot_batch_comparison(
+    rows: list[dict[str, Any]],
+    scoring_mode: str,
+    sigma: float,
+) -> Figure:
+    """grouped bar chart: asr-r vs memsad tpr per attack, with auroc annotations."""
+    attacks = [r["Attack"] for r in rows]
+    asr_r = [float(r["ASR-R"]) for r in rows]
+    tpr = [float(r["MemSAD TPR"]) for r in rows]
+    fpr = [float(r["MemSAD FPR"]) for r in rows]
+    auroc = [float(r["AUROC"]) for r in rows]
+
+    n = len(attacks)
+    positions = range(n)
+    bar_width = 0.27
+
+    fig, ax = plt.subplots(figsize=(7.5, 4.5), dpi=110)
+    ax.bar(
+        [p - bar_width for p in positions],
+        asr_r,
+        width=bar_width,
+        color="#d62728",
+        label="ASR-R (attack strength)",
+    )
+    ax.bar(
+        list(positions),
+        tpr,
+        width=bar_width,
+        color="#2ca02c",
+        label="MemSAD TPR (detection recall)",
+    )
+    ax.bar(
+        [p + bar_width for p in positions],
+        fpr,
+        width=bar_width,
+        color="#7f7f7f",
+        label="MemSAD FPR (false alarms)",
+    )
+
+    # annotate auroc above each attack group
+    for i, score in enumerate(auroc):
+        ax.annotate(
+            f"AUROC = {score:.2f}",
+            xy=(i, 1.02),
+            ha="center",
+            va="bottom",
+            fontsize=8,
+            color="#555555",
+        )
+
+    ax.set_xticks(list(positions))
+    ax.set_xticklabels(attacks)
+    ax.set_ylabel("Metric Value")
+    ax.set_ylim(0.0, 1.12)
+    ax.set_title(
+        f"Attack vs MemSAD Defense (scoring = {scoring_mode}, " f"sigma = {sigma:.1f})"
+    )
+    ax.grid(axis="y", linestyle=":", alpha=0.5)
+    ax.legend(loc="lower right", frameon=True, fontsize=9)
+    fig.tight_layout()
+    return fig
 
 
 # ---------------------------------------------------------------------------
@@ -486,14 +684,15 @@ def build_app() -> gr.Blocks:
         title="MemSAD: Memory Agent Security Demo",
     ) as app:
         gr.Markdown(
-            "# MemSAD: Semantic Anomaly Detection for Memory Poisoning Attacks\n"
+            "# MemSAD: Gradient-Coupled Anomaly Detection for Memory Poisoning\n"
             "interactive demonstration of memory poisoning attacks against llm agent "
             "memory systems and the memsad defense. select an attack, issue a victim "
             "query, and observe how poison passages are retrieved by the vector "
             "retrieval system. toggle memsad on to watch detection scores fire on "
             "adversarial entries.\n\n"
-            "**paper**: *Evaluating and Defending Against Memory Poisoning Attacks on "
-            "LLM Agents* -- see the full paper for formal analysis and proofs.\n\n"
+            "**paper**: *MemSAD: Gradient-Coupled Anomaly Detection for Memory "
+            "Poisoning in Retrieval-Augmented Agents* -- see the full paper for "
+            "formal analysis and proofs.\n\n"
             f"**corpus**: {_CORPUS_SIZE} benign entries | "
             f"{len(_victim_query_strs)} victim queries | "
             f"faiss IndexFlatIP + all-MiniLM-L6-v2 (384-dim)"
@@ -504,6 +703,12 @@ def build_app() -> gr.Blocks:
             # tab 1: interactive single-query demo
             # ---------------------------------------------------------------
             with gr.TabItem("Interactive Demo"):
+                with gr.Accordion(
+                    "What am I looking at? (click to expand)",
+                    open=False,
+                ):
+                    gr.Markdown(_GLOSSARY_MD)
+
                 with gr.Row():
                     with gr.Column(scale=1):
                         attack_dropdown = gr.Dropdown(
@@ -512,20 +717,18 @@ def build_app() -> gr.Blocks:
                             label="Attack Type",
                             info="select the memory poisoning attack to simulate",
                         )
-                        query_input = gr.Textbox(
-                            value=_victim_query_strs[0],
-                            label="Victim Query",
-                            info="the query issued to the agent's memory retrieval system",
-                            lines=2,
-                        )
-                        query_preset = gr.Dropdown(
+                        query_input = gr.Dropdown(
                             choices=_victim_query_strs,
                             value=_victim_query_strs[0],
-                            label="Preset Victim Queries",
-                            info="select a preset victim query from the evaluation set",
+                            label="Victim Query",
+                            info=(
+                                "pick a preset from the evaluation set or type "
+                                "a custom query (free text is allowed)"
+                            ),
+                            allow_custom_value=True,
                         )
                         enable_defense = gr.Checkbox(
-                            value=False,
+                            value=True,
                             label="Enable MemSAD Defense",
                             info="toggle semantic anomaly detection on/off",
                         )
@@ -573,31 +776,25 @@ def build_app() -> gr.Blocks:
                     interactive=False,
                 )
 
-                # wire up preset query selector
-                query_preset.change(
-                    fn=lambda q: q,
-                    inputs=[query_preset],
-                    outputs=[query_input],
-                )
+                _demo_inputs = [
+                    attack_dropdown,
+                    query_input,
+                    enable_defense,
+                    sigma_slider,
+                    scoring_dropdown,
+                ]
+                _demo_outputs = [
+                    retrieval_output,
+                    poison_status_output,
+                    defense_output,
+                    attack_info_output,
+                    calibration_output,
+                ]
 
-                # wire up main button
-                run_btn.click(
-                    fn=run_demo,
-                    inputs=[
-                        attack_dropdown,
-                        query_input,
-                        enable_defense,
-                        sigma_slider,
-                        scoring_dropdown,
-                    ],
-                    outputs=[
-                        retrieval_output,
-                        poison_status_output,
-                        defense_output,
-                        attack_info_output,
-                        calibration_output,
-                    ],
-                )
+                # wire main button and fire the same function on initial load
+                # so visitors see a populated, non-empty view without clicking.
+                run_btn.click(fn=run_demo, inputs=_demo_inputs, outputs=_demo_outputs)
+                app.load(fn=run_demo, inputs=_demo_inputs, outputs=_demo_outputs)
 
             # ---------------------------------------------------------------
             # tab 2: threshold sweep
@@ -624,12 +821,13 @@ def build_app() -> gr.Blocks:
                     )
                     sweep_btn = gr.Button("Run Sweep", variant="primary")
 
+                sweep_plot = gr.Plot(label="Threshold Sweep Curves")
                 sweep_output = gr.Markdown(label="Sweep Results")
 
                 sweep_btn.click(
                     fn=run_threshold_sweep,
                     inputs=[sweep_attack, sweep_scoring],
-                    outputs=[sweep_output],
+                    outputs=[sweep_output, sweep_plot],
                 )
 
             # ---------------------------------------------------------------
@@ -657,12 +855,13 @@ def build_app() -> gr.Blocks:
                     )
                     batch_btn = gr.Button("Run All Attacks", variant="primary")
 
+                batch_plot = gr.Plot(label="Attack Strength vs MemSAD Detection")
                 batch_output = gr.Markdown(label="Comparative Results")
 
                 batch_btn.click(
                     fn=run_batch_evaluation,
                     inputs=[batch_scoring, batch_sigma],
-                    outputs=[batch_output],
+                    outputs=[batch_output, batch_plot],
                 )
 
             # ---------------------------------------------------------------
@@ -670,11 +869,11 @@ def build_app() -> gr.Blocks:
             # ---------------------------------------------------------------
             with gr.TabItem("About"):
                 gr.Markdown(
-                    "## MemSAD: Semantic Anomaly Detection\n\n"
+                    "## MemSAD: Gradient-Coupled Anomaly Detection\n\n"
                     "### Overview\n"
-                    "this demo accompanies the research paper *Evaluating and "
-                    "Defending Against Memory Poisoning Attacks on LLM Agents*. "
-                    "it demonstrates:\n\n"
+                    "this demo accompanies the research paper *MemSAD: "
+                    "Gradient-Coupled Anomaly Detection for Memory Poisoning "
+                    "in Retrieval-Augmented Agents*. it demonstrates:\n\n"
                     "1. **three state-of-the-art memory poisoning attacks**:\n"
                     "   - AgentPoison (Chen et al., NeurIPS 2024): trigger-optimized "
                     "centroid passage targeting\n"
@@ -701,14 +900,12 @@ def build_app() -> gr.Blocks:
                     "| MINJA | 0.650 | 1.000 | 0.000 | 1.000 |\n"
                     "| InjecMEM | 0.500 | 0.400 | 0.000 | 0.920 |\n\n"
                     "### Citation\n"
-                    "```bibtex\n"
-                    "@article{memsad2026,\n"
-                    "  title={Evaluating and Defending Against Memory Poisoning\n"
-                    "         Attacks on LLM Agents},\n"
-                    "  year={2026},\n"
-                    "  note={Under review}\n"
-                    "}\n"
-                    "```\n\n"
+                    "the associated paper is currently under double-blind review. "
+                    "a full bibtex entry (authors, venue, year, pages) will be "
+                    "posted here once the paper is accepted and de-anonymized. "
+                    "for the interim, please cite as: *MemSAD: Gradient-Coupled "
+                    "Anomaly Detection for Memory Poisoning in Retrieval-Augmented "
+                    "Agents* (under review, 2026).\n\n"
                     "### Source Code\n"
                     "the full research framework, evaluation pipeline, and paper "
                     "source are available at: "
@@ -729,8 +926,10 @@ def main():
     app = build_app()
     # hf spaces sets SERVER_PORT or defaults to 7860
     port = int(os.environ.get("PORT", os.environ.get("SERVER_PORT", "7860")))
+    # bind to all interfaces is required for hugging face spaces;
+    # the sandboxed container proxies :7860 externally via https.
     app.launch(
-        server_name="0.0.0.0",
+        server_name="0.0.0.0",  # nosec B104
         server_port=port,
         share=False,
     )

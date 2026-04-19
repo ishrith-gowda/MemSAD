@@ -333,7 +333,7 @@ def _spread_std(
 ) -> np.ndarray:
     """compute per-step std of spread across multiple seeds."""
     series = np.array([_extract_spread_series(r, max_steps) for r in results])
-    return np.std(series, axis=0)
+    return np.asarray(np.std(series, axis=0))
 
 
 # ---------------------------------------------------------------------------
@@ -345,8 +345,8 @@ def generate_figure(
     no_def_results: list[PropagationResult],
     memsad_results: list[PropagationResult],
     composite_results: list[PropagationResult],
-    qr_memsad: object,
-    qr_composite: object,
+    qr_memsad: QuarantineResult | None,
+    qr_composite: QuarantineResult | None,
     out_dir: Path,
 ) -> None:
     """
@@ -427,7 +427,9 @@ def generate_figure(
     ax.grid(True, alpha=0.3)
 
     # right panel: secondary poison entries over time
-    def _pad_secondary(results: list[PropagationResult]) -> np.ndarray:
+    def _pad_secondary(
+        results: list[PropagationResult],
+    ) -> tuple[np.ndarray, np.ndarray]:
         series = []
         for r in results:
             vals = [s.n_secondary for s in r.steps]
@@ -435,7 +437,7 @@ def generate_figure(
                 vals = vals + [vals[-1]] * (MAX_STEPS - len(vals))
             series.append(vals[:MAX_STEPS])
         arr = np.array(series, dtype=float)
-        return arr.mean(axis=0), arr.std(axis=0)
+        return np.asarray(arr.mean(axis=0)), np.asarray(arr.std(axis=0))
 
     sec_no_mean, sec_no_std = _pad_secondary(no_def_results)
     sec_ms_mean, sec_ms_std = _pad_secondary(memsad_results)
@@ -510,8 +512,8 @@ def generate_table(
     no_def: PropagationResult,
     memsad_result: PropagationResult,
     composite_result: PropagationResult,
-    qr_memsad: object,
-    qr_composite: object,
+    qr_memsad: QuarantineResult | None,
+    qr_composite: QuarantineResult | None,
     out_dir: Path,
 ) -> None:
     """
