@@ -186,6 +186,12 @@ def _clone_benign_memory() -> VectorMemorySystem:
     return new
 
 
+# eagerly prime the benign-memory cache at module import so the first
+# request (either the on-load run or the first user click) does not pay
+# the ~15s sentence-transformer download + embedding cost.
+_get_cached_benign_memory()
+
+
 # ---------------------------------------------------------------------------
 # helper: generate poison passages for a given attack
 # ---------------------------------------------------------------------------
@@ -722,7 +728,7 @@ def build_app() -> gr.Blocks:
                             allow_custom_value=True,
                         )
                         enable_defense = gr.Checkbox(
-                            value=False,
+                            value=True,
                             label="Enable MemSAD Defense",
                             info="toggle semantic anomaly detection on/off",
                         )
@@ -770,24 +776,25 @@ def build_app() -> gr.Blocks:
                     interactive=False,
                 )
 
-                # wire up main button
-                run_btn.click(
-                    fn=run_demo,
-                    inputs=[
-                        attack_dropdown,
-                        query_input,
-                        enable_defense,
-                        sigma_slider,
-                        scoring_dropdown,
-                    ],
-                    outputs=[
-                        retrieval_output,
-                        poison_status_output,
-                        defense_output,
-                        attack_info_output,
-                        calibration_output,
-                    ],
-                )
+                _demo_inputs = [
+                    attack_dropdown,
+                    query_input,
+                    enable_defense,
+                    sigma_slider,
+                    scoring_dropdown,
+                ]
+                _demo_outputs = [
+                    retrieval_output,
+                    poison_status_output,
+                    defense_output,
+                    attack_info_output,
+                    calibration_output,
+                ]
+
+                # wire main button and fire the same function on initial load
+                # so visitors see a populated, non-empty view without clicking.
+                run_btn.click(fn=run_demo, inputs=_demo_inputs, outputs=_demo_outputs)
+                app.load(fn=run_demo, inputs=_demo_inputs, outputs=_demo_outputs)
 
             # ---------------------------------------------------------------
             # tab 2: threshold sweep
