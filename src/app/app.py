@@ -539,8 +539,11 @@ def _plot_threshold_sweep(
 # ---------------------------------------------------------------------------
 
 
-def run_batch_evaluation(scoring_mode: str, sigma: float) -> str:
-    """evaluate all three attacks and return comparative results."""
+def run_batch_evaluation(
+    scoring_mode: str,
+    sigma: float,
+) -> tuple[str, Figure]:
+    """evaluate all three attacks and return comparative table + bar plot."""
     benign_texts = [e["content"] for e in _benign_entries_raw]
     results_rows = []
 
@@ -595,7 +598,72 @@ def run_batch_evaluation(scoring_mode: str, sigma: float) -> str:
         )
 
     df = pd.DataFrame(results_rows)
-    return str(df.to_markdown(index=False))
+    table_md = str(df.to_markdown(index=False))
+    fig = _plot_batch_comparison(results_rows, scoring_mode, sigma)
+    return table_md, fig
+
+
+def _plot_batch_comparison(
+    rows: list[dict[str, Any]],
+    scoring_mode: str,
+    sigma: float,
+) -> Figure:
+    """grouped bar chart: asr-r vs memsad tpr per attack, with auroc annotations."""
+    attacks = [r["Attack"] for r in rows]
+    asr_r = [float(r["ASR-R"]) for r in rows]
+    tpr = [float(r["MemSAD TPR"]) for r in rows]
+    fpr = [float(r["MemSAD FPR"]) for r in rows]
+    auroc = [float(r["AUROC"]) for r in rows]
+
+    n = len(attacks)
+    positions = range(n)
+    bar_width = 0.27
+
+    fig, ax = plt.subplots(figsize=(7.5, 4.5), dpi=110)
+    ax.bar(
+        [p - bar_width for p in positions],
+        asr_r,
+        width=bar_width,
+        color="#d62728",
+        label="ASR-R (attack strength)",
+    )
+    ax.bar(
+        list(positions),
+        tpr,
+        width=bar_width,
+        color="#2ca02c",
+        label="MemSAD TPR (detection recall)",
+    )
+    ax.bar(
+        [p + bar_width for p in positions],
+        fpr,
+        width=bar_width,
+        color="#7f7f7f",
+        label="MemSAD FPR (false alarms)",
+    )
+
+    # annotate auroc above each attack group
+    for i, score in enumerate(auroc):
+        ax.annotate(
+            f"AUROC = {score:.2f}",
+            xy=(i, 1.02),
+            ha="center",
+            va="bottom",
+            fontsize=8,
+            color="#555555",
+        )
+
+    ax.set_xticks(list(positions))
+    ax.set_xticklabels(attacks)
+    ax.set_ylabel("Metric Value")
+    ax.set_ylim(0.0, 1.12)
+    ax.set_title(
+        f"Attack vs MemSAD Defense (scoring = {scoring_mode}, " f"sigma = {sigma:.1f})"
+    )
+    ax.grid(axis="y", linestyle=":", alpha=0.5)
+    ax.legend(loc="lower right", frameon=True, fontsize=9)
+    fig.tight_layout()
+    return fig
 
 
 # ---------------------------------------------------------------------------
@@ -780,12 +848,13 @@ def build_app() -> gr.Blocks:
                     )
                     batch_btn = gr.Button("Run All Attacks", variant="primary")
 
+                batch_plot = gr.Plot(label="Attack Strength vs MemSAD Detection")
                 batch_output = gr.Markdown(label="Comparative Results")
 
                 batch_btn.click(
                     fn=run_batch_evaluation,
                     inputs=[batch_scoring, batch_sigma],
-                    outputs=[batch_output],
+                    outputs=[batch_output, batch_plot],
                 )
 
             # ---------------------------------------------------------------
