@@ -10,7 +10,7 @@ pinned: false
 license: mit
 ---
 
-# MemSAD: Semantic Anomaly Detection for Memory Poisoning Attacks
+# MemSAD: Gradient-Coupled Anomaly Detection for Memory Poisoning
 
 Interactive demonstration of memory poisoning attacks (AgentPoison, MINJA, InjecMEM) against LLM agent memory systems and the MemSAD defense.
 
@@ -23,4 +23,4 @@ Interactive demonstration of memory poisoning attacks (AgentPoison, MINJA, Injec
 
 ## Paper
 
-*Evaluating and Defending Against Memory Poisoning Attacks on LLM Agents* (under review)
+*MemSAD: Gradient-Coupled Anomaly Detection for Memory Poisoning in Retrieval-Augmented Agents* (under review)

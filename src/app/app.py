@@ -518,14 +518,15 @@ def build_app() -> gr.Blocks:
         title="MemSAD: Memory Agent Security Demo",
     ) as app:
         gr.Markdown(
-            "# MemSAD: Semantic Anomaly Detection for Memory Poisoning Attacks\n"
+            "# MemSAD: Gradient-Coupled Anomaly Detection for Memory Poisoning\n"
             "interactive demonstration of memory poisoning attacks against llm agent "
             "memory systems and the memsad defense. select an attack, issue a victim "
             "query, and observe how poison passages are retrieved by the vector "
             "retrieval system. toggle memsad on to watch detection scores fire on "
             "adversarial entries.\n\n"
-            "**paper**: *Evaluating and Defending Against Memory Poisoning Attacks on "
-            "LLM Agents* -- see the full paper for formal analysis and proofs.\n\n"
+            "**paper**: *MemSAD: Gradient-Coupled Anomaly Detection for Memory "
+            "Poisoning in Retrieval-Augmented Agents* -- see the full paper for "
+            "formal analysis and proofs.\n\n"
             f"**corpus**: {_CORPUS_SIZE} benign entries | "
             f"{len(_victim_query_strs)} victim queries | "
             f"faiss IndexFlatIP + all-MiniLM-L6-v2 (384-dim)"
@@ -702,11 +703,11 @@ def build_app() -> gr.Blocks:
             # ---------------------------------------------------------------
             with gr.TabItem("About"):
                 gr.Markdown(
-                    "## MemSAD: Semantic Anomaly Detection\n\n"
+                    "## MemSAD: Gradient-Coupled Anomaly Detection\n\n"
                     "### Overview\n"
-                    "this demo accompanies the research paper *Evaluating and "
-                    "Defending Against Memory Poisoning Attacks on LLM Agents*. "
-                    "it demonstrates:\n\n"
+                    "this demo accompanies the research paper *MemSAD: "
+                    "Gradient-Coupled Anomaly Detection for Memory Poisoning "
+                    "in Retrieval-Augmented Agents*. it demonstrates:\n\n"
                     "1. **three state-of-the-art memory poisoning attacks**:\n"
                     "   - AgentPoison (Chen et al., NeurIPS 2024): trigger-optimized "
                     "centroid passage targeting\n"
