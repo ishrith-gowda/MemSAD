@@ -926,8 +926,10 @@ def main():
     app = build_app()
     # hf spaces sets SERVER_PORT or defaults to 7860
     port = int(os.environ.get("PORT", os.environ.get("SERVER_PORT", "7860")))
+    # bind to all interfaces is required for hugging face spaces;
+    # the sandboxed container proxies :7860 externally via https.
     app.launch(
-        server_name="0.0.0.0",
+        server_name="0.0.0.0",  # nosec B104
         server_port=port,
         share=False,
     )
