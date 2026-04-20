@@ -23,7 +23,7 @@ import os
 import sys
 import time
 from pathlib import Path
-from typing import TYPE_CHECKING, Any
+from typing import Any
 
 import gradio as gr
 import matplotlib
@@ -31,9 +31,7 @@ import pandas as pd
 
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt  # noqa: E402
-
-if TYPE_CHECKING:
-    from matplotlib.figure import Figure
+from matplotlib.figure import Figure  # noqa: E402, TC002
 
 # ---------------------------------------------------------------------------
 # path setup: ensure src/ is importable
