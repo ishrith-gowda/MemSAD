@@ -6,12 +6,16 @@ configuration files for experiments, memory systems, attacks, and defenses.
 all comments are lowercase.
 """
 
-from collections.abc import Callable
+from __future__ import annotations
+
 from pathlib import Path
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 import yaml
 from omegaconf import DictConfig, OmegaConf
+
+if TYPE_CHECKING:
+    from collections.abc import Callable
 
 
 class configmanager:
