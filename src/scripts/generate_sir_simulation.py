@@ -354,6 +354,27 @@ def generate_figure(
 
     saves fig_sir_propagation.pdf and fig_sir_propagation.png.
     """
+    # latex + seaborn configuration (matches figs 4, 5, 6 style)
+    import seaborn as sns
+
+    sns.set_theme(style="whitegrid")
+    plt.rcParams.update(
+        {
+            "text.usetex": True,
+            "font.family": "serif",
+            "font.serif": ["Computer Modern Roman"],
+            "axes.labelsize": 12,
+            "font.size": 12,
+            "legend.fontsize": 10,
+            "xtick.labelsize": 10,
+            "ytick.labelsize": 10,
+            "figure.titlesize": 14,
+            "figure.dpi": 300,
+            "axes.grid": True,
+            "grid.alpha": 0.3,
+        }
+    )
+
     steps = np.arange(1, MAX_STEPS + 1)
 
     # compute mean spread series from averaged PropagationResult objects
@@ -369,13 +390,14 @@ def generate_figure(
     std_memsad = _spread_std(memsad_results)
     std_composite = _spread_std(composite_results)
 
-    fig, axes = plt.subplots(1, 2, figsize=(10, 4.2))
+    # vertical (2 rows x 1 col) layout with muted pastel palette
+    fig, axes = plt.subplots(2, 1, figsize=(7.5, 7.5))
 
-    # left panel: spread over time with std bands
+    # top panel: spread over time with std bands
     ax = axes[0]
-    colors = {"no_def": "#d62728", "memsad": "#1f77b4", "composite": "#2ca02c"}
+    colors = {"no_def": "#c47070", "memsad": "#7ea6cf", "composite": "#8fbf7f"}
 
-    ax.plot(steps, s_no_def, color=colors["no_def"], linewidth=2.0, label="No Defense")
+    ax.plot(steps, s_no_def, color=colors["no_def"], linewidth=2.0, label=r"No Defense")
     ax.fill_between(
         steps,
         np.clip(s_no_def - std_no_def, 0, 1),
@@ -390,7 +412,7 @@ def generate_figure(
         color=colors["memsad"],
         linewidth=2.0,
         linestyle="--",
-        label=r"MemSAD ($\sigma=2.0$)",
+        label=r"\textsc{MemSad} ($\sigma=2.0$)",
     )
     ax.fill_between(
         steps,
@@ -406,7 +428,7 @@ def generate_figure(
         color=colors["composite"],
         linewidth=2.0,
         linestyle=":",
-        label=r"Composite ($\sigma=1.0$)",
+        label=r"Composite ($\sigma=1.0$)",  # noqa
     )
     ax.fill_between(
         steps,
@@ -417,14 +439,14 @@ def generate_figure(
     )
 
     ax.axhline(0.9, color="gray", linewidth=0.8, linestyle="--", alpha=0.5)
-    ax.text(MAX_STEPS * 0.6, 0.91, "90% threshold", color="gray", fontsize=8)
-    ax.set_xlabel("Propagation Step")
-    ax.set_ylabel("Fraction of Agents Exposed")
-    ax.set_title("Multi-Agent SIR Propagation")
+    ax.text(1.5, 0.91, r"$90\%$ threshold", color="gray", fontsize=9)
+    ax.set_xlabel(r"Propagation Step")
+    ax.set_ylabel(r"Fraction of Agents Exposed")
+    ax.set_title(r"\textbf{(a)} Multi-Agent SIR Propagation", fontsize=12)
     ax.set_xlim(1, MAX_STEPS)
     ax.set_ylim(-0.02, 1.05)
-    ax.legend(fontsize=9, loc="lower right")
-    ax.grid(True, alpha=0.3)
+    ax.legend(loc="lower right", framealpha=0.9)
+    ax.grid(True, ls=":", lw=0.5, alpha=0.6)
 
     # right panel: secondary poison entries over time
     def _pad_secondary(
@@ -445,7 +467,7 @@ def generate_figure(
 
     ax2 = axes[1]
     ax2.plot(
-        steps, sec_no_mean, color=colors["no_def"], linewidth=2.0, label="No Defense"
+        steps, sec_no_mean, color=colors["no_def"], linewidth=2.0, label=r"No Defense"
     )
     ax2.fill_between(
         steps,
@@ -460,7 +482,7 @@ def generate_figure(
         color=colors["memsad"],
         linewidth=2.0,
         linestyle="--",
-        label="MemSAD",
+        label=r"\textsc{MemSad}",
     )
     ax2.fill_between(
         steps,
@@ -475,7 +497,7 @@ def generate_figure(
         color=colors["composite"],
         linewidth=2.0,
         linestyle=":",
-        label="Composite",
+        label=r"Composite",
     )
     ax2.fill_between(
         steps,
@@ -485,14 +507,14 @@ def generate_figure(
         alpha=0.15,
     )
 
-    ax2.set_xlabel("Propagation Step")
-    ax2.set_ylabel("Secondary Poison Entries")
-    ax2.set_title("Secondary Entry Growth")
+    ax2.set_xlabel(r"Propagation Step")
+    ax2.set_ylabel(r"Secondary Poison Entries")
+    ax2.set_title(r"\textbf{(b)} Secondary Entry Growth", fontsize=12)
     ax2.set_xlim(1, MAX_STEPS)
-    ax2.legend(fontsize=9, loc="upper left")
-    ax2.grid(True, alpha=0.3)
+    ax2.legend(loc="upper left", framealpha=0.9)
+    ax2.grid(True, ls=":", lw=0.5, alpha=0.6)
 
-    fig.tight_layout()
+    fig.tight_layout(h_pad=2.5)
 
     out_dir.mkdir(parents=True, exist_ok=True)
     for ext in ("pdf", "png"):

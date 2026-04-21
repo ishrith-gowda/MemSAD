@@ -198,16 +198,53 @@ def generate_encoder_generalization_figure(all_results: dict) -> Path:
 
     returns the path to the saved .pdf file.
     """
-    enc_names = [e[0] for e in _ENCODERS]
-    enc_labels = [e[1] for e in _ENCODERS]
+    import seaborn as sns
 
+    # latex rendering configuration
+    sns.set_theme(style="whitegrid")
+    plt.rcParams.update(
+        {
+            "text.usetex": True,
+            "font.family": "serif",
+            "font.serif": ["Computer Modern Roman"],
+            "axes.labelsize": 12,
+            "font.size": 12,
+            "legend.fontsize": 10,
+            "xtick.labelsize": 10,
+            "ytick.labelsize": 10,
+            "figure.titlesize": 14,
+            "figure.dpi": 300,
+            "axes.grid": True,
+            "grid.alpha": 0.3,
+        }
+    )
+
+    # only include encoders present in results
+    enc_names = [e[0] for e in _ENCODERS if e[0] in all_results]
+    enc_labels_tex = {
+        "all-MiniLM-L6-v2": "MiniLM-L6\n(384-d)",
+        "all-mpnet-base-v2": "MPNet-Base\n(768-d)",
+        "paraphrase-MiniLM-L6-v2": "Para-MiniLM\n(384-d)",
+        "intfloat/e5-base-v2": "E5-Base\n(768-d)",
+        "facebook/contriever": "Contriever\n(768-d)",
+        "BAAI/bge-large-en-v1.5": "BGE-Large\n(1024-d)",
+    }
+    enc_labels = [enc_labels_tex[e] for e in enc_names]
+
+    # muted pastel colors
     attack_colors = {
-        "minja": "#2166ac",
-        "injecmem": "#8073ac",
-        "agentpoison_triggered": "#4dac26",
+        "minja": "#7ea6cf",
+        "injecmem": "#b5a8c9",
+        "agentpoison_triggered": "#8fbf7f",
+    }
+    attack_labels_tex = {
+        "minja": r"\textsc{Minja}",
+        "injecmem": r"\textsc{InjecMem}",
+        "agentpoison_triggered": r"\textsc{AgentPoison} (trig.\ cal.)",
     }
 
-    fig, axes = plt.subplots(1, 2, figsize=(9.5, 4.2))
+    # vertical layout: 2 rows, 1 col
+    fig, axes = plt.subplots(2, 1, figsize=(7.5, 7.5))
 
     x = np.arange(len(enc_names))
     width = 0.25
@@ -220,64 +257,50 @@ def generate_encoder_generalization_figure(all_results: dict) -> Path:
             bars = ax.bar(
                 x + offsets[atk_idx],
                 values,
-                width=width * 0.95,
+                width=width * 0.92,
                 color=attack_colors[atk],
-                label=_ATTACK_LABELS[atk].replace("\n", " "),
-                alpha=0.88,
+                label=attack_labels_tex[atk],
                 edgecolor="white",
-                linewidth=0.5,
+                linewidth=0.6,
             )
             # add value labels on bars
             for bar, val in zip(bars, values):
                 if val > 0.04:
                     ax.text(
                         bar.get_x() + bar.get_width() / 2,
-                        bar.get_height() + 0.018,
+                        bar.get_height() + 0.015,
                         f"{val:.2f}",
                         ha="center",
                         va="bottom",
-                        fontsize=7.5,
+                        fontsize=8,
                         color="black",
                     )
 
         ax.set_xticks(x)
-        ax.set_xticklabels(enc_labels, fontsize=9.5)
-        ax.set_ylim(0.0, 1.18)
+        ax.set_xticklabels(enc_labels, fontsize=10)
+        ax.set_ylim(0.0, 1.15)
         ax.set_yticks([0.0, 0.2, 0.4, 0.6, 0.8, 1.0])
         metric_label = (
-            "True Positive Rate (TPR)"
+            r"True Positive Rate (TPR)"
             if metric == "tpr"
-            else "False Positive Rate (FPR)"
+            else r"False Positive Rate (FPR)"
         )
-        ax.set_ylabel(metric_label, fontsize=11)
-        ax.set_xlabel("Encoder Model", fontsize=11)
+        ax.set_ylabel(metric_label)
+        if ax_idx == 1:
+            ax.set_xlabel(r"Encoder Model")
         ax.set_title(
-            f"SAD {metric.upper()} by Encoder ($k=2.0$)",
-            fontsize=11,
-            fontweight="bold",
+            r"\textbf{("
+            + ("a" if ax_idx == 0 else "b")
+            + r")} SAD "
+            + metric.upper()
+            + r" by Encoder ($\kappa = 2.0$)",
+            fontsize=12,
         )
-        ax.legend(loc="upper right", fontsize=8.5, framealpha=0.9)
-        ax.grid(True, axis="y", ls=":", lw=0.5, alpha=0.6)
+        legend_loc = "lower right" if metric == "tpr" else "upper right"
+        ax.legend(loc=legend_loc, framealpha=0.9, fontsize=10)
+        ax.grid(True, axis="y", ls=":", lw=0.5, alpha=0.5)
 
-        # panel label
-        label = "(a)" if ax_idx == 0 else "(b)"
-        ax.text(
-            0.02,
-            0.97,
-            label,
-            transform=ax.transAxes,
-            fontsize=11,
-            fontweight="bold",
-            va="top",
-        )
-
-    fig.suptitle(
-        "SAD Encoder Generalization: TPR and FPR Across Sentence-Transformer Models",
-        fontsize=12,
-        fontweight="bold",
-        y=1.02,
-    )
-    fig.tight_layout()
+    fig.tight_layout(h_pad=2.5)
 
     out_pdf = _FIG_DIR / "fig_encoder_generalization.pdf"
     out_png = _FIG_DIR / "fig_encoder_generalization.png"

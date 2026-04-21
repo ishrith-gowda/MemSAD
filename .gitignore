@@ -90,3 +90,27 @@ docs/paper/*.fdb_latexmk
 docs/paper/*.fls
 docs/paper/*.synctex.gz
 docs/paper/*.out
+docs/neurips2026/*.aux
+docs/neurips2026/*.bbl
+docs/neurips2026/*.blg
+docs/neurips2026/*.fdb_latexmk
+docs/neurips2026/*.fls
+docs/neurips2026/*.synctex.gz
+docs/neurips2026/*.out
+
+# macos metadata files (AppleDouble format)
+._*
+
+# conference template archives (not part of the repo)
+Formatting_Instructions_NeurIPS_2025.zip
+Formatting_Instructions_For_NeurIPS_2026.zip
+docs/neurips2026/template.zip
+docs/neurips2026/neurips_2026.tex
+
+# claude-flow and coordination tool caches (local, not part of research)
+.claude/
+.claude-flow/
+.hive-mind/
+.swarm/
+.mcp.json
+CLAUDE.md
