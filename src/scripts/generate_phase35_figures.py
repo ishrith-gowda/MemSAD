@@ -201,7 +201,7 @@ def generate_fig_b_gradient_coupling() -> Path:
     # ------------------------------------------------------------------
     # build figure
     # ------------------------------------------------------------------
-    fig, ax = plt.subplots(figsize=(6.2, 3.8))
+    fig, ax = plt.subplots(figsize=(8.4, 3.2))
 
     # score contour background (pale-to-warm cmap)
     warm = LinearSegmentedColormap.from_list(
@@ -426,7 +426,7 @@ def generate_fig_c_coupling_trajectory() -> Path:
     # ------------------------------------------------------------------
     # figure
     # ------------------------------------------------------------------
-    fig, ax_loss = plt.subplots(figsize=(6.0, 3.4))
+    fig, ax_loss = plt.subplots(figsize=(8.4, 2.3))
 
     # left axis — retrieval loss (attacker wants this low)
     ax_loss.plot(
