@@ -1,17 +1,17 @@
 #!/usr/bin/env bash
-# auto-recompile docs/paper/main.tex whenever any .tex or .bib file changes.
+# auto-recompile docs/neurips2026/main.tex whenever any .tex or .bib file changes.
 # uses fswatch (brew install fswatch) to monitor for file-system events.
 #
 # usage:
 #   ./watch_paper.sh          # compile + watch for changes
 #   ./watch_paper.sh --once   # compile once and exit
 #
-# the compiled pdf is at: docs/paper/main.pdf
+# the compiled pdf is at: docs/neurips2026/main.pdf
 # open it in any pdf viewer that supports auto-refresh (e.g. preview, skim).
 
 set -euo pipefail
 
-PAPER_DIR="$(cd "$(dirname "$0")/docs/paper" && pwd)"
+PAPER_DIR="$(cd "$(dirname "$0")/docs/neurips2026" && pwd)"
 REPO_ROOT="$(cd "$(dirname "$0")" && pwd)"
 
 compile() {
@@ -31,7 +31,7 @@ compile() {
     if [ $exit_code -eq 0 ]; then
         local pages
         pages=$(pdfinfo main.pdf 2>/dev/null | grep Pages | awk '{print $2}' || echo "?")
-        echo "--- ok: ${pages} pages in ${elapsed}s  [docs/paper/main.pdf] ---"
+        echo "--- ok: ${pages} pages in ${elapsed}s  [docs/neurips2026/main.pdf] ---"
     else
         echo "--- COMPILATION FAILED (${elapsed}s) ---"
         echo "last 20 lines of log:"
@@ -49,8 +49,8 @@ if [ "${1:-}" = "--once" ]; then
 fi
 
 echo ""
-echo "watching docs/paper/ for changes (.tex / .bib / figures) ..."
-echo "open docs/paper/main.pdf in Skim or Preview (auto-refresh on save)."
+echo "watching docs/neurips2026/ for changes (.tex / .bib / figures) ..."
+echo "open docs/neurips2026/main.pdf in Skim or Preview (auto-refresh on save)."
 echo "press ctrl+c to stop."
 echo ""
 

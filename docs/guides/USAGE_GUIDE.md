@@ -1,18 +1,27 @@
-# Memory Agent Security Research - Usage Guide
+# MemSAD Usage Guide
+
+*Framework backing the NeurIPS 2026 paper* **MemSAD: Gradient-Coupled Anomaly Detection for Memory Poisoning in Retrieval-Augmented Agents** *(under double-blind review).*
+
+> Last synced: 2026-04-24 (phase 36). For the end-to-end reproduction protocol used in the paper, see `README.md`. For the module-level API surface, see `docs/api/API_REFERENCE.md`.
 
 ## Quick Start
 
 ### 1. Project Setup
 
 ```bash
-# Clone or navigate to project directory
-cd memory-agent-security
+git clone https://github.com/ishrith-gowda/MemSAD
+cd MemSAD
 
-# Run setup script
-python setup.py
+python3 -m venv .venv
+source .venv/bin/activate
+pip install -r requirements.txt
 
-# Verify installation
-python -c "import src.utils.config; print('Setup successful!')"
+# verify installation
+python3 -c "import src.utils.config; print('setup successful')"
+
+# (optional) install dev + pre-commit tooling
+pip install -r requirements-dev.txt
+pre-commit install
 ```
 
 ### 2. Basic Usage

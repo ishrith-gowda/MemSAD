@@ -1,8 +1,9 @@
 # memory agent security — research notes / progress dump
 
 ishrith gowda, uc berkeley
-march 2026
-target: neurips 2026 or acm ccs 2026
+last updated: 2026-04-24
+target: neurips 2026 (abstract may 4, full paper may 6)
+paper: *memsad: gradient-coupled anomaly detection for memory poisoning in retrieval-augmented agents* (under double-blind review)
 
 ---
 
@@ -404,23 +405,41 @@ python3 smoke_test.py                                              # 5 quick tes
 | 19 | fix text-data inconsistencies (adaptive adversary, sad) | done |
 | 20 | fix ablation text/data inconsistencies | done |
 | 21 | triggered-query-aware sad finding added to paper | done |
-| 22 | calibrate_triggered() implementation + tests + table2 footnote + abstract fix | done |
+| 22 | calibrate_triggered + multi-encoder + graph memory + openai integration | done |
+| 23 | formal proposition + sad roc figures + introduction correction | done |
+| 24 | encoder choice rationale + strip/spectral inapplicability + readme | done |
+| 25 | encoder generalization experiment (3 encoders, appendix c.6) | done |
+| 26 | fix proactive/watermark/composite defense metrics | done |
+| 27 | sad combined scoring mode + auroc + minja isr footnote | done |
+| 28 | consolidated paper + 1,000-corpus validation | done |
+| 29 | final research validation (submission block) | done |
+| 30 | research finalization | done |
+| 31 | neurips reviewer weakness fixes (pr #21) | done |
+| 32 | residual items + sir propagation simulation | done |
+| 33 | final comprehensive audit (pr #36, 0 open issues) | done |
+| 34 | final reviewer concern fixes (pr #37) | done |
+| 35 | process + mechanism figures per dr. zhao feedback (pr #72, #71) | done |
 
 ## paper status
 
-- `docs/paper/main.tex` — 23-page paper, clean pdflatex+bibtex compilation
-- all text-data inconsistencies resolved across all sections
-- all 6 contributions documented in introduction
-- abstract reflects correct adaptive adversary finding (synonym-invariant, Δasr-r≈0)
-- abstract includes triggered-query calibration finding (tpr 0.00 → 1.00)
+- `docs/neurips2026/main.tex` — 31-page paper total
+  - main body = 9 pages (neurips 2026 limit): abstract, intro, related work, formal threat model, memsad (algorithm + gradient coupling theorem + certified radius + le cam minimax + synonym loophole proposition), additional defenses, experiments, discussion, conclusion
+  - references = 2 pages
+  - appendix = 20 pages: proofs, tradeoff surface, write-time pipeline tikz, generalization bound, hardness, fisher-rao, ood baseline, calibration sensitivity, cross-corpus nq, memsad+, compound exposure, tool-use agent eval (gpt-4o-mini), production memory validation, llm sanitization, multi-agent sir, graph memory, additional figures
+- clean pdflatex + bibtex + pdflatex + pdflatex cycle, 0 errors, 0 warnings
+- all cross-references resolve; all theorems, propositions, and lemmas numbered
+- abstract reflects four formal guarantees + synonym loophole + composite defense asr-r = 0
 
-## things that still need work
+## current state
 
-**multi-agent extension** — poison that propagates across agents sharing a knowledge base. future work section material; not needed for current submission.
+**ready for neurips 2026 submission.** paper has been through 35 phases of refinement. all reviewer concerns from phase 31 (weakness fixes) and phase 33/34 (audit) have been addressed. phase 35 added the mechanism / process figures requested by dr. xuandong zhao.
 
-**live agent asr-a** — full end-to-end measurement with a real llm agent. gpt-2 lower bound is documented; true asr-a requires api-level agent execution. left as future work.
+### things that were previously "future work" and are now done
 
-**extended ablation on corpus scale** — triggered agentpoison ablation shows asr-r ≥0.95 at all corpus sizes; un-triggered ablation shows decay. the paper documents both; no additional ablation needed for submission.
+- **multi-agent propagation** — sir epidemic model simulation (phase 32) shows composite defense stops spread at 0.00 compromise.
+- **live agent asr-a** — gpt-4o-mini tool-use evaluation (phase 22 / appendix) replaces the gpt-2 local lower bound with production-aligned measurement.
+- **extended ablation on corpus scale** — 1,000-entry corpus (phase 28) replaces the 200-entry seed; corpus-scaling figure in appendix.
+- **encoder generalization** — 6 sentence encoders (minilm, mpnet, e5-base, contriever, bge-large, para-minilm) with clopper-pearson fpr validation across 20 trials (phase 22, 25).
 
 ---
 

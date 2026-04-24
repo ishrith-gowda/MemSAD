@@ -47,9 +47,9 @@ matplotlib.use("Agg")
 _HERE = Path(__file__).resolve().parent
 sys.path.insert(0, str(_HERE.parent))
 
-# default output: docs/paper/figures/
+# default output: docs/neurips2026/figures/ (canonical live paper location)
 _PROJECT_ROOT = _HERE.parent.parent
-_DEFAULT_OUTPUT = str(_PROJECT_ROOT / "docs" / "paper" / "figures")
+_DEFAULT_OUTPUT = str(_PROJECT_ROOT / "docs" / "neurips2026" / "figures")
 
 # matplotlib style: clean, publication-ready
 plt.rcParams.update(

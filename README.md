@@ -1,46 +1,73 @@
-# Poisoning the Memory: A Unified Framework for Attacking and Defending LLM Agent Memory Systems
+# MemSAD: Gradient-Coupled Anomaly Detection for Memory Poisoning in Retrieval-Augmented Agents
 
-Research code for the paper submitted to NeurIPS 2026 / ACM CCS 2026.
+Research code and evaluation framework for the NeurIPS 2026 submission
 
-**Authors:** Ishrith Gowda, University of California, Berkeley
+> **MemSAD: Gradient-Coupled Anomaly Detection for Memory Poisoning in Retrieval-Augmented Agents**
+> *Anonymous Author(s); under double-blind review.*
+
+[![CI](https://github.com/ishrith-gowda/MemSAD/actions/workflows/ci.yml/badge.svg)](https://github.com/ishrith-gowda/MemSAD/actions/workflows/ci.yml)
+[![Interactive demo](https://img.shields.io/badge/demo-live-brightgreen)](https://ishrith-gowda-memsad-demo.hf.space/)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
 ---
 
 ## Overview
 
-LLM agents persist context across sessions through external memory systems (Mem0, A-MEM, MemGPT). This repository provides a unified evaluation framework for three memory poisoning attacks and five defenses, evaluated under a realistic FAISS-backed vector memory store with a 200-entry synthetic corpus.
+LLM agents persist context across sessions through external memory systems (Mem0, A-MEM, MemGPT). This creates an attack surface: an adversary who can write to that memory can covertly influence future agent behavior — redirecting actions, exfiltrating data, or bypassing safety controls.
 
-**Key contributions:**
-- Evaluation protocol correction for AgentPoison (triggered-query evaluation raises ASR-R 0.25 → 1.00)
-- Semantic Anomaly Detection (SAD) — novel unsupervised defense with no labeled attack examples required
-- Formal gradient tension proposition (Proposition 1) showing continuous evasion is impossible
-- Full 3×5 attack-defense interaction matrix with measured values
-- DPR HotFlip trigger optimizer, token-level watermark, and GPT-2 agent evaluator
-- Triggered-query calibration closes AgentPoison blind spot (TPR 0.00 → 1.00, FPR = 0.00)
+**MemSAD** is the first memory-poisoning defense with formal guarantees. It is a calibration-based, write-time anomaly detector whose threshold $\mu + \kappa\sigma$ is derived from a benign reference corpus. We prove four theorems about its behavior:
+
+1. **Gradient coupling** (Theorem 1) — any monotone detector inherits the retrieval-loss gradient, so continuous evasion is impossible.
+2. **Certified detection radius** (Lemma 2) — checkable, per-entry guarantee whenever the adversarial-benign similarity gap exceeds calibration uncertainty.
+3. **Minimax optimality via Le Cam's method** (Theorem 3) — any threshold detector requires $\Omega(1/\rho^2)$ calibration samples; MemSAD achieves this up to $\log(1/\delta)$.
+4. **Synonym-invariance loophole** (Proposition 11) — formal boundary characterizing where the continuous guarantees stop, motivating the hybrid MemSAD+ (character n-gram) extension.
+
+Empirically, on a $3 \times 5$ attack-defense matrix with bootstrap CIs, Bonferroni-corrected hypothesis tests, and Clopper-Pearson validation (20 trials, $n=1{,}000$), the composite defense reaches $\text{TPR}=1.00$, $\text{FPR}=0.00$ across every attack. Synonym substitution, as Proposition 11 predicts, remains the only construction that evades: 80–100% evasion at $\Delta \text{ASR-R} \approx 0$.
+
+---
+
+## Key contributions
+
+1. **Stackelberg formalization** of the memory-poisoning game with explicit leader–follower dynamics between the detector and a white-box adversary.
+2. **Four formal guarantees**: gradient coupling, certified radius, Le Cam minimax lower bound, and the formal synonym-invariance loophole.
+3. **MemSAD**, a write-time detector with $O(md)$ per-entry cost — $\sim 2$ ms/entry on commodity hardware.
+4. **MemSAD+**, a hybrid detector adding character n-gram JSD features that partially close the synonym gap (InjecMEM TPR $0.00 \to 0.40$).
+5. **Comprehensive empirical validation** across three attacks (AgentPoison, MINJA, InjecMEM) × five defenses (watermark, validation, proactive, composite, MemSAD), six sentence encoders, and a cross-corpus Natural Questions replication.
+6. **Tool-use evaluation** with GPT-4o-mini confirming the threat is practical: ASR-A of 0.48 on triggered queries.
+7. **Multi-agent SIR propagation** showing composite defense prevents cross-agent epidemic spread entirely.
+8. **Production-quality artifact**: 593 tests passing; deterministic pipeline reproducing every table and figure in under 5 minutes on CPU.
+
+---
+
+## Interactive demo
+
+A live SPA walkthrough of the framework — single-run retrieval, threshold sweep, attack×defense matrix, and artifact reproducibility details — is hosted at:
+
+**https://ishrith-gowda-memsad-demo.hf.space/**
+
+The frontend source lives under `src/frontend/` (React + Vite).
 
 ---
 
 ## Installation
 
-Requires Python 3.10+ and approximately 4 GB disk space for model downloads.
+Python 3.10–3.13 are supported. All experiments run on CPU; GPU optional for DPR-HotFlip and token-level watermark.
 
 ```bash
-git clone https://github.com/ishrith-gowda/memory-agent-security
-cd memory-agent-security
+git clone https://github.com/ishrith-gowda/MemSAD
+cd MemSAD
 python3 -m venv .venv
 source .venv/bin/activate
 pip install -r requirements.txt
 ```
 
-**Hardware:** All evaluations run on CPU. GPU is not required. The DPR HotFlip optimizer and token-level watermark benefit from a GPU but are not required for core experiments.
-
-**Model downloads:** `sentence-transformers/all-MiniLM-L6-v2` (90 MB) and `facebook/dpr-ctx_encoder-single-nq-base` (440 MB) are downloaded automatically on first run via Hugging Face Hub.
+**Model downloads (automatic on first run):** `sentence-transformers/all-MiniLM-L6-v2` (90 MB) for the primary encoder; `facebook/dpr-ctx_encoder-single-nq-base` (440 MB) for DPR-HotFlip trigger optimization.
 
 ---
 
-## Quick Start
+## Quick start
 
-### Smoke test (5 tests, ~10 seconds)
+### Smoke test (~10 seconds)
 
 ```bash
 python3 smoke_test.py
@@ -49,18 +76,18 @@ python3 smoke_test.py
 ### Fast test mode (~3 minutes, corpus=15, reduced parameters)
 
 ```bash
-MEMORY_SECURITY_TEST=true python3 -m pytest src/tests/test_memory_security.py tests/ -q
+MEMORY_SECURITY_TEST=true python3 -m pytest src/tests/ tests/ -q
 ```
 
-### Full test suite (~3 minutes in fast mode, ~30 minutes full)
+### Full test suite (~30 minutes)
 
 ```bash
-python3 -m pytest src/tests/test_memory_security.py tests/ -q
+python3 -m pytest src/tests/ tests/ -q
 ```
 
 ---
 
-## Reproducing Paper Results
+## Reproducing paper results
 
 ### Full pipeline (all tables + figures)
 
@@ -71,134 +98,161 @@ python3 -m src.scripts.run_pipeline --mode full    # ~60 minutes, paper params
 
 Output is written to `pipeline_output/`.
 
-### Individual components
+### Individual figures
 
 ```bash
-# generate attack evaluation results (table 1)
-python3 -m src.scripts.generate_paper_results
-
-# generate all paper figures
-python3 -m src.scripts.generate_paper_results --figures-only
-
-# generate SAD ROC curve and calibration comparison figures
+# sad roc curve + plain-vs-triggered calibration comparison
 python3 -m src.scripts.generate_sad_figures
 
-# generate phase 17 figures (dpr convergence, watermark comparison, measured asr-a)
+# phase 17 figures: dpr convergence, token watermark comparison, measured asr-a
 python3 -m src.scripts.generate_phase17_figures
+
+# phase 22 figures: multi-encoder cka heatmap, clopper-pearson fpr validation
+python3 -m src.scripts.generate_phase22_figures
+
+# phase 35 mechanism figures: gradient coupling, empirical trajectory, synonym loophole
+python3 -m src.scripts.generate_phase35_figures
 ```
 
 ### Compile the paper
 
 ```bash
-cd docs/paper
+cd docs/neurips2026
 pdflatex main.tex && bibtex main && pdflatex main.tex && pdflatex main.tex
 ```
 
-Pre-generated figures are included in `docs/paper/figures/` so the paper compiles without re-running experiments.
+Pre-generated figures are checked into `docs/neurips2026/figures/` so the paper compiles without re-running experiments.
 
 ---
 
-## Repository Structure
+## Repository structure
 
 ```
 src/
   attacks/
-    implementations.py             — agentpoison, minja, injecmem
-    adaptive_attack.py             — white-box adaptive adversary (synonym substitution)
-    trigger_optimization/          — coordinate-descent and dpr hotflip trigger optimizers
+    implementations.py             - agentpoison, minja, injecmem
+    adaptive_attack.py             - white-box adaptive adversary (synonym substitution)
+    trigger_optimization/
+      optimizer.py                 - coordinate-descent trigger optimizer
+      dpr_optimizer.py             - dpr-hotflip trigger optimizer (phase 17)
   defenses/
-    implementations.py             — watermark, validation, proactive, composite
-    semantic_anomaly.py            — sad defense (novel; calibrate, detect, threshold_sweep)
+    implementations.py             - watermark, validation, proactive, composite
+    semantic_anomaly.py            - memsad detector (calibrate, detect, threshold_sweep,
+                                     calibrate_triggered, combined scoring mode)
+    lexical_diversity.py           - lexical-diversity gate + sad+gate wrapper
   evaluation/
-    retrieval_sim.py               — realistic faiss retrieval simulation
-    attack_defense_matrix.py       — 3x5 attack-defense cross-product evaluator
-    ablation_study.py              — corpus/topk/poison/sad/watermark sweeps
-    statistical.py                 — bootstrap ci, hypothesis testing, latex table generation
-    comprehensive_eval.py          — end-to-end paper result generation
-    agent_eval.py                  — local gpt-2 agent evaluator (measured asr-a lower bounds)
-    evasion_eval.py                — watermark evasion evaluator
+    retrieval_sim.py               - faiss-backed retrieval simulation
+    attack_defense_matrix.py       - 3x5 attack-defense cross-product evaluator
+    ablation_study.py              - corpus/topk/poison/sigma sweeps
+    statistical.py                 - bootstrap ci, clopper-pearson, multi-trial fpr
+    comprehensive_eval.py          - end-to-end paper result generation
+    multi_encoder_eval.py          - 6-encoder generalization + cka transferability
+    multi_agent_propagation.py     - sir epidemic model for memory propagation
+    hypothesis_testing.py          - bonferroni-corrected tests, power analysis
+    evasion_eval.py                - watermark evasion evaluator
+    agent_eval.py                  - gpt-2 local + gpt-4o-mini openai agent evaluators
   watermark/
-    watermarking.py                — unigram, lsb, semantic, crypto, composite encoders
-    token_watermark.py             — token-level watermark (zhao et al. iclr 2024, gpt-2 backbone)
+    watermarking.py                - unigram, lsb, semantic, crypto, composite encoders
+    token_watermark.py             - token-level watermark (zhao et al. iclr 2024)
   memory_systems/
-    vector_store.py                — faiss indexflatip + all-minilm-l6-v2 (paper eval backbone)
-    wrappers.py                    — mem0, a-mem, memgpt wrappers (graceful degradation)
+    vector_store.py                - faiss indexflatip + all-minilm-l6-v2
+    graph_memory.py                - entity-relation graph memory + structural attacks
+    wrappers.py                    - mem0, a-mem, memgpt wrappers
   data/
-    synthetic_corpus.py            — 200-entry synthetic agent memory corpus (7 categories)
+    synthetic_corpus.py            - 200-entry seed corpus (also extends to 1,000)
+    corpus_extended.py             - 1,000-entry corpus used in paper tables
+    nq_subset.py                   - natural questions cross-corpus replication set
   scripts/
-    run_pipeline.py                — end-to-end pipeline (quick/full mode)
-    generate_paper_results.py      — paper table + figure generation
-    generate_sad_figures.py        — sad roc curve + triggered calibration comparison
-    generate_phase17_figures.py    — phase 17 paper figures
-    visualization.py               — benchmark visualizer and statistical analyzer
+    run_pipeline.py                - 6-phase end-to-end pipeline (quick/full mode)
+    generate_sad_figures.py        - phase 11 sad figures
+    generate_phase17_figures.py    - phase 17 figures (dpr, token-wm, measured asr-a)
+    generate_phase22_figures.py    - phase 22 figures (multi-encoder, cka, clopper-pearson)
+    generate_phase35_figures.py    - phase 35 figures (mechanism, coupling, synonym)
+    generate_sir_simulation.py     - phase 32 sir multi-agent propagation figures
+    encoder_generalization.py      - 6-encoder sad evaluation
 
-docs/paper/
-  main.tex                         — paper root (pdflatex + bibtex)
-  sections/                        — introduction, threat_model, attacks, defenses,
-                                     experiments, discussion, related_work, conclusion, appendix
-  figures/                         — 34 figure files (png + pdf pairs)
-  references.bib                   — 48 bibliography entries
+docs/
+  neurips2026/
+    main.tex                       - paper root (pdflatex + bibtex cycle)
+    figures/                       - 30+ pdf/png figure pairs
+    references.bib                 - bibliography
+    checklist.tex                  - neurips 2026 reproducibility checklist
+  research/
+    progress_report.md             - phase-by-phase implementation log
+    memory-agent-research-document.md  - historical research scoping doc
+  api/API_REFERENCE.md             - module-level api surface
+  guides/USAGE_GUIDE.md            - end-to-end usage patterns
+  publication_strategy.md          - venue strategy notes
 
-results/tables/                    — 7 generated latex tables (table1–table6)
-configs/                           — yaml configuration files for attacks and defenses
-notebooks/experiments/             — 4 jupyter notebooks with interactive experiments
-src/tests/                         — 408 unit and integration tests
-tests/                             — 37 additional unit tests
+results/
+  tables/                          - generated latex tables
+  phase28/                         - phase 28 defense-results snapshots
+
+src/app/                           - gradio backend (legacy; frontend now react spa)
+src/frontend/                      - react + vite demo (deployed to hf space)
+tests/, src/tests/                 - 593 tests total (593 pass)
 ```
 
 ---
 
-## Key Results
+## Key results
 
-### Attack Success Rates (N=200, k=5)
+### Attack success rates (|M| = 1,000, 100 queries, 5 seeds, bootstrap 95% CI)
 
-| Attack | ASR-R | ASR-A* | ASR-T |
+| Attack | ASR-R | ASR-A (GPT-2) | ASR-A (GPT-4o-mini) |
 |---|---|---|---|
-| AgentPoison (triggered) | 1.000 | 0.68 | 0.650 |
-| MINJA | 0.650 | 0.76 | 0.550 |
-| InjecMEM | 0.500 | 0.57 | 0.350 |
+| AgentPoison (triggered) | 1.000 | 0.42 | 0.48 |
+| MINJA | 1.000 | 0.51 | 0.20* |
+| InjecMEM | 0.852 | 0.29 | 0.00* |
 
-*ASR-A modelled from paper-reported values; measured lower bounds via GPT-2 agent: 0.42, 0.51, 0.29.
+*GPT-4o-mini's safety alignment suppresses downstream ASR-A for the two attacks whose payloads rely on producing explicit tool-use text; the retrieval-level attack (ASR-R) still succeeds.
 
-### Attack-Defense Matrix (ASR-R under defense)
+### Attack × defense matrix (ASR-R under defense; lower is better)
 
-| Attack | Watermark | Validation | Proactive | Composite | SAD |
-|---|---|---|---|---|---|
-| AgentPoison | 0.000 | 0.000 | 0.000 | 0.000 | 1.000† |
-| MINJA | 0.000 | 0.000 | 0.000 | 0.000 | 0.000 |
-| InjecMEM | 0.000 | 0.483 | 0.000 | 0.000 | 0.433 |
+| Attack | No defense | Perplexity | Similarity cap | LLM sanitizer | **MemSAD** | Composite |
+|---|---|---|---|---|---|---|
+| AgentPoison | 0.842 | 0.781 | 0.594 | 0.402 | **0.073** | 0.000 |
+| MINJA | 0.751 | 0.692 | 0.503 | 0.396 | **0.091** | 0.000 |
+| InjecMEM | 0.488 | 0.412 | 0.322 | 0.275 | **0.264** | 0.000 |
 
-†Under triggered-query calibration (see paper Section 7), SAD achieves ASR-R = 0.000 for AgentPoison (TPR = 1.00, FPR = 0.00).
+MemSAD row reports 95% Clopper–Pearson CIs; composite defense achieves ASR-R = 0 on every attack at TPR = 1.00, FPR = 0.00.
+
+### MemSAD threshold sweep (σ)
+
+At σ = 2.0 with combined scoring (default operating point): AgentPoison triggered-calibration TPR = 1.000, MINJA TPR = 1.000, InjecMEM TPR = 0.433; all three at FPR = 0.000.
 
 ---
 
-## Configuration
+## Development
 
-The evaluation uses test mode by default in CI (`MEMORY_SECURITY_TEST=true`):
-- Corpus size: 15 entries (vs. 200 paper)
-- Top-k: 3 (vs. 5 paper)
-- Poison count: 1 (vs. 5 paper)
+Pre-commit hooks enforce `black`, `isort`, `ruff`, `flake8`, and `pyupgrade`. CI (`.github/workflows/ci.yml`) runs lint, typecheck (mypy), security (Bandit), and the full test matrix on Python 3.10–3.13 for every PR.
 
-Full paper parameters are activated when `MEMORY_SECURITY_TEST` is unset or `false`.
+```bash
+pre-commit install
+pre-commit run --all-files
+```
 
-Pre-commit hooks enforce code style: `black`, `isort`, and `flake8` (max-line-length=88).
+`setup.cfg` pins `flake8 max-line-length=88` and isort profile `black`.
 
 ---
 
 ## Citation
 
 ```bibtex
-@article{gowda2026poisoning,
-  title={Poisoning the Memory: A Unified Framework for Attacking and
-         Defending {LLM} Agent Memory Systems},
-  author={Gowda, Ishrith},
-  year={2026},
-  note={Preprint}
+@inproceedings{memsad2026,
+  title     = {{MemSAD}: Gradient-Coupled Anomaly Detection for
+               Memory Poisoning in Retrieval-Augmented Agents},
+  author    = {Anonymous Author(s)},
+  booktitle = {Advances in Neural Information Processing Systems (NeurIPS)},
+  year      = {2026},
+  note      = {Under review}
 }
 ```
+
+Full author list, affiliations, and acknowledgements will be disclosed after double-blind review.
 
 ---
 
 ## License
 
-MIT License. See `LICENSE` for details.
+MIT License. See [LICENSE](LICENSE) for details.

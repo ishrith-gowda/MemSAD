@@ -1,8 +1,19 @@
 # publication strategy: memory agent security
 
 **author**: ishrith gowda, uc berkeley
-**date**: march 23, 2026
-**paper**: "poisoning the memory: a unified framework for attacking and defending llm agent memory systems"
+**last updated**: 2026-04-24
+**paper**: *memsad: gradient-coupled anomaly detection for memory poisoning in retrieval-augmented agents* (double-blind, neurips 2026)
+
+---
+
+## 0. current status
+
+- paper locked at 9-page main body + 20-page appendix (31 pages total, `docs/neurips2026/main.tex`)
+- phase 35 (mechanism + process figures per dr. xuandong zhao's review) merged as pr #72, closing issue #71
+- abstract deadline **may 4, 2026**; full paper deadline **may 6, 2026**
+- primary submission target: **neurips 2026**
+- backup plan if rejected: iclr 2027 (~oct 2026 deadline) with revision window for reviewer feedback
+- interactive demo live at https://ishrith-gowda-memsad-demo.hf.space/
 
 ---
 

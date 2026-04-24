@@ -15,7 +15,7 @@ usage (from repo root):
     python3 -m src.scripts.encoder_generalization [--corpus-size 1000]
 
 outputs:
-    docs/paper/figures/fig_encoder_generalization.pdf/.png
+    docs/neurips2026/figures/fig_encoder_generalization.pdf/.png
     results/tables/table_encoder_generalization.tex
 
 all comments are lowercase.

@@ -1,40 +1,38 @@
 ---
-title: MemSAD Memory Agent Security Demo
+title: MemSAD
 emoji: "\U0001F6E1"
 colorFrom: blue
 colorTo: gray
-sdk: gradio
-sdk_version: "5.0.0"
-app_file: app.py
+sdk: docker
+app_port: 7860
 pinned: false
 license: mit
 ---
 
-# MemSAD: Gradient-Coupled Anomaly Detection for Memory Poisoning
+# MemSAD — Gradient-Coupled Anomaly Detection for Memory Poisoning
 
-Interactive demonstration of memory poisoning attacks (AgentPoison, MINJA, InjecMEM) against LLM agent memory systems and the MemSAD defense.
+Interactive research artifact for the NeurIPS 2026 submission *MemSAD: Gradient-Coupled Anomaly Detection for Memory Poisoning in Retrieval-Augmented Agents* (under double-blind review).
 
-## Features
+The live Space at https://ishrith-gowda-memsad-demo.hf.space/ is a React + Vite single-page app served via Docker + nginx. The frontend source lives in-repo at `src/frontend/`.
 
-- Select an attack type and observe poison passages retrieved by FAISS vector search
-- Toggle MemSAD defense to watch anomaly detection scores
-- Threshold sweep across sigma values
-- Comparative evaluation across all attacks
+## Sections
 
-## Paper
+- **§1 Hero** — live passage feed + headline results
+- **§2 Single-run** — retrieve → score → decide on a victim query
+- **§3 Threshold** — σ sweep across attack families with live ROC
+- **§4 Matrix** — 3 attacks × 5 defenses
+- **§5 About** — methodology, reproduction details, BibTeX
 
-*MemSAD: Gradient-Coupled Anomaly Detection for Memory Poisoning in Retrieval-Augmented Agents* (under review)
+## Double-blind submission notice
 
-## Double-Blind Submission Notice
+The associated paper is currently under double-blind review at a top-tier venue. This public Hugging Face Space is deployed for an independent engineering / internship context (interactive artifact of the research framework) and **does not constitute part of the submitted paper's supplementary material**. Reviewers should consult the anonymized supplementary archive provided via the conference submission system rather than this deployment, which is necessarily linked to an identifiable GitHub account.
 
-the associated paper is currently under double-blind review at a top-tier venue.
-this public Hugging Face Space is deployed for an independent engineering /
-internship context (interactive artifact of the research framework) and
-**does not constitute part of the submitted paper's supplementary material**.
-reviewers are asked to consult the anonymized supplementary archive provided
-via the conference submission system rather than this deployment, which is
-necessarily linked to an identifiable GitHub account.
+Author names, affiliations, funding acknowledgements, and a full BibTeX citation entry will be added here once the paper is accepted and de-anonymized.
 
-author names, affiliations, funding acknowledgements, and a full bibtex
-citation entry will be added here once the paper is accepted and
-de-anonymized.
+## Legacy Gradio backend
+
+The earlier Gradio-based backend at `src/app/app.py` is retained for programmatic access (batch scoring, direct attack/defense invocation). It is not deployed on the live Space but remains reproducible locally:
+
+```bash
+python3 src/app/app.py
+```
