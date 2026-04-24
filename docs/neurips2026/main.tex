@@ -326,19 +326,19 @@ The gradient coupling reflects a deeper geometric structure: the Fisher-Rao metr
 \begin{figure}[htbp]
 \centering
 \vspace{-2pt}
-\begin{subfigure}{0.52\linewidth}
+\begin{subfigure}{0.78\linewidth}
   \centering
   \includegraphics[width=\linewidth,trim=4pt 4pt 4pt 4pt,clip]{fig_gradient_coupling_mechanism.pdf}
   \caption{Mechanism (schematic).}
   \label{fig:coupling_mechanism}
-\end{subfigure}\hfill
-\begin{subfigure}{0.46\linewidth}
+\end{subfigure}\\[2pt]
+\begin{subfigure}{0.78\linewidth}
   \centering
   \includegraphics[width=\linewidth,trim=4pt 4pt 4pt 4pt,clip]{fig_coupling_trajectory.pdf}
   \caption{Empirical confirmation (DPR-HotFlip).}
   \label{fig:coupling_trajectory}
 \end{subfigure}
-\caption{\textbf{Gradient coupling, visualized.} (\subref{fig:coupling_mechanism}) 2-D projection: dashed contour marks the $\hat\mu+\kappa\hat\sigma$ firing region around the query cluster $\cQ$. The adversary's retrieval-loss gradient $\nabla_p\cL_{\mathrm{ret}}$ pushes the poison (red squares) into the firing region along the same direction that raises the \textsc{MemSAD} score --- the coupling of Theorem~\ref{thm:gradient_coupling}. (\subref{fig:coupling_trajectory}) Empirical realization on DPR-HotFlip: retrieval loss and score move in near-perfect mirror image; detection fires at $t=9$, well before retrieval convergence.}
+\caption{\textbf{Gradient coupling, visualized.} (\subref{fig:coupling_mechanism}) 2-D projection: dashed contour marks the $\hat\mu+\kappa\hat\sigma$ firing region around $\cQ$; the adversary's gradient $\nabla_p\cL_{\mathrm{ret}}$ pushes the poison into the firing region along the direction that raises $s$ (Thm.~\ref{thm:gradient_coupling}). (\subref{fig:coupling_trajectory}) DPR-HotFlip: $\cL_{\mathrm{ret}}$ and $s$ mirror; detection fires at $t=9$.}
 \label{fig:coupling}
 \end{figure}
 
