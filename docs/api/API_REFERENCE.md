@@ -1,8 +1,12 @@
-# Memory Agent Security Research Framework
+# MemSAD: API Reference
+
+*Framework backing the NeurIPS 2026 paper* **MemSAD: Gradient-Coupled Anomaly Detection for Memory Poisoning in Retrieval-Augmented Agents** *(under double-blind review).*
+
+> Last synced with code: 2026-04-24 (phase 36). This document catalogs the stable public surface; see `src/` for in-tree docstrings (all lowercase per project convention) and `docs/research/progress_report.md` for the phase-by-phase build log.
 
 ## Overview
 
-This framework provides comprehensive tools for researching security vulnerabilities in memory agent systems, including attack characterization, defense development, and systematic evaluation. The framework supports Mem0, A-MEM, and MemGPT memory systems with implementations for AgentPoison, MINJA, and InjecMEM attacks, along with watermarking-based defenses.
+This framework provides tools for researching security vulnerabilities in memory-augmented LLM agents, including attack characterization (AgentPoison, MINJA, InjecMEM, PoisonedRAG), defenses (watermark, validation, proactive, composite, and the novel MemSAD semantic anomaly detector), and systematic statistical evaluation. Memory backends integrated include Mem0, A-MEM, MemGPT, and a native FAISS vector store plus a graph-memory extension.
 
 ## Architecture
 
@@ -13,15 +17,24 @@ This framework provides comprehensive tools for researching security vulnerabili
 - **Base Protocol**: `MemorySystem` protocol defining standard interface
 - **Wrappers**: `Mem0Wrapper`, `AMEMWrapper`, `MemGPTWrapper` for external system integration
 - **Factory**: `create_memory_system()` for dynamic instantiation
+- **Vector store**: `VectorMemorySystem` (`vector_store.py`) — FAISS `IndexFlatIP` + `all-MiniLM-L6-v2`; this is the primary retrieval backend used in the paper
+- **Graph memory**: `GraphMemorySystem` (`graph_memory.py`) — entity-relation graph with FAISS retrieval and BFS expansion; supports hub / edge-hijack / subgraph-cluster attacks and degree-anomaly detection
 
 #### Attacks (`src/attacks/`)
 
 - **Base Class**: `Attack` abstract base class with `execute()` method
 - **Implementations**:
-  - `AgentPoisonAttack`: Content poisoning via character manipulation
-  - `MINJAAttack`: Memory injection attacks
-  - `InjecMEMAttack`: Memory manipulation attacks
+  - `AgentPoisonAttack`: gradient-optimized trigger-based poisoning (Chen et al., NeurIPS 2024)
+  - `MINJAAttack`: query-only memory injection (Dong et al., NeurIPS 2025)
+  - `InjecMEMAttack`: broad-anchor single-interaction memory injection
+  - `PoisonedRAGAttack`: RAG-specific poisoning baseline
 - **Suite**: `AttackSuite` for batch execution
+- **Trigger optimization** (`src/attacks/trigger_optimization/`):
+  - `TriggerOptimizer` / `optimize_agentpoison_triggers` — coordinate-descent
+  - `DPRTriggerOptimizer` / `optimize_dpr_triggers` — DPR-HotFlip (phase 17)
+- **Adaptive adversary** (`src/attacks/adaptive_attack.py`):
+  - `AdaptivePassageCrafter` — greedy word-level synonym substitution (60+ domain synonym dictionary)
+  - `AdaptiveSADEvaluator` — evasion vs. retrieval-degradation tradeoff
 
 #### Defenses (`src/defenses/`)
 
@@ -29,24 +42,39 @@ This framework provides comprehensive tools for researching security vulnerabili
 - **Implementations**:
   - `WatermarkDefense`: Watermark-based provenance tracking
   - `ContentValidationDefense`: Pattern-based content validation
-  - `ProactiveDefense`: Simulation-based attack prevention
-  - `CompositeDefense`: Multi-layered defense combination
+  - `ProactiveDefense`: Retrieval-breadth detection with 16 domain probe queries (threshold = 0.19)
+  - `CompositeDefense`: Multi-layered defense combination (weighted ensemble)
+  - `SemanticAnomalyDetector` (in `semantic_anomaly.py`): **MemSAD — the paper's novel defense.** Calibration-based write-time detector with `calibrate()`, `calibrate_triggered()`, `detect()`, `threshold_sweep()`, and `scoring_mode="combined"` (default). Implements the $\mu + \kappa\sigma$ operating point with gradient coupling, certified radius, and Le Cam minimax guarantees.
+  - `LexicalDiversityGate` (in `lexical_diversity.py`): hybrid gate combining MemSAD with character n-gram / TTR lexical features (MemSAD+).
 - **Suite**: `DefenseSuite` for coordinated defense activation
 
 #### Watermarking (`src/watermark/`)
 
 - **Encoders**:
-  - `LSBWatermarkEncoder`: Least significant bit steganography
-  - `SemanticWatermarkEncoder`: Semantic embedding watermarks
-  - `CryptographicWatermarkEncoder`: Cryptographically secure watermarks
-  - `CompositeWatermarkEncoder`: Multi-technique combination
+  - `UnigramWatermarkEncoder`: unigram character-level watermark (Zhao et al., ICLR 2024; default in paper)
+  - `LSBWatermarkEncoder`: least significant bit steganography
+  - `SemanticWatermarkEncoder`: semantic embedding watermarks
+  - `CryptographicWatermarkEncoder`: cryptographically secure watermarks
+  - `CompositeWatermarkEncoder`: multi-technique combination
+  - `TokenLevelWatermarkEncoder` (`token_watermark.py`): Zhao et al. ICLR 2024, GPT-2 backbone (phase 17)
+- **Factory**: `create_watermark_encoder()` with `token_level`, `unigram`, etc.
 - **Tracker**: `ProvenanceTracker` for content origin verification
 
 #### Evaluation (`src/evaluation/`)
 
-- **Metrics**: `AttackMetrics`, `DefenseMetrics` dataclasses
+- **Metrics**: `AttackMetrics`, `DefenseMetrics` dataclasses (paper-faithful ASR-R/A/T and TPR/FPR/AUROC)
 - **Evaluators**: `AttackEvaluator`, `DefenseEvaluator` for performance measurement
 - **Runner**: `BenchmarkRunner` for comprehensive experiment execution
+- **Retrieval simulation** (`retrieval_sim.py`): `RetrievalSimulator` with `use_trigger_optimization` and `use_dpr_optimizer` flags
+- **Attack×defense matrix** (`attack_defense_matrix.py`): `AttackDefenseEvaluator`, `MatrixResult`, `PairResult` — produces the 3×5 matrix with bootstrap CIs
+- **Statistical validation** (`statistical.py`): `BootstrapCI`, `StatisticalHypothesisTester`, `MultiTrialEvaluator`, `LatexTableGenerator`, `clopper_pearson_ci`, `FPRValidator`, `BinomialCI`
+- **Hypothesis testing** (`hypothesis_testing.py`): `HypothesisTester`, `MultipleTestCorrector` (Bonferroni), `PowerAnalysis`
+- **Multi-encoder generalization** (`multi_encoder_eval.py`): `MultiEncoderEvaluator`, `SentenceTransformerEncoder`, `OpenAIEncoder`, CKA transferability matrix
+- **Multi-agent propagation** (`multi_agent_propagation.py`): `MultiAgentEnvironment` (SIR epidemic model), `SharedKnowledgeBase`, `PropagationWithSADQuarantine`
+- **Ablation** (`ablation_study.py`): corpus / top-k / poison / σ / watermark sweeps
+- **Comprehensive** (`comprehensive_eval.py`): end-to-end `ComprehensiveEvaluator` and `generate_paper_tables()`
+- **Agent evaluation** (`agent_eval.py`): `LocalAgentEvaluator` (GPT-2 baseline) and `OpenAIAgentEvaluator` (GPT-4o-mini production)
+- **Evasion** (`evasion_eval.py`): `WatermarkEvasionEvaluator`, `EvasionResult`
 - **Reports**: `EvaluationReportGenerator` for result analysis
 
 #### Utilities (`src/utils/`)
