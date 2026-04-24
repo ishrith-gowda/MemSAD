@@ -135,7 +135,8 @@ def _score_field(
     s_max = kmat.max(axis=1)
     s_mean = kmat.mean(axis=1)
     s_comb = 0.5 * s_max + 0.5 * s_mean
-    return s_comb.reshape(grid_x.shape)
+    reshaped: np.ndarray = np.asarray(s_comb.reshape(grid_x.shape))
+    return reshaped
 
 
 def generate_fig_b_gradient_coupling() -> Path:
