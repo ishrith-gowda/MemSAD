@@ -29,7 +29,10 @@ matplotlib.use("Agg")  # non-interactive backend
 # resolve paths regardless of invocation location
 _REPO_ROOT = Path(__file__).resolve().parents[2]
 _SRC = _REPO_ROOT / "src"
-_FIG_DIR = _REPO_ROOT / "docs" / "paper" / "figures"
+# canonical figure location is the neurips 2026 submission directory.
+# the legacy docs/paper/ tree is preserved in-repo for historical continuity
+# but the live paper at docs/neurips2026/main.tex reads from this path.
+_FIG_DIR = _REPO_ROOT / "docs" / "neurips2026" / "figures"
 _FIG_DIR.mkdir(parents=True, exist_ok=True)
 
 sys.path.insert(0, str(_SRC))
@@ -474,7 +477,7 @@ def generate_triggered_calibration_figure() -> Path:
 
 
 def main() -> None:
-    """generate all sad figures and save to docs/paper/figures/."""
+    """generate all sad figures and save to docs/neurips2026/figures/."""
     print("generating sad figure 1: threshold-sweep roc curve ...")
     generate_sad_roc_figure()
 

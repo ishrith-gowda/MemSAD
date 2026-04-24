@@ -4,8 +4,8 @@ generate updated paper tables and figures from phase 28 results.
 reads results/phase28/phase28_results.json and produces:
   - results/tables/table1_attack_results.tex (updated with 1k scale + measured asr-a)
   - results/tables/table5_adaptive_sad.tex (updated with 1k scale)
-  - docs/paper/figures/fig_corpus_scaling.pdf (200 vs 1000 comparison)
-  - docs/paper/figures/fig_measured_asr_a.pdf (gpt-2 vs gpt-4o-mini vs modelled)
+  - docs/neurips2026/figures/fig_corpus_scaling.pdf (200 vs 1000 comparison)
+  - docs/neurips2026/figures/fig_measured_asr_a.pdf (gpt-2 vs gpt-4o-mini vs modelled)
 
 all comments are lowercase.
 """
@@ -102,7 +102,7 @@ def generate_scaling_figure(results: dict) -> None:
         print("  skipping figures (matplotlib not available)")
         return
 
-    fig_dir = Path("docs/paper/figures")
+    fig_dir = Path("docs/neurips2026/figures")
     fig_dir.mkdir(parents=True, exist_ok=True)
 
     # 200-entry baseline values (from phase 9 results)
@@ -241,7 +241,7 @@ def generate_asr_a_figure(results: dict) -> None:
         }
     )
 
-    fig_dir = Path("docs/paper/figures")
+    fig_dir = Path("docs/neurips2026/figures")
     fig_dir.mkdir(parents=True, exist_ok=True)
     neurips_fig_dir = Path("docs/neurips2026/figures")
     neurips_fig_dir.mkdir(parents=True, exist_ok=True)
@@ -324,7 +324,7 @@ def generate_encoder_figure(results: dict) -> None:
         print("  skipping figures (matplotlib not available)")
         return
 
-    fig_dir = Path("docs/paper/figures")
+    fig_dir = Path("docs/neurips2026/figures")
     fig_dir.mkdir(parents=True, exist_ok=True)
 
     enc_results = results.get("encoder_results", {})

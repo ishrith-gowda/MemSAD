@@ -5,7 +5,7 @@ this script runs the full evaluation suite with the exact parameters
 stated in the paper (corpus=200, n_seeds=5, n_poison_base=5, top_k=5)
 and saves all output to:
   - results/tables/  (latex tables 1-6)
-  - docs/paper/figures/  (publication-quality png + pdf)
+  - docs/neurips2026/figures/  (publication-quality png + pdf)
 
 usage:
     cd src && python3 scripts/generate_paper_results.py
