@@ -287,7 +287,7 @@ The \emph{combined scoring mode} averages max-query and mean-query similarity, c
 \end{algorithmic}
 \end{algorithm}
 
-\noindent The full pre-ingestion procedure is given in Algorithm~\ref{alg:sad}.
+\noindent The full pre-ingestion procedure is given in Algorithm~\ref{alg:sad}; a block-diagram view of the same pipeline (candidate $\to$ encoder $\to$ cosine vs.\ $\cH$ $\to$ $s_{\text{comb}}$ $\to$ threshold compare $\to$ accept/reject) is provided in Fig.~\ref{fig:pipeline} (Appendix~\ref{app:pipeline}).
 
 \subsection{Gradient coupling theorem}
 \label{sec:gradient}
@@ -322,6 +322,25 @@ Under L2-normalization (Assumption~\ref{ass:encoder}(iii)), $\nabla_{e_c}\cR = \
 The combined score $s_{\text{comb}}$ also preserves directional coupling (Corollary~\ref{cor:combined_coupling}, Appendix~\ref{app:tradeoff_surface}).
 
 The gradient coupling reflects a deeper geometric structure: the Fisher-Rao metric induced by the score family is rank-1 ($g^F = \hat{\sigma}^{-2}\nabla\cR\nabla\cR^\top$), so any continuous evasion path pays retrieval cost in exact proportion to Fisher-Rao distance~\citep{amari2016information} (Theorem~\ref{thm:fisher_rao}, Appendix~\ref{app:proof_fisher_rao}).
+
+\begin{figure}[htbp]
+\centering
+\vspace{-2pt}
+\begin{subfigure}{0.52\linewidth}
+  \centering
+  \includegraphics[width=\linewidth,trim=4pt 4pt 4pt 4pt,clip]{fig_gradient_coupling_mechanism.pdf}
+  \caption{Mechanism (schematic).}
+  \label{fig:coupling_mechanism}
+\end{subfigure}\hfill
+\begin{subfigure}{0.46\linewidth}
+  \centering
+  \includegraphics[width=\linewidth,trim=4pt 4pt 4pt 4pt,clip]{fig_coupling_trajectory.pdf}
+  \caption{Empirical confirmation (DPR-HotFlip).}
+  \label{fig:coupling_trajectory}
+\end{subfigure}
+\caption{\textbf{Gradient coupling, visualized.} (\subref{fig:coupling_mechanism}) 2-D projection: dashed contour marks the $\hat\mu+\kappa\hat\sigma$ firing region around the query cluster $\cQ$. The adversary's retrieval-loss gradient $\nabla_p\cL_{\mathrm{ret}}$ pushes the poison (red squares) into the firing region along the same direction that raises the \textsc{MemSAD} score --- the coupling of Theorem~\ref{thm:gradient_coupling}. (\subref{fig:coupling_trajectory}) Empirical realization on DPR-HotFlip: retrieval loss and score move in near-perfect mirror image; detection fires at $t=9$, well before retrieval convergence.}
+\label{fig:coupling}
+\end{figure}
 
 \subsection{Certified detection guarantee}
 \label{sec:certified}
@@ -473,6 +492,7 @@ Composite portfolios achieve $\tpr = 1.00$, $\fpr = 0.00$ across all attacks (Pr
 \end{table}
 
 \subsection{Adaptive adversary analysis}
+\label{sec:adaptive_adversary}
 
 Following~\citet{tramer2020adaptive}, we model a white-box adversary with full knowledge of $(\hat{\mu}, \hat{\sigma}, \kappa)$ who applies greedy synonym substitution ($>60$ pairs):
 \begin{equation}
@@ -552,23 +572,7 @@ At $\kappa=2.0$, standalone \memsad{} achieves moderate TPR at strict FPR contro
 %% ============================================================
 \section{Conclusion}
 
-We introduced \memsad{}, the first defense for memory poisoning in retrieval-augmented agents with formal guarantees: gradient coupling (Theorem~\ref{thm:gradient_coupling}) establishes that any monotone detector inherits the retrieval gradient, making continuous evasion impossible; the certified radius (Lemma~\ref{lem:certified}) gives checkable per-entry guarantees; and Le Cam's method (Theorem~\ref{thm:minimax_lower}) proves minimax optimality.
-Equally important is what \memsad{} \emph{cannot} do: Proposition~\ref{prop:synonym} identifies exactly where continuous guarantees break down, showing that the gap between semantic similarity and lexical identity is the fundamental open frontier.
-
-Several directions follow directly from our analysis.
-First, closing the synonym gap: \memsad{}+ demonstrates that character n-gram features partially recover detection, but sentence-level rewrites remain out of reach. Provenance-based approaches that attach cryptographic attestation at write time would sidestep the content analysis problem entirely.
-Second, our experiments are limited to $|\cM| \leq 1{,}000$; production memory stores may be orders of magnitude larger, and approximate nearest-neighbor indices introduce quantization noise whose interaction with calibration bounds is unknown. Extending the regret analysis (Theorem~\ref{thm:regret}) to these settings requires new tools.
-Third, multi-modal agents increasingly store vision and audio embeddings; whether gradient coupling holds across modalities is untested.
-Fourth, multi-agent propagation (Appendix~\ref{app:propagation}) shows that shared memory creates epidemic-like dynamics that single-agent defenses do not address.
-
-On reproducibility: all experiments run on commodity hardware (Apple M-series, 16\,GB) without GPU, and the full pipeline completes in under 5 minutes. Every attack reproduction is paired with a working defense; the synonym loophole is disclosed so it can be studied rather than exploited. Our tool-use evaluation confirms that the threat is practical: GPT-4o-mini executes adversarial tool calls in 48\% of triggered queries, and compound exposure reaches near-certain compromise within a handful of sessions even at low per-query ASR-R.
-
-Three open questions are worth highlighting.
-Can calibration bounds be tightened for heavy-tailed embedding distributions?
-Does the regret guarantee (Theorem~\ref{thm:regret}) survive adversarial non-stationarity, where the attacker deliberately shifts the query distribution?
-Can the hardness result (Proposition~\ref{prop:hardness}) be extended from piecewise-linear to transformer encoders?
-A community benchmark for agent memory security would help answer these and accelerate progress beyond what any single evaluation framework can provide.
-Code and data will be released upon publication.
+We introduced \memsad{}, the first formally-guaranteed defense for memory poisoning in retrieval-augmented agents: gradient coupling (Theorem~\ref{thm:gradient_coupling}) makes continuous evasion impossible; the certified radius (Lemma~\ref{lem:certified}) gives checkable per-entry guarantees; Le Cam's method (Theorem~\ref{thm:minimax_lower}) proves minimax optimality; and Proposition~\ref{prop:synonym} identifies the discrete synonym gap as the exact frontier at which these guarantees stop. Open directions include closing that gap beyond character n-grams, scaling calibration to production memory with approximate NN indices, multi-modal extension, and multi-agent propagation (Appendix~\ref{app:propagation}). Code and data release upon publication.
 
 %% ============================================================
 \begin{ack}
@@ -581,6 +585,50 @@ Acknowledgments will be added in the camera-ready version.
 %% ============================================================
 \newpage
 \appendix
+
+\section{Write-time pipeline diagram}
+\label{app:pipeline}
+
+\begin{figure}[ht]
+\centering
+\begin{tikzpicture}[
+  node distance = 0.45cm and 0.55cm,
+  stage/.style  = {draw, rounded corners=2pt, minimum width=1.55cm,
+                   minimum height=0.55cm, align=center, font=\scriptsize,
+                   fill=gray!4},
+  calib/.style  = {draw, rounded corners=2pt, minimum width=1.75cm,
+                   minimum height=0.5cm, align=center, font=\scriptsize,
+                   fill=blue!6},
+  branch/.style = {draw, rounded corners=2pt, minimum width=1.45cm,
+                   minimum height=0.5cm, align=center, font=\scriptsize},
+  accept/.style = {branch, fill=green!12},
+  reject/.style = {branch, fill=red!12},
+  arr/.style    = {-{Stealth[length=3.5pt]}, semithick},
+  dashedarr/.style = {-{Stealth[length=3.5pt]}, semithick, dashed, gray!60!black},
+]
+  \node[stage]                  (cand)  {candidate\\ entry $c$};
+  \node[stage, right=of cand]   (enc)   {encoder\\ $\enc(\cdot)$};
+  \node[stage, right=of enc]    (sim)   {cosine sim\\ vs.\ $\cH$};
+  \node[stage, right=of sim]    (score) {combined\\ score $s_{\text{comb}}$};
+  \node[stage, right=of score]  (cmp)   {compare\\ to $\hat\mu+\kappa\hat\sigma$};
+  \draw[arr] (cand)  -- (enc);
+  \draw[arr] (enc)   -- node[above, font=\tiny]{$e_c$} (sim);
+  \draw[arr] (sim)   -- node[above, font=\tiny]{$s_{\max},s_{\mathrm{mean}}$} (score);
+  \draw[arr] (score) -- node[above, font=\tiny]{$s$} (cmp);
+
+  \node[accept, above right=0.30cm and 0.45cm of cmp] (acc) {accept: $c\!\to\!\cM$};
+  \node[reject, below right=0.30cm and 0.45cm of cmp] (rej) {reject: discard};
+  \draw[arr] (cmp.east) -- ++(0.18,0) |- node[near start, right, font=\tiny]{$s\!\leq\!\hat\mu\!+\!\kappa\hat\sigma$} (acc.west);
+  \draw[arr] (cmp.east) -- ++(0.18,0) |- node[near start, right, font=\tiny]{$s\!>\!\hat\mu\!+\!\kappa\hat\sigma$} (rej.west);
+
+  \node[calib, below=0.55cm of sim]   (qh)   {$\cH$: rolling\\ victim queries};
+  \node[calib, below=0.55cm of score] (mref) {$\cM_{\text{ref}}$:\\ calibration $(\hat\mu,\hat\sigma)$};
+  \draw[dashedarr] (qh)   -- (sim);
+  \draw[dashedarr] (mref) -- (cmp);
+\end{tikzpicture}
+\caption{\textbf{\textsc{MemSAD} write-time pipeline} (Def.~\ref{def:sad}, Alg.~\ref{alg:sad}). Every candidate~$c$ is embedded, scored against a rolling victim-query history~$\cH$ via the combined max--mean similarity (Eq.~\ref{eq:sad_combined}), and compared to the $\hat\mu+\kappa\hat\sigma$ threshold derived from the benign reference corpus~$\cM_{\text{ref}}$. Rejection happens \emph{before} the entry is committed to memory --- attacks are blocked at write time rather than filtered at retrieval.}
+\label{fig:pipeline}
+\end{figure}
 
 \section{Proofs of main results}
 \label{app:proofs}
@@ -1260,6 +1308,13 @@ For synonym substitution $c' = \mathrm{sub}(c, w_i, w_i')$ with $i = 1, \ldots, 
 \end{equation}
 where $\delta_{\text{char}} \coloneqq \max_{(w, w')} |\mathrm{JSD}(\hat{p}_{c[w \to w']} \| \hat{p}_0) - \mathrm{JSD}(\hat{p}_c \| \hat{p}_0)|$ is the per-substitution JSD shift. For typical synonym pairs, $\delta_{\text{char}} \gg \epsilon_{\text{syn}}$. \memsad{}+ flags $c$ if $s(c; \cH) > \tau_{\text{sem}}$ \emph{or} $D_{\text{char}}(c) > \tau_{\text{char}}$.
 \end{proposition}
+
+\begin{figure}[ht]
+\centering
+\includegraphics[width=0.78\linewidth]{fig_synonym_loophole.pdf}
+\caption{\textbf{Synonym substitution is the only attack construction that evades \textsc{MemSAD}.} \textsc{MemSAD} combined scores for $n=60$ poison passages per condition, at the $\hat\mu+2\hat\sigma$ operating threshold (dashed). Original poisons are detected with TPR${=}1.00$; DPR-HotFlip optimization preserves attack utility and remains detected; greedy word-level synonym substitution (adaptive adversary, Sec.~\ref{sec:adaptive_adversary}) shifts the score distribution \emph{below} the threshold, producing the paper's empirical 80--100\% evasion finding. This is the empirical face of Proposition~\ref{prop:synonym}: the coupling theorem holds against continuous perturbations but discrete synonym jumps have $\epsilon_{\text{syn}}\approx 0$.}
+\label{fig:synonym_loophole}
+\end{figure}
 
 \begin{table}[ht]
   \centering
