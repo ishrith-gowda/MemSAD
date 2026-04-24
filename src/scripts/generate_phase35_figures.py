@@ -66,7 +66,15 @@ _PAL = {
 
 
 def _configure_style() -> None:
-    """configure matplotlib rcparams for neurips-quality rendering."""
+    """configure matplotlib rcparams for neurips-quality rendering.
+
+    canvas widths are matched to the latex render target (~6 inches at
+    0.92\\linewidth in a neurips column) so the latex \\includegraphics
+    scale factor is approximately 1.0; this keeps rendered font sizes equal
+    to the matplotlib font sizes specified here, avoiding the readability
+    loss that occurs when figures are authored on an 8--9" canvas and
+    shrunk to fit.
+    """
     import seaborn as sns
 
     sns.set_theme(style="whitegrid")
@@ -81,17 +89,17 @@ def _configure_style() -> None:
             "font.size": 11,
             "legend.fontsize": 9,
             "legend.frameon": True,
-            "legend.framealpha": 0.92,
+            "legend.framealpha": 0.95,
             "legend.edgecolor": "#c9c6bd",
             "xtick.labelsize": 9,
             "ytick.labelsize": 9,
-            "figure.titlesize": 13,
+            "figure.titlesize": 12,
             "figure.dpi": 300,
             "axes.grid": True,
             "grid.alpha": 0.28,
             "grid.color": _PAL["grid"],
             "axes.edgecolor": "#6b6f7a",
-            "axes.linewidth": 0.8,
+            "axes.linewidth": 0.85,
         }
     )
 
@@ -199,9 +207,9 @@ def generate_fig_b_gradient_coupling() -> Path:
     benign = np.array([-3.1, 1.9])
 
     # ------------------------------------------------------------------
-    # build figure
+    # build figure (taller to accommodate legend outside data region)
     # ------------------------------------------------------------------
-    fig, ax = plt.subplots(figsize=(8.4, 3.2))
+    fig, ax = plt.subplots(figsize=(6.0, 2.6))
 
     # score contour background (pale-to-warm cmap)
     warm = LinearSegmentedColormap.from_list(
@@ -209,18 +217,18 @@ def generate_fig_b_gradient_coupling() -> Path:
     )
     ax.contourf(gx, gy, field, levels=18, cmap=warm, alpha=0.78, zorder=0)
 
-    # thin contour lines to emphasize gradient direction
-    contours = ax.contour(
+    # thin contour lines to emphasize gradient direction (unlabeled —
+    # cleaner at paper scale than numeric clabels that overlap everything)
+    ax.contour(
         gx,
         gy,
         field,
         levels=8,
         colors="#6b6f7a",
         linewidths=0.45,
-        alpha=0.55,
+        alpha=0.5,
         zorder=1,
     )
-    ax.clabel(contours, inline=True, fontsize=6, fmt="%.2f")
 
     # firing region: single bold dashed contour at tau
     # (the warm cmap background already highlights the high-score lobe
@@ -319,33 +327,25 @@ def generate_fig_b_gradient_coupling() -> Path:
         label=r"Poison post-optim ($s > \mu + k\sigma$, reject)",
     )
 
-    # attacker gradient label placed just below the arrow midpoint
+    # attacker-gradient label — placed below the arrow midpoint in the
+    # empty lower-left quadrant so it does not overlap the arrows.
     mid = 0.5 * (traj[2] + traj[3])
     ax.annotate(
         r"attacker's gradient $\nabla_{p}\mathcal{L}_{\mathrm{ret}}$",
         xy=mid,
-        xytext=(mid[0] - 1.4, mid[1] - 1.4),
-        fontsize=9,
+        xytext=(mid[0] - 1.2, mid[1] - 1.6),
+        fontsize=10,
         color=_PAL["poison"],
         arrowprops=dict(arrowstyle="-", color=_PAL["poison"], lw=0.6),
     )
 
-    # detector score label placed in the upper-left quadrant (empty space)
-    ax.annotate(
-        r"\textsc{MemSAD} score $s(p) = \tfrac{1}{2}(s_{\max} + s_{\mathrm{mean}})$",
-        xy=(q_center[0] + 0.4, q_center[1] + 0.9),
-        xytext=(-3.7, 2.55),
-        fontsize=9,
-        color="#5a1f1f",
-        arrowprops=dict(arrowstyle="-", color="#5a1f1f", lw=0.6),
-    )
-
-    # threshold boundary label, tangent to the dashed contour on its top edge
+    # firing-boundary label — placed in the upper-left empty quadrant,
+    # leader line drawn to the dashed boundary.
     ax.annotate(
         r"$\mu + k\sigma$ firing boundary",
-        xy=(q_center[0] - 0.6, q_center[1] + 1.55),
-        xytext=(q_center[0] - 2.9, q_center[1] + 1.85),
-        fontsize=9,
+        xy=(q_center[0] + 1.05, q_center[1] + 1.15),
+        xytext=(-3.9, 2.45),
+        fontsize=10,
         color=_PAL["threshold"],
         arrowprops=dict(arrowstyle="-", color=_PAL["threshold"], lw=0.6),
     )
@@ -355,22 +355,26 @@ def generate_fig_b_gradient_coupling() -> Path:
     ax.set_ylim(y_lin[0], y_lin[-1])
     ax.set_xlabel(r"Projected Embedding Axis $e_1$")
     ax.set_ylabel(r"Projected Embedding Axis $e_2$")
+    ax.set_aspect("equal", adjustable="box")
+    ax.grid(True, alpha=0.22)
+
+    # legend placed fully below the axes as a 2-column, 2-row grid so each
+    # entry is readable at paper scale; no data overlap.
     ax.set_title(
         r"The Attacker's Retrieval Gradient Raises the \textsc{MemSAD} Score",
         pad=8,
     )
-    ax.set_aspect("equal", adjustable="box")
-    ax.grid(True, alpha=0.22)
-
-    # legend at bottom with clean ordering
     ax.legend(
-        loc="lower left",
+        loc="upper center",
+        bbox_to_anchor=(0.5, -0.14),
         ncol=2,
-        fontsize=8,
-        borderpad=0.55,
-        handlelength=1.6,
-        handletextpad=0.45,
-        columnspacing=0.9,
+        fontsize=9,
+        borderpad=0.45,
+        handlelength=1.4,
+        handletextpad=0.35,
+        columnspacing=1.6,
+        labelspacing=0.4,
+        frameon=True,
     )
 
     fig.tight_layout()
@@ -424,16 +428,17 @@ def generate_fig_c_coupling_trajectory() -> Path:
     cross_idx = int(np.argmax(score >= tau)) if np.any(score >= tau) else len(t)
 
     # ------------------------------------------------------------------
-    # figure
+    # figure — taller canvas so legend can sit below the axes without
+    # overlapping either curve.
     # ------------------------------------------------------------------
-    fig, ax_loss = plt.subplots(figsize=(8.4, 2.3))
+    fig, ax_loss = plt.subplots(figsize=(6.0, 2.2))
 
     # left axis — retrieval loss (attacker wants this low)
     ax_loss.plot(
         t,
         loss,
         color=_PAL["loss"],
-        lw=2.0,
+        lw=2.4,
         label=r"Adversary retrieval loss $\mathcal{L}_{\mathrm{ret}}(p_t)$",
     )
     ax_loss.set_xlabel(r"Optimizer Step $t$")
@@ -450,7 +455,7 @@ def generate_fig_c_coupling_trajectory() -> Path:
         t,
         score,
         color=_PAL["score"],
-        lw=2.0,
+        lw=2.4,
         linestyle="-",
         label=r"\textsc{MemSAD} score $s(p_t)$",
     )
@@ -473,52 +478,75 @@ def generate_fig_c_coupling_trajectory() -> Path:
         tau,
         color=_PAL["threshold"],
         linestyle="--",
-        linewidth=1.0,
+        linewidth=1.1,
         alpha=0.85,
     )
+
+    # mu + k*sigma label: placed on the right edge, just above the dashed
+    # line, clear of the left-side detection annotation and the legend.
     ax_score.text(
         n_steps - 0.4,
-        tau - 0.25 * sigma,
+        tau + 0.25 * sigma,
         r"$\mu + k\sigma$",
-        fontsize=8,
+        fontsize=10,
         color=_PAL["threshold"],
-        va="top",
+        va="bottom",
         ha="right",
     )
 
-    # detection step annotation
+    # detection step annotation — placed to the LEFT of the dotted vertical
+    # (per phase 38 user request), pointing right to the crossing point.
+    # we put the text slightly BELOW the crossing score so it does not
+    # collide with the descending retrieval-loss curve in the upper-left.
     if cross_idx < len(t):
         ax_score.axvline(
             cross_idx,
             color="#5a1f1f",
             linestyle=":",
             linewidth=1.0,
-            alpha=0.8,
+            alpha=0.85,
         )
         ax_score.annotate(
             rf"detection at $t = {cross_idx}$",
             xy=(cross_idx, score[cross_idx]),
-            xytext=(cross_idx + 1.2, mu + 2.6 * sigma),
-            fontsize=8,
+            xytext=(cross_idx - 6.0, mu + 0.6 * sigma),
+            fontsize=10,
             color="#5a1f1f",
-            arrowprops=dict(arrowstyle="-", color="#5a1f1f", lw=0.6),
+            arrowprops=dict(
+                arrowstyle="->",
+                color="#5a1f1f",
+                lw=0.65,
+                shrinkA=1.5,
+                shrinkB=3.0,
+            ),
+            ha="center",
+            va="center",
         )
 
-    # unified legend
+    # title
+    ax_loss.set_title(
+        r"Empirical Gradient Coupling Under DPR-HotFlip Optimization",
+        pad=10,
+    )
+    ax_loss.grid(True, alpha=0.25)
+
+    # unified legend placed fully below the axes — no overlap with either
+    # the falling loss curve or the rising score curve, and it no longer
+    # covers the data or the μ+kσ band.
     lines_1, labels_1 = ax_loss.get_legend_handles_labels()
     lines_2, labels_2 = ax_score.get_legend_handles_labels()
     ax_loss.legend(
         lines_1 + lines_2,
         labels_1 + labels_2,
-        loc="center right",
-        framealpha=0.95,
+        loc="upper center",
+        bbox_to_anchor=(0.5, -0.30),
+        ncol=2,
+        fontsize=9,
+        frameon=True,
+        borderpad=0.45,
+        handlelength=1.6,
+        columnspacing=1.4,
     )
-
-    ax_loss.set_title(
-        r"Empirical Gradient Coupling Under DPR-HotFlip Optimization",
-        pad=8,
-    )
-    ax_loss.grid(True, alpha=0.25)
 
     fig.tight_layout()
 
