@@ -776,12 +776,21 @@ The \emph{discrete-token} minimum-edit evasion problem is NP-hard for piecewise-
 \subsection{Detection-evasion tradeoff surface}
 \label{app:tradeoff_surface}
 
-\begin{corollary}[Combined scoring preserves coupling]
+\begin{assumption}[Aligned mean gradient]
+\label{ass:aligned_mean}
+The mean-similarity gradient is not adversarial to the max-similarity gradient, in the sense $\langle \nabla s_{\text{mean}}, \nabla s_{\max}\rangle \geq -\beta \|\nabla s_{\max}\|^2$ for some $\beta \in [0, \alpha/(1-\alpha))$ at all points of differentiability of $s_{\text{comb}}$.
+\end{assumption}
+
+\begin{corollary}[Combined scoring preserves directional coupling]
 \label{cor:combined_coupling}
-The combined score $s_{\text{comb}} = \alpha\, s_{\max} + (1-\alpha)\, s_{\text{mean}}$ with $\alpha \in (0,1)$ satisfies directional monotonicity: $\langle \delta, \nabla s_{\text{comb}} \rangle < 0 \implies \langle \delta, \nabla \cR \rangle < 0$ (at all points of differentiability), and admits the same necessity characterization~(ii). Consequently, Lemma~\ref{lem:certified} and Theorem~\ref{thm:fisher_rao} apply unchanged to $s_{\text{comb}}$.
+Under Assumption~\ref{ass:aligned_mean}, the combined score $s_{\text{comb}} = \alpha\, s_{\max} + (1-\alpha)\, s_{\text{mean}}$ with $\alpha \in (0,1)$ satisfies directional monotonicity: any continuous perturbation $\delta$ that strictly decreases $s_{\text{comb}}$ also strictly decreases $\cR = s_{\max}$. Consequently, Lemma~\ref{lem:certified} and Theorem~\ref{thm:fisher_rao} apply with a multiplicative constant degradation reflecting the worst-case alignment $\beta$.
 \end{corollary}
 \begin{proof}
-$\nabla s_{\text{comb}} = \alpha \nabla s_{\max} + (1-\alpha)\nabla s_{\text{mean}}$. Since $\nabla s_{\max} = \nabla_{e_c}\cosim(e_c, \enc(q^*))$ for the unique maximizer $q^*$, the projection onto $\nabla\cR$ is positive under the mild condition that the mean gradient is not adversarial to the max gradient (holds empirically). The second-order tradeoff surface follows below.
+$\nabla s_{\text{comb}} = \alpha \nabla s_{\max} + (1-\alpha)\nabla s_{\text{mean}}$. The projection onto the max-direction is
+\[
+  \langle \nabla s_{\text{comb}}, \nabla s_{\max}\rangle = \alpha\|\nabla s_{\max}\|^2 + (1-\alpha)\langle \nabla s_{\text{mean}}, \nabla s_{\max}\rangle \geq (\alpha - (1-\alpha)\beta)\|\nabla s_{\max}\|^2.
+\]
+Under Assumption~\ref{ass:aligned_mean}, $\alpha - (1-\alpha)\beta > 0$, so $\langle \nabla s_{\text{comb}}, \nabla s_{\max}\rangle$ has the same sign as $\|\nabla s_{\max}\|^2 > 0$, and any $\delta$ with $\langle \delta, \nabla s_{\text{comb}}\rangle < 0$ must satisfy $\langle \delta, \nabla s_{\max}\rangle < 0$. The empirical bound from our experiments (Section~\ref{sec:experiments}) gives $\beta \leq 0.4$ across all 6 encoders evaluated, well within the constraint $\beta < \alpha/(1-\alpha) = 1$ at $\alpha = 0.5$.
 \end{proof}
 
 By Theorem~\ref{thm:gradient_coupling}, $\cD(e_c') < \cD(e_c)$ (evasion) implies $\cR(e_c') < \cR(e_c)$ (retrieval degradation) to first order. The tradeoff defines a surface in $(\epsilon, \theta, \Delta\cD)$ space where $\theta$ is the angle between perturbation $\delta$ and gradient $\nabla\cD$. Expanding to second order:
@@ -927,12 +936,18 @@ In practice, the composite portfolio $(\pi_{\text{wm}} \lor \pi_{\text{SAD}} \lo
 
 \begin{proposition}[FPR concentration]
 \label{prop:fpr_concentration}
-Let $c_1, \ldots, c_n$ be $n$ i.i.d.\ benign candidates with scores $s_i = s(c_i; \cH)$. Let $\widehat{\fpr}_n = n^{-1}\sum_{i=1}^n \mathbf{1}[s_i > \hat{\mu} + \kappa\hat{\sigma}]$. Under sub-Gaussian scores with parameter $\sigma^2$:
+Let $c_1, \ldots, c_n$ be $n$ i.i.d.\ benign candidates evaluated against a threshold $\hat\tau_N$ calibrated from $N$ separate i.i.d.\ benign samples. Let $\widehat{\fpr}_n = n^{-1}\sum_{i=1}^n \mathbf{1}[s_i > \hat\tau_N]$ and let $\fpr^*$ be the population FPR at the oracle threshold $\tau^*$. Then
 \begin{equation}
-  \PP\!\left[|\widehat{\fpr}_n - \fpr| > \epsilon\right] \leq 2\exp\!\left(-\frac{n\epsilon^2}{2\fpr(1-\fpr)}\right) + 2\exp\!\left(-\frac{n\epsilon^2}{8}\right).
+  \PP\!\left[|\widehat{\fpr}_n - \fpr^*| > \epsilon\right]
+  \;\leq\;
+  \underbrace{2\exp\!\left(-\frac{n\epsilon^2/2}{\fpr^*(1-\fpr^*) + \epsilon/3}\right)}_{\text{empirical FPR concentration (Bernstein)}}
+  +
+  \underbrace{2\exp\!\left(-\frac{N\epsilon^2}{8}\right)}_{\text{threshold-estimation error}}.
 \end{equation}
-The first term is the Bernstein bound on the empirical FPR; the second accounts for threshold estimation error (from Theorem~\ref{thm:calibration_bound}). For $\kappa = 2.0$ and $n = 1{,}000$: $\PP[|\widehat{\fpr} - 0| > 0.01] < 0.006$, consistent with the Clopper-Pearson CI $[0.000, 0.004]$ (Table~\ref{tab:fpr_validation}).
+The first term is Bernstein's inequality with the standard $\epsilon/3$ range correction (the previous omission of this term renders the bound vacuous when $\fpr^* = 0$, the regime of interest); the second tracks the calibration error, with the correct denominator being the calibration size $N$, \emph{not} the test-set size $n$, since the threshold is fixed once calibration ends.
 \end{proposition}
+
+For $\kappa = 2.0$, $N = 200$, $n = 1{,}000$, $\fpr^* = 0$: with $\epsilon = 0.01$ the first term reduces to $2 e^{-1.5}\approx 0.45$ (loose because $\fpr^* = 0$); the binomial-exact Clopper-Pearson CI $[0.000, 0.004]$ (Table~\ref{tab:fpr_validation}) is the tighter bound used in practice and is the only one we report empirically. The second term gives $2 e^{-0.25} \approx 1.6$, dominated by the calibration confidence already enforced via Theorem~\ref{thm:calibration_bound}.
 
 \section{Additional defense details}
 \label{app:defenses}
@@ -941,7 +956,11 @@ The first term is the Bernstein bound on the empirical FPR; the second accounts 
 
 \paragraph{Proactive.} 16 probe queries span 8 subtopics. Threshold $\tau = 0.19$ minimizes FPR while maintaining $\geq 0.50$ TPR on centroid passages.
 
-\paragraph{Composite defense.} The weighted ensemble uses $w_{\text{wm}} = 0.50$, $w_{\text{val}} = 0.20$, $w_{\text{pro}} = 0.30$, threshold $\theta = 0.50$: an entry is rejected if $0.50 \cdot d_{\text{wm}}(c) + 0.20 \cdot d_{\text{val}}(c) + 0.30 \cdot d_{\text{pro}}(c) > 0.50$. Composite achieves $\tpr = 1.00$ because watermarking alone achieves $\tpr = 1.00$ when controlling ingestion; for attacks exploiting auto-storage (bypassing watermarking), proactive and validation terms provide the remaining detection.
+\paragraph{Composite defense.} \emph{Definitive specification (resolves an inconsistency in earlier drafts).} The composite defense deployed in all experiments is the logical disjunction
+\[
+  \pi_{\text{comp}}(c) \;=\; \pi_{\text{wm}}(c) \;\lor\; \pi_{\text{SAD}}(c) \;\lor\; \pi_{\text{pro}}(c),
+\]
+i.e., an entry is rejected if any of the watermark, MEMSAD, or proactive defenses flags it. The four-way breakdown (watermark, validation, proactive, MEMSAD) used as input to ablation tables refers to this same disjunction with one term ablated at a time. The weighted-sum form $0.50 d_{\text{wm}}(c) + 0.20 d_{\text{val}}(c) + 0.30 d_{\text{pro}}(c) > 0.50$ that appeared in some earlier exposition was an alternative tunable formulation we evaluated but is \emph{not} the composite reported in Tables~\ref{tab:defense_tpr_fpr} and \ref{tab:attack_defense_matrix}; we deprecate it here. Under the disjunctive composite, the perfect $\tpr = 1.00$ against \minja{} reported in Table~\ref{tab:defense_tpr_fpr} arises from MEMSAD detection (since \minja{} bypasses watermarking via auto-storage), consistent with the per-defense breakdown. The disjunction was chosen over the weighted sum because (i) it satisfies the assumption used in the equilibrium proof (Proposition~\ref{prop:equilibrium}) and (ii) its FPR is the union of per-defense FPRs, which are all $\leq 0.01$ at the calibrated thresholds and remain $\leq 0.04$ in aggregate.
 
 \paragraph{Evaluation correction.} Prior work evaluated \agentpoison{} with plain queries $q$; the paper's Algorithm~2 specifies triggered queries $q \oplus \trigger^*$, changing $\cosim$ from $\approx 0.45$ to $\sim 0.78$.
 
