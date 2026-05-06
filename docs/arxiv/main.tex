@@ -1109,12 +1109,12 @@ For $N$ agents sharing $\cM_{\text{shared}}$, the discrete-step SIR model~\citep
 For the classical SIR model with no re-introduction, the active-infection fraction $I(t)/N$ asymptotically decays to zero, $\lim_{t\to\infty} I(t)/N = 0$, since infected agents recover (or are quarantined) and acquire immunity. The relevant epidemic statistic is therefore the \emph{final-size proportion} (fraction of agents ever infected before recovery), which solves the implicit equation $1 - R_\infty/N = e^{-(\beta/\gamma) R_\infty/N}$ for $\beta > \gamma$. With \memsad{} quarantine ($\tpr = 1.00$ for \minja{}), $\gamma_{\text{eff}} = \gamma + \tpr \cdot \beta$; the basic reproduction number $\cR_0 = \beta/\gamma_{\text{eff}}$ drops below 1, eliminating secondary infection. \emph{Erratum:} the formula $I_\infty/N = 1 - \gamma/\beta$ that appeared in earlier exposition is the SIS endemic equilibrium, not the SIR final size; the SIR-correct expression above is what governs the simulations reported in Table~\ref{tab:sir_results}.
 
 \subsection*{Empirical simulation}
-We instantiate the SIR model with $N=20$ agents, $p_{\text{re-store}}=0.30$, $T=30$ steps, 5 initial \minja{}-style poison entries, and a 200-entry synthetic corpus (all-MiniLM-L6-v2 FAISS retrieval).  Each condition is run under 5 independent seeds controlling agent query-sampling trajectories (corpus held fixed); both no-defense and defended conditions use the same per-trial seed for a fair comparison.  Three conditions are evaluated: (i)~no defense; (ii)~\memsad{} with triggered calibration ($\sigma=2.0$, combined scoring); (iii)~composite defense approximated by $\sigma=1.0$.
+We instantiate the SIR model with $N=20$ agents, $p_{\text{re-store}}=0.30$, $T=30$ steps, 5 initial \minja{}-style poison entries, and a 200-entry synthetic corpus (all-MiniLM-L6-v2 FAISS retrieval).  Each condition is run under 5 independent seeds controlling agent query-sampling trajectories (corpus held fixed); both no-defense and defended conditions use the same per-trial seed for a fair comparison.  Three conditions are evaluated: (i)~no defense; (ii)~\memsad{} with triggered calibration ($\kappa=2.0$, combined scoring); (iii)~composite defense approximated by $\kappa=1.0$.
 
 \begin{figure}[ht]
   \centering
   \includegraphics[width=0.92\linewidth]{fig_sir_propagation.pdf}
-  \caption{Multi-agent SIR propagation (mean $\pm1\sigma$ over 5 seeds). \textbf{Top}: fraction of agents exposed over 30 steps. \textbf{Bottom}: secondary poison entry growth. Composite ($\sigma=1.0$) prevents spread entirely; \memsad{} ($\sigma=2.0$) matches no-defense spread timing but reduces secondary entries by 22\%, as 4 of 5 initial entries pass the looser threshold and the composite is required to stop initial spread.}
+  \caption{Multi-agent SIR propagation (mean $\pm 1\sigma$ over 5 seeds; here $\sigma$ refers to the seed-distribution standard deviation, not the calibration std). \textbf{Top}: fraction of agents exposed over 30 steps. \textbf{Bottom}: secondary poison entry growth. Composite ($\kappa=1.0$) prevents spread entirely; \memsad{} ($\kappa=2.0$) matches no-defense spread timing but reduces secondary entries by 22\%, as 4 of 5 initial entries pass the looser threshold and the composite is required to stop initial spread.}
   \label{fig:sir_propagation}
 \end{figure}
 
@@ -1129,13 +1129,13 @@ We instantiate the SIR model with $N=20$ agents, $p_{\text{re-store}}=0.30$, $T=
     Defense & Final Spread & Step to 50\% & Step to 90\% & Secondary Entries & Quarantined \\
     \midrule
     No Defense                  & 1.00 & 5    & 14   & 23 & --- \\
-    \memsad{} ($\sigma=2.0$)    & 1.00 & 5    & 14   & 18 & 5   \\
-    Composite ($\sigma=1.0$)    & 0.00 & $>$30 & $>$30 & 0  & 2  \\
+    \memsad{} ($\kappa=2.0$)    & 1.00 & 5    & 14   & 18 & 5   \\
+    Composite ($\kappa=1.0$)    & 0.00 & $>$30 & $>$30 & 0  & 2  \\
     \bottomrule
   \end{tabular}
 \end{table}
 
-\noindent Figure~\ref{fig:sir_propagation} and Table~\ref{tab:sir_propagation} summarize the results. The tighter composite threshold ($\sigma=1.0$) quarantines 2 of 5 initial entries and all secondary entries, holding spread to zero. \memsad{} at $\sigma=2.0$ quarantines $\approx$5 entries per trial (averaged over 5 seeds) but the 4 initial entries that pass the looser threshold seed infection at the same rate as the no-defense baseline ($t_{90\%} = 14$ steps in both conditions); \memsad{}'s measurable effect is a 22\% reduction in secondary entries (18 vs.\ 23), preventing secondary amplification while the composite is required to stop initial spread entirely.
+\noindent Figure~\ref{fig:sir_propagation} and Table~\ref{tab:sir_propagation} summarize the results. The tighter composite threshold ($\kappa=1.0$) quarantines 2 of 5 initial entries and all secondary entries, holding spread to zero. \memsad{} at $\kappa=2.0$ quarantines $\approx$5 entries per trial (averaged over 5 seeds) but the 4 initial entries that pass the looser threshold seed infection at the same rate as the no-defense baseline ($t_{90\%} = 14$ steps in both conditions); \memsad{}'s measurable effect is a 22\% reduction in secondary entries (18 vs.\ 23), preventing secondary amplification while the composite is required to stop initial spread entirely.
 
 \section{Statistical hypothesis tests}
 \label{app:hypothesis}
