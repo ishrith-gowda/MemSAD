@@ -66,14 +66,15 @@ _PAL = {
 
 
 def _configure_style() -> None:
-    """configure matplotlib rcparams for neurips-quality rendering.
+    """configure matplotlib rcparams to match the appendix figure aesthetic
+    used in generate_sad_figures.py and generate_phase22_figures.py so all
+    paper figures share consistent type sizes when rendered.
 
-    canvas widths are matched to the latex render target (~6 inches at
-    0.92\\linewidth in a neurips column) so the latex \\includegraphics
-    scale factor is approximately 1.0; this keeps rendered font sizes equal
-    to the matplotlib font sizes specified here, avoiding the readability
-    loss that occurs when figures are authored on an 8--9" canvas and
-    shrunk to fit.
+    matched values: font.size=12, axes.labelsize=12, legend.fontsize=10,
+    tick labels 10, serif family. canvases are sized so that at the
+    paper's 0.92\\linewidth render target, the latex include scale factor
+    sits near 0.73 — this lands rendered type at ~8.7pt, the same size
+    other figures in this paper print at.
     """
     import seaborn as sns
 
@@ -84,16 +85,16 @@ def _configure_style() -> None:
             "text.latex.preamble": r"\usepackage{amsmath}\usepackage{amssymb}",
             "font.family": "serif",
             "font.serif": ["Computer Modern Roman"],
-            "axes.labelsize": 11,
-            "axes.titlesize": 12,
-            "font.size": 11,
-            "legend.fontsize": 9,
+            "axes.labelsize": 12,
+            "axes.titlesize": 14,
+            "font.size": 12,
+            "legend.fontsize": 10,
             "legend.frameon": True,
             "legend.framealpha": 0.95,
             "legend.edgecolor": "#c9c6bd",
-            "xtick.labelsize": 9,
-            "ytick.labelsize": 9,
-            "figure.titlesize": 12,
+            "xtick.labelsize": 10,
+            "ytick.labelsize": 10,
+            "figure.titlesize": 14,
             "figure.dpi": 300,
             "axes.grid": True,
             "grid.alpha": 0.28,
@@ -209,7 +210,7 @@ def generate_fig_b_gradient_coupling() -> Path:
     # ------------------------------------------------------------------
     # build figure (taller to accommodate legend outside data region)
     # ------------------------------------------------------------------
-    fig, ax = plt.subplots(figsize=(6.0, 2.6))
+    fig, ax = plt.subplots(figsize=(9.5, 7.2))
 
     # score contour background (pale-to-warm cmap)
     warm = LinearSegmentedColormap.from_list(
@@ -333,10 +334,10 @@ def generate_fig_b_gradient_coupling() -> Path:
     ax.annotate(
         r"attacker's gradient $\nabla_{p}\mathcal{L}_{\mathrm{ret}}$",
         xy=mid,
-        xytext=(mid[0] - 1.2, mid[1] - 1.6),
-        fontsize=10,
+        xytext=(mid[0] - 1.6, mid[1] - 1.5),
+        fontsize=11,
         color=_PAL["poison"],
-        arrowprops=dict(arrowstyle="-", color=_PAL["poison"], lw=0.6),
+        arrowprops=dict(arrowstyle="-", color=_PAL["poison"], lw=0.7),
     )
 
     # firing-boundary label — placed in the upper-left empty quadrant,
@@ -344,10 +345,10 @@ def generate_fig_b_gradient_coupling() -> Path:
     ax.annotate(
         r"$\mu + k\sigma$ firing boundary",
         xy=(q_center[0] + 1.05, q_center[1] + 1.15),
-        xytext=(-3.9, 2.45),
-        fontsize=10,
+        xytext=(-4.0, 2.55),
+        fontsize=11,
         color=_PAL["threshold"],
-        arrowprops=dict(arrowstyle="-", color=_PAL["threshold"], lw=0.6),
+        arrowprops=dict(arrowstyle="-", color=_PAL["threshold"], lw=0.7),
     )
 
     # cosmetics
@@ -365,16 +366,17 @@ def generate_fig_b_gradient_coupling() -> Path:
         pad=8,
     )
     ax.legend(
-        loc="upper center",
-        bbox_to_anchor=(0.5, -0.14),
+        loc="lower right",
         ncol=2,
-        fontsize=9,
-        borderpad=0.45,
-        handlelength=1.4,
-        handletextpad=0.35,
+        fontsize=10,
+        borderpad=0.5,
+        handlelength=1.6,
+        handletextpad=0.45,
         columnspacing=1.6,
-        labelspacing=0.4,
+        labelspacing=0.45,
         frameon=True,
+        framealpha=0.95,
+        edgecolor="#c9c6bd",
     )
 
     fig.tight_layout()
@@ -431,7 +433,7 @@ def generate_fig_c_coupling_trajectory() -> Path:
     # figure — taller canvas so legend can sit below the axes without
     # overlapping either curve.
     # ------------------------------------------------------------------
-    fig, ax_loss = plt.subplots(figsize=(6.0, 2.2))
+    fig, ax_loss = plt.subplots(figsize=(8.0, 3.0))
 
     # left axis — retrieval loss (attacker wants this low)
     ax_loss.plot(
@@ -488,7 +490,7 @@ def generate_fig_c_coupling_trajectory() -> Path:
         n_steps - 0.4,
         tau + 0.25 * sigma,
         r"$\mu + k\sigma$",
-        fontsize=10,
+        fontsize=11,
         color=_PAL["threshold"],
         va="bottom",
         ha="right",
@@ -509,13 +511,13 @@ def generate_fig_c_coupling_trajectory() -> Path:
         ax_score.annotate(
             rf"detection at $t = {cross_idx}$",
             xy=(cross_idx, score[cross_idx]),
-            xytext=(cross_idx - 6.0, mu + 0.6 * sigma),
-            fontsize=10,
+            xytext=(cross_idx - 4.5, mu + 2.4 * sigma),
+            fontsize=11,
             color="#5a1f1f",
             arrowprops=dict(
                 arrowstyle="->",
                 color="#5a1f1f",
-                lw=0.65,
+                lw=0.7,
                 shrinkA=1.5,
                 shrinkB=3.0,
             ),
@@ -538,14 +540,16 @@ def generate_fig_c_coupling_trajectory() -> Path:
     ax_loss.legend(
         lines_1 + lines_2,
         labels_1 + labels_2,
-        loc="upper center",
-        bbox_to_anchor=(0.5, -0.30),
-        ncol=2,
-        fontsize=9,
+        loc="lower right",
+        bbox_to_anchor=(0.98, 0.05),
+        ncol=1,
+        fontsize=10,
         frameon=True,
-        borderpad=0.45,
-        handlelength=1.6,
-        columnspacing=1.4,
+        framealpha=0.95,
+        edgecolor="#c9c6bd",
+        borderpad=0.5,
+        handlelength=1.8,
+        columnspacing=1.6,
     )
 
     fig.tight_layout()

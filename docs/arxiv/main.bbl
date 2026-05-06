@@ -1,0 +1,322 @@
+\begin{thebibliography}{44}
+\providecommand{\natexlab}[1]{#1}
+\providecommand{\url}[1]{\texttt{#1}}
+\expandafter\ifx\csname urlstyle\endcsname\relax
+  \providecommand{\doi}[1]{doi: #1}\else
+  \providecommand{\doi}{doi: \begingroup \urlstyle{rm}\Url}\fi
+
+\bibitem[{A-MEM Team}(2025)]{amem}
+{A-MEM Team}.
+\newblock {A-MEM}: Agentic memory for {LLM} agents, 2025.
+\newblock URL \url{https://github.com/agiresearch/A-MEM}.
+
+\bibitem[Amari(2016)]{amari2016information}
+Shun-ichi Amari.
+\newblock \emph{Information Geometry and Its Applications}, volume 194 of
+  \emph{Applied Mathematical Sciences}.
+\newblock Springer, 2016.
+
+\bibitem[Andriushchenko et~al.(2025)Andriushchenko, Croce, and
+  Flammarion]{andriushchenko2025agentharm}
+Maksym Andriushchenko, Francesco Croce, and Nicolas Flammarion.
+\newblock {AgentHarm}: A benchmark for measuring harmfulness of {LLM} agents.
+\newblock In \emph{International Conference on Learning Representations
+  (ICLR)}, 2025.
+\newblock URL \url{https://arxiv.org/abs/2410.09024}.
+
+\bibitem[Anonymous(2025{\natexlab{a}})]{corruptrag2025}
+Anonymous.
+\newblock {CorruptRAG}: Practical corpus poisoning against retrieval-augmented
+  generation.
+\newblock \emph{arXiv preprint arXiv:2504.03957}, 2025{\natexlab{a}}.
+
+\bibitem[Anonymous(2025{\natexlab{b}})]{memorygraft2025}
+Anonymous.
+\newblock {MemoryGraft}: Persistent compromise of {LLM} agents via poisoned
+  experience retrieval.
+\newblock \emph{arXiv preprint arXiv:2512.16962}, 2025{\natexlab{b}}.
+\newblock URL \url{https://arxiv.org/abs/2512.16962}.
+
+\bibitem[Anonymous(2025{\natexlab{c}})]{ragdefender2025}
+Anonymous.
+\newblock {RAGDefender}: Post-retrieval defense against corpus poisoning
+  attacks on {RAG}.
+\newblock In \emph{Annual Computer Security Applications Conference (ACSAC)},
+  2025{\natexlab{c}}.
+\newblock URL \url{https://arxiv.org/abs/2511.01268}.
+
+\bibitem[Anonymous(2025{\natexlab{d}})]{reliabilityrag2025}
+Anonymous.
+\newblock {ReliabilityRAG}: Provably robust retrieval-augmented generation via
+  maximum independent set.
+\newblock In \emph{Advances in Neural Information Processing Systems
+  (NeurIPS)}, 2025{\natexlab{d}}.
+\newblock Poster.
+
+\bibitem[Anonymous(2025{\natexlab{e}})]{seconrag2025}
+Anonymous.
+\newblock {SeCon-RAG}: Semantic and conflict-aware retrieval-augmented
+  generation.
+\newblock In \emph{Advances in Neural Information Processing Systems
+  (NeurIPS)}, 2025{\natexlab{e}}.
+\newblock Poster.
+
+\bibitem[Anonymous(2026)]{injecmem2026}
+Anonymous.
+\newblock {InjecMEM}: Targeted memory injection with single interaction.
+\newblock In \emph{International Conference on Learning Representations
+  (ICLR)}, 2026.
+\newblock Submission \texttt{openreview:QVX6hcJ2um}.
+
+\bibitem[Carlini and Wagner(2017)]{carlini2017evaluating}
+Nicholas Carlini and David Wagner.
+\newblock Towards evaluating the robustness of neural networks.
+\newblock In \emph{IEEE Symposium on Security and Privacy (S\&P)}, 2017.
+
+\bibitem[Chaudhari et~al.(2024)Chaudhari, Severi, Abascal, Oprea, Vempala, and
+  Melis]{chaudhari2024phantom}
+Harsh Chaudhari, Giorgio Severi, John Abascal, Alina Oprea, Santosh Vempala,
+  and Luca Melis.
+\newblock Phantom: General trigger attacks on retrieval augmented language
+  generation.
+\newblock In \emph{Proceedings of the 2024 Conference on Empirical Methods in
+  Natural Language Processing}, 2024.
+\newblock URL \url{https://arxiv.org/abs/2405.20485}.
+
+\bibitem[Chen et~al.(2024)Chen, Tan, Zhao, Cheng, Jiang, Zhang,
+  et~al.]{chen2024agentpoison}
+Zhaorun Chen, Zhen Tan, Hexiang Zhao, Zhengyang Cheng, Chenhui Jiang, Huan
+  Zhang, et~al.
+\newblock {AgentPoison}: Red-teaming {LLM} agents via poisoning memory or
+  knowledge bases.
+\newblock In \emph{Advances in Neural Information Processing Systems
+  (NeurIPS)}, 2024.
+\newblock URL \url{https://arxiv.org/abs/2407.12784}.
+
+\bibitem[Cheng et~al.(2024)Cheng, Ding, Ju, et~al.]{trojanrag2024}
+Pengzhou Cheng, Yidong Ding, Tianjie Ju, et~al.
+\newblock {TrojanRAG}: Retrieval-augmented generation can be backdoor driver in
+  large language models.
+\newblock \emph{arXiv preprint arXiv:2405.13401}, 2024.
+
+\bibitem[Cohen et~al.(2019)Cohen, Rosenfeld, and Kolter]{cohen2019certified}
+Jeremy~M. Cohen, Elan Rosenfeld, and J.~Zico Kolter.
+\newblock Certified adversarial robustness via randomized smoothing.
+\newblock In \emph{International Conference on Machine Learning (ICML)}, 2019.
+
+\bibitem[Dong et~al.(2025)]{dong2025minja}
+Sicheng Dong et~al.
+\newblock {MINJA}: Memory injection attacks on {LLM} agents via query-only
+  interaction.
+\newblock In \emph{Advances in Neural Information Processing Systems
+  (NeurIPS)}, 2025.
+\newblock URL \url{https://arxiv.org/abs/2503.03704}.
+
+\bibitem[Ebrahimi et~al.(2018)Ebrahimi, Rao, Lowd, and
+  Dou]{ebrahimi2018hotflip}
+Javid Ebrahimi, Anyi Rao, Daniel Lowd, and Dejing Dou.
+\newblock {HotFlip}: White-box adversarial examples for text classification.
+\newblock In \emph{Proceedings of the 56th Annual Meeting of the Association
+  for Computational Linguistics (ACL)}, 2018.
+\newblock URL \url{https://arxiv.org/abs/1712.06751}.
+
+\bibitem[Gu et~al.(2024)Gu, Zheng, Pang, Du, Liu, Wang, Jiang, and
+  Lin]{gu2024agentsmith}
+Xiangming Gu, Xiaosen Zheng, Tianyu Pang, Chao Du, Qian Liu, Ye~Wang, Jing
+  Jiang, and Min Lin.
+\newblock {AGENT-SMITH}: A single image can jailbreak one million multimodal
+  {LLM} agents instantly.
+\newblock In \emph{Proceedings of the 41st International Conference on Machine
+  Learning (ICML)}, 2024.
+\newblock URL \url{https://arxiv.org/abs/2402.08567}.
+
+\bibitem[Hayase et~al.(2021)Hayase, Kong, Somani, and Oh]{hayase2021spectre}
+Jonathan Hayase, Weihao Kong, Raghav Somani, and Sewoong Oh.
+\newblock {SPECTRE}: Defending against backdoor attacks using robust
+  statistics.
+\newblock In \emph{International Conference on Machine Learning (ICML)}, 2021.
+\newblock URL \url{https://arxiv.org/abs/2104.11315}.
+
+\bibitem[Karpukhin et~al.(2020)Karpukhin, Oguz, Min, Lewis, Wu, Edunov, Chen,
+  and Yih]{karpukhin2020dense}
+Vladimir Karpukhin, Barlas Oguz, Sewon Min, Patrick Lewis, Ledell Wu, Sergey
+  Edunov, Danqi Chen, and Wen-tau Yih.
+\newblock Dense passage retrieval for open-domain question answering.
+\newblock In \emph{Proceedings of EMNLP}, 2020.
+
+\bibitem[Kermack and McKendrick(1927)]{kermack1927sir}
+William~Ogilvy Kermack and Anderson~G. McKendrick.
+\newblock A contribution to the mathematical theory of epidemics.
+\newblock \emph{Proceedings of the Royal Society of London. Series A},
+  115\penalty0 (772):\penalty0 700--721, 1927.
+
+\bibitem[Kirchenbauer et~al.(2023)Kirchenbauer, Geiping, Wen, Katz, Miers, and
+  Goldstein]{kirchenbauer2023watermark}
+John Kirchenbauer, Jonas Geiping, Yuxin Wen, Jonathan Katz, Ian Miers, and Tom
+  Goldstein.
+\newblock A watermark for large language models.
+\newblock In \emph{International Conference on Machine Learning (ICML)}, 2023.
+
+\bibitem[Kwiatkowski et~al.(2019)Kwiatkowski, Palomaki, Redfield, Collins,
+  Parikh, Alberti, Epstein, Polosukhin, Devlin, and
+  Lee]{kwiatkowski2019natural}
+Tom Kwiatkowski, Jennimaria Palomaki, Olivia Redfield, Michael Collins, Ankur
+  Parikh, Chris Alberti, Danielle Epstein, Illia Polosukhin, Jacob Devlin, and
+  Kenton Lee.
+\newblock Natural questions: A benchmark for question answering research.
+\newblock \emph{Transactions of the Association for Computational Linguistics},
+  7:\penalty0 453--466, 2019.
+
+\bibitem[Laurent and Massart(2000)]{laurentmassart2000}
+Beatrice Laurent and Pascal Massart.
+\newblock Adaptive estimation of a quadratic functional by model selection.
+\newblock \emph{Annals of Statistics}, 28\penalty0 (5):\penalty0 1302--1338,
+  2000.
+\newblock Lemma 1 provides chi-squared tail bounds used for sample standard
+  deviation concentration.
+
+\bibitem[Le~Cam(1973)]{lecam1973convergence}
+Lucien Le~Cam.
+\newblock Convergence of estimates under dimensionality restrictions.
+\newblock \emph{The Annals of Statistics}, 1\penalty0 (1):\penalty0 38--53,
+  1973.
+
+\bibitem[Lee et~al.(2018)Lee, Lee, Lee, and Shin]{lee2018simple}
+Kimin Lee, Kibok Lee, Honglak Lee, and Jinwoo Shin.
+\newblock A simple unified framework for detecting out-of-distribution samples
+  and deep generative models.
+\newblock In \emph{Advances in Neural Information Processing Systems
+  (NeurIPS)}, 2018.
+
+\bibitem[Lehmann(1959)]{lehmann1959testing}
+Erich~L. Lehmann.
+\newblock \emph{Testing Statistical Hypotheses}.
+\newblock Wiley, 1959.
+\newblock Chapter 3: Uniformly most powerful tests; Karlin--Rubin theorem for
+  monotone likelihood ratio families.
+
+\bibitem[Li et~al.(2025)]{amemguard2025}
+Lijun Li et~al.
+\newblock {A-MemGuard}: A proactive defense framework for {LLM}-based agent
+  memory.
+\newblock \emph{arXiv preprint arXiv:2510.02373}, 2025.
+\newblock URL \url{https://arxiv.org/abs/2510.02373}.
+
+\bibitem[Liu et~al.(2020)Liu, Wang, Owens, and Li]{liu2020energy}
+Weitang Liu, Xiaoyun Wang, John Owens, and Yixuan Li.
+\newblock Energy-based out-of-distribution detection.
+\newblock In \emph{Advances in Neural Information Processing Systems
+  (NeurIPS)}, 2020.
+
+\bibitem[{Mem0 Team}(2024)]{mem0}
+{Mem0 Team}.
+\newblock {Mem0}: The memory layer for personalized {AI}, 2024.
+\newblock URL \url{https://github.com/mem0ai/mem0}.
+
+\bibitem[Micciancio and Goldwasser(2002)]{micciancio2001hardness}
+Daniele Micciancio and Shafi Goldwasser.
+\newblock \emph{Complexity of Lattice Problems: A Cryptographic Perspective}.
+\newblock Kluwer Academic Publishers, 2002.
+\newblock Chapter 3 establishes NP-hardness of CVP; used for the
+  minimum-perturbation evasion hardness reduction.
+
+\bibitem[Packer et~al.(2023)Packer, Fang, Patil, Zhang, Wooders, and
+  Gonzalez]{memgpt2023}
+Charles Packer, Vivian Fang, Shishir~G. Patil, Kevin Zhang, Sarah Wooders, and
+  Joseph~E. Gonzalez.
+\newblock {MemGPT}: Towards {LLMs} as operating systems.
+\newblock In \emph{NeurIPS Workshop on Foundation Models for Decision Making},
+  2023.
+
+\bibitem[Robey et~al.(2023)Robey, Wong, Hassani, and
+  Pappas]{robey2023smoothllm}
+Alexander Robey, Eric Wong, Hamed Hassani, and George~J. Pappas.
+\newblock {SmoothLLM}: Defending large language models against jailbreaking
+  attacks.
+\newblock In \emph{Advances in Neural Information Processing Systems
+  (NeurIPS)}, 2023.
+
+\bibitem[Shafran et~al.(2025)Shafran, Peleg, and Schuster]{shafran2025blocker}
+Avital Shafran, Roei Peleg, and Tal Schuster.
+\newblock Machine against the {RAG}: Jamming retrieval-augmented generation
+  with blocker documents.
+\newblock In \emph{USENIX Security Symposium}, 2025.
+
+\bibitem[Tan et~al.(2025)Tan, Luan, Luo, Sun, Chen, and Dai]{tan2025revprag}
+Xue Tan, Hao Luan, Mingyu Luo, Xiaoyan Sun, Ping Chen, and Jun Dai.
+\newblock {RevPRAG}: Revealing poisoning attacks in retrieval-augmented
+  generation through {LLM} activation analysis.
+\newblock In \emph{Findings of the Association for Computational Linguistics:
+  EMNLP}, 2025.
+\newblock URL \url{https://arxiv.org/abs/2411.18948}.
+
+\bibitem[Tram\`{e}r et~al.(2020)Tram\`{e}r, Carlini, Brendel, Madry, Kurakin,
+  and Papernot]{tramer2020adaptive}
+Florian Tram\`{e}r, Nicholas Carlini, Wieland Brendel, Aleksander Madry, Alexey
+  Kurakin, and Nicolas Papernot.
+\newblock On adaptive attacks to adversarial example defenses.
+\newblock In \emph{Advances in Neural Information Processing Systems
+  (NeurIPS)}, 2020.
+
+\bibitem[Villani(2009)]{villani2009optimal}
+C{\'e}dric Villani.
+\newblock \emph{Optimal Transport: Old and New}.
+\newblock Springer, Berlin, 2009.
+\newblock Sorting-based estimation of $W_1$ in one dimension;
+  Kantorovich-Rubinstein duality.
+
+\bibitem[Wainwright(2019)]{wainwright2019highdim}
+Martin~J. Wainwright.
+\newblock \emph{High-Dimensional Statistics: A Non-Asymptotic Viewpoint}.
+\newblock Cambridge University Press, 2019.
+
+\bibitem[Wu et~al.(2024)Wu, Pi, Zheng, et~al.]{wu2024badagent}
+Yifeng Wu, Ruqing Pi, Yue Zheng, et~al.
+\newblock {BadAgent}: Inserting and activating backdoor attacks in {LLM}
+  agents.
+\newblock In \emph{Proceedings of the 62nd Annual Meeting of the Association
+  for Computational Linguistics (ACL)}, 2024.
+\newblock URL \url{https://arxiv.org/abs/2406.03007}.
+
+\bibitem[Xiang et~al.(2024)Xiang, Tong, Sun, and Li]{xiang2024robustrag}
+Chejian Xiang, Mintong Tong, Jie Sun, and Bo~Li.
+\newblock Certifiably robust {RAG} against retrieval corruption.
+\newblock In \emph{International Conference on Machine Learning (ICML)}, 2024.
+\newblock URL \url{https://arxiv.org/abs/2405.15556}.
+
+\bibitem[Xu et~al.(2026)]{xu2026memflow}
+Zhenyang Xu et~al.
+\newblock From storage to steering: Memory control flow attacks on {LLM}
+  agents.
+\newblock \emph{arXiv preprint arXiv:2603.15125}, 2026.
+
+\bibitem[Xue et~al.(2024)Xue, Zheng, Hua, Shen, Liu, Zhao, and
+  Lou]{xue2024badrag}
+Jiaqi Xue, Mengxin Zheng, Ting Hua, Yilong Shen, Yepeng Liu, Ladislau Zhao, and
+  Qian Lou.
+\newblock {BadRAG}: Identifying vulnerabilities in retrieval augmented
+  generation of large language models.
+\newblock \emph{arXiv preprint arXiv:2406.00083}, 2024.
+
+\bibitem[Zhang et~al.(2025)Zhang, Zheng, et~al.]{zhang2025asb}
+Hanrong Zhang, Jingyuan Zheng, et~al.
+\newblock Agent security bench ({ASB}): Formalizing and benchmarking attacks
+  and defenses in {LLM}-based agents.
+\newblock In \emph{International Conference on Learning Representations
+  (ICLR)}, 2025.
+\newblock URL \url{https://arxiv.org/abs/2410.02644}.
+
+\bibitem[Zhao et~al.(2024)Zhao, Ananth, Li, and Wang]{zhao2024watermark}
+Xuandong Zhao, Prabhanjan Ananth, Lei Li, and Yu-Xiang Wang.
+\newblock Provable robust watermarking for {AI}-generated text.
+\newblock In \emph{International Conference on Learning Representations
+  (ICLR)}, 2024.
+\newblock URL \url{https://arxiv.org/abs/2306.17439}.
+
+\bibitem[Zou et~al.(2024)Zou, Geng, Wang, and Jia]{zou2024poisonedrag}
+Wei Zou, Runpeng Geng, Binghui Wang, and Jinyuan Jia.
+\newblock {PoisonedRAG}: Knowledge corruption attacks to retrieval-augmented
+  generation of large language models.
+\newblock In \emph{USENIX Security Symposium}, 2024.
+
+\end{thebibliography}
