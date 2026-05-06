@@ -708,34 +708,18 @@ where the last equality uses $g = \text{id}$ (since $\cD$ is the cosine similari
 \subsection{Proof of Proposition~\ref{prop:hardness} (detailed)}
 \label{app:proof_hardness}
 
-\begin{proposition}[Hardness of optimal evasion]
+\begin{proposition}[Hardness of optimal discrete-token evasion]
 \label{prop:hardness}
-The minimum-perturbation evasion problem is NP-hard for piecewise-linear encoders, via reduction from CVP~\citep{micciancio2001hardness}. This motivates the adversary's shift to discrete synonym substitution.
+The \emph{discrete-token} minimum-edit evasion problem is NP-hard for piecewise-linear encoders, via reduction from CVP~\citep{micciancio2001hardness}. The continuous-embedding relaxation is, by contrast, solvable in polynomial time within any fixed activation region; the hardness arises specifically from the integrality (token-index) constraints in the input vocabulary.
 \end{proposition}
 
-\paragraph{Reduction from CVP.} Given a CVP instance $(\Lambda, t)$ where $\Lambda \subseteq \RR^n$ is a lattice with basis $B \in \RR^{n \times n}$ and $t \in \RR^n$ is the target vector, we construct a memory poisoning evasion instance as follows.
+\paragraph{Why the discrete formulation is the relevant hard problem.} The continuous problem of finding the minimum-norm embedding-space perturbation $\delta \in \RR^d$ subject to a cosine-similarity constraint on $e_c + \delta$ is a continuous convex optimization within any fixed ReLU activation region: the constraint set is a convex polytope, and within each polytope the objective is quadratic. A polynomial-time algorithm enumerates regions or solves a single SOCP under a fixed activation pattern. We do \emph{not} claim hardness for this relaxation. The deployed adversary, however, must produce a token sequence $c \in \cV^*$ whose embedding satisfies the constraint, and the embedding is tied to the token sequence via the integer indices selected from the vocabulary $\cV$. We formalize this discrete-token problem and show its NP-hardness below.
 
-\paragraph{Encoder construction (explicit).}
-Let $n$ be the CVP lattice dimension. Define $\enc: \RR^n \to \RR^n$ as a single-hidden-layer ReLU network:
-\begin{equation}
-  \enc(x) = \mathrm{ReLU}(W_1 x), \quad W_1 = B^\top \in \RR^{n \times n},
-\end{equation}
-where $B$ is the lattice basis matrix. Set the query embedding $\enc(q^*) = t/\|t\|$ (normalized target). Set biases to zero, so the encoder is $\enc(x) = \mathrm{ReLU}(B^\top x)$.
+\paragraph{Discrete-token evasion problem.} Fix a piecewise-linear encoder $\enc : \cV^* \to \RR^d$ (e.g., one-hot lookup followed by a ReLU network), a victim query embedding $\enc(q^*)$, a retrieval threshold $\tau_{\text{ret}}$, and a detection threshold $\tau_{\text{det}} = \hat\mu + \kappa\hat\sigma$. Given an initial passage $c_0 \in \cV^*$ and an edit budget $r \in \NN$, decide whether there exists $c \in \cV^*$ with token-edit distance $d_T(c_0, c) \leq r$ such that $\cosim(\enc(c), \enc(q^*)) \in [\tau_{\text{ret}}, \tau_{\text{det}}]$.
 
-\paragraph{Feasible set.} The evasion constraint $\cD(e_c + \delta) \leq \hat{\mu} + \kappa\hat{\sigma}$ with $\cR(e_c + \delta) \geq \tau_{\text{ret}}$ defines:
-\begin{equation}
-  \cF = \{x \in \RR^n : \cosim(\enc(x), t/\|t\|) \in [\tau_{\text{ret}},\, \hat{\mu} + \kappa\hat{\sigma}]\}.
-\end{equation}
-Within each ReLU activation region $\mathcal{I} \subseteq \{0,1\}^n$ (indexing which neurons are active), the encoder acts as the affine map $\enc_{\mathcal{I}}(x) = D_{\mathcal{I}} B^\top x$ where $D_{\mathcal{I}}$ is the diagonal activation mask. Hence $\cF \cap \text{region}_\mathcal{I}$ is a convex polytope defined by two half-space constraints in $x$-space.
+\paragraph{Reduction from CVP.} Given a CVP instance $(\Lambda, t)$ where $\Lambda = B\mathbb{Z}^n$ is a lattice with basis $B \in \RR^{n \times n}$ and target $t \in \RR^n$, construct an instance of the discrete-token evasion problem as follows. Let $\cV = \{v_1, \ldots, v_n\}$ have $|\cV| = n$, and let the input embedding lookup map $v_i \mapsto b_i$ where $b_i$ is the $i$-th column of $B$. Take the encoder $\enc(c) = \mathrm{ReLU}(\sum_{i:v_i \in c} b_i)$, which under the all-active region computes $\enc(c) = \sum_{i \in I(c)} b_i = B \mathbf{1}_{I(c)}$ where $I(c)$ is the index set of tokens in $c$. The adversary's discrete choice of $c$ is therefore equivalent to selecting $\lambda \in \{0,1\}^n \subset \mathbb{Z}^n$, and the constraint $\cosim(B\lambda, t/\|t\|) \geq \tau_{\text{ret}}$ instantiates exactly the minimum-distance lattice problem in $\Lambda$ restricted to $0/1$ coefficients. The integrality constraint $\lambda \in \mathbb{Z}^n$ is enforced by the discrete vocabulary, which is what continuous embedding-space optimization lacks. Hence the discrete-token evasion problem subsumes CVP and is NP-hard under randomized reductions~\citep{micciancio2001hardness}. \qed
 
-\paragraph{Formal reduction.}
-Given the CVP instance $(\Lambda = B\mathbb{Z}^n, t)$, let $x_0 = 0$ be the origin (current passage embedding). The minimum-perturbation evasion problem asks for:
-\[
-  \delta^* = \argmin_{\delta} \|\delta\| \quad \text{s.t.} \quad x_0 + \delta \in \cF.
-\]
-We claim $\|\delta^*\| = \|B^{-\top} v^* - 0\|$ where $v^*$ is the closest lattice vector to $t$ in $\Lambda$. Specifically: within the single activation region where all neurons are active ($D_\mathcal{I} = I$), $\enc(x) = B^\top x$, and $\cosim(B^\top x, t/\|t\|) = (B^\top x)^\top t / (\|B^\top x\| \cdot \|t\|)$. The feasibility constraint becomes a quadratic constraint in $x$. For the target similarity $\tau_{\text{ret}} = \cos\theta^*$ induced by the CVP distance, the minimum-norm $x$ satisfying the constraint corresponds exactly to finding the vector $x = B^{-\top} \lambda$ with $\lambda \in \mathbb{Z}^n$ closest to $t$ in the lattice metric --- which is exactly CVP. This reduction runs in polynomial time in $n$ (constructing $W_1 = B^\top$ and $\enc(q^*) = t/\|t\|$ takes $O(n^2)$ time). Since CVP is NP-hard under randomized reductions~\citep{micciancio2001hardness}, the minimum-perturbation evasion problem is NP-hard. \qed
-
-\paragraph{Practical implication.} This hardness result is \emph{worst-case} over encoder architectures: for the specific ReLU encoder construction used in the reduction, the optimal evasion is NP-hard. For the actual all-MiniLM-L6-v2 encoder (transformer architecture), the reduction does not directly apply due to softmax nonlinearities, and the result is conjectured but not proven. The practical takeaway is that efficient optimal evasion is unlikely, motivating the adversary's empirical shift to discrete synonym substitution that sidesteps gradient-based search entirely.
+\paragraph{Practical implication.} The continuous-embedding evasion is poly-time within any activation region (PAT-flagged correctly): an adversary with white-box continuous access to the embedding could compute the minimum-norm direction in poly-time and would be defeated only by gradient coupling (Theorem~\ref{thm:gradient_coupling}). The genuine hardness, captured by Proposition~\ref{prop:hardness}, lies in projecting that continuous direction back onto the integer-valued token grid --- exactly the discrete bottleneck the synonym-loophole adversary (Proposition~\ref{prop:synonym}) exploits in the opposite direction. Together: gradient coupling closes the continuous attack surface, the discrete reduction closes the unconstrained-token attack surface, and the synonym loophole identifies the residual gap.
 
 \subsection{Detection-evasion tradeoff surface}
 \label{app:tradeoff_surface}
