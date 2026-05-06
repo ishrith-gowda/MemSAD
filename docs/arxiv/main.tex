@@ -169,14 +169,19 @@ An \emph{adversary} $\cS = (\cQ_v, n, \alpha)$ targets victim queries $\cQ_v \su
 
 \begin{definition}[Stackelberg game formulation]
 \label{def:stackelberg}
-The memory poisoning interaction is a Stackelberg game $\cG = (\cS, \cD, u_{\cS}, u_{\cD})$ where the defender (leader) commits to a detection policy $\pi_{\cD} : \cV^* \to \{0, 1\}$ and the adversary (follower) best-responds:
+The memory poisoning interaction is a Stackelberg game $\cG = (\cS, \cD, u_{\cS}, u_{\cD})$ where the defender (leader) commits to a detection policy $\pi_{\cD} : \cV^* \to \{0, 1\}$ and the adversary (follower) best-responds. The defender's utility is $u_{\cD}(\pi_{\cD}, \cP) = -\asrr(\cP \setminus \cF(\pi_{\cD}, \cP), \cQ_v) - \lambda \cdot \fpr(\pi_{\cD})$ for $\lambda > 0$, where $\cF(\pi_{\cD}, \cP) = \{p \in \cP : \pi_{\cD}(p) = 1\}$ is the filtered set; the adversary's utility is $u_{\cS}(\cP) = \asrt(\cP, \cQ_v) = \asrr(\cP, \cQ_v) \cdot \asra(\cP)$. The leader and best-response sets are
 \begin{align}
-  \pi_{\cD}^* &= \argmin_{\pi_{\cD} \in \Pi} \; \max_{\cP \in \cB(\pi_{\cD})} \; \asrr(\cP, \cQ_v), \label{eq:leader} \\
-  \cB(\pi_{\cD}) &= \argmax_{\cP \subseteq \cV^*,\, |\cP| \leq n} \; \asrr(\cP \setminus \{p : \pi_{\cD}(p) = 1\}, \cQ_v), \label{eq:follower}
+  \pi_{\cD}^* &= \argmin_{\pi_{\cD} \in \Pi} \;\Big[\, \max_{\cP \in \cB(\pi_{\cD})} \asrr(\cP \setminus \cF(\pi_{\cD}, \cP), \cQ_v) \;+\; \lambda \cdot \fpr(\pi_{\cD}) \,\Big], \label{eq:leader} \\
+  \cB(\pi_{\cD}) &= \argmax_{\cP \subseteq \cV^*,\, |\cP| \leq n} \; u_{\cS}(\cP \setminus \cF(\pi_{\cD}, \cP)), \label{eq:follower}
 \end{align}
-where $\Pi = \{\pi(c) = \mathbf{1}[s(c; \cH) > \tau] : \tau > 0\}$ is the class of threshold detectors.
-The defender's utility is $u_{\cD} = -\asrr - \lambda \cdot \fpr$ ($\lambda > 0$) and the adversary's is $u_{\cS} = \asrt$.
+where $\Pi = \{\pi(c) = \mathbf{1}[s(c; \cH) > \tau] : \tau > 0\}$ is the class of threshold detectors operating on the candidate token sequence $c \in \cV^*$ via the score $s(c; \cH)$. The access model $\alpha$ from Definition~\ref{def:threat_model} restricts the adversary's effective strategy space to a subset $\cV^*_\alpha \subseteq \cV^*$: \textsc{write} access permits arbitrary token sequences ($\cV^*_\alpha = \cV^*$); \textsc{query} access restricts $\cP$ to passages reachable as auto-storage outputs of legitimate user queries; \textsc{single} access fixes $|\cP| = 1$ and pre-specifies its content. The formal game in Eqs.~\eqref{eq:leader}--\eqref{eq:follower} instantiates the worst-case \textsc{write}-access adversary; the restricted variants are obtained by replacing $\cV^*$ in Eq.~\eqref{eq:follower} with $\cV^*_\alpha$.
 \end{definition}
+
+\begin{assumption}[Payload invariance]
+\label{ass:payload_invariance}
+For the adversaries considered in Section~\ref{sec:experiments}, $\asra(\cP)$ depends only on the trigger / payload structure embedded in each $p \in \cP$ and is invariant to the embedding-space placement of $\cP$ chosen by the optimizer. Hence the follower's $\argmax$ in Eq.~\eqref{eq:follower} reduces to maximizing $\asrr$ over $\cP$, with $\asra$ acting as a multiplicative constant in $\asrt$.
+\end{assumption}
+\noindent\emph{Remark.} Assumption~\ref{ass:payload_invariance} is satisfied by all three attacks studied here: \agentpoison{} fixes the trigger string before optimization, \minja{}'s injected directive is identical across queries, and \injecmem{}'s payload is a single static entry. Under this assumption the algebraic best-response in Eq.~\eqref{eq:follower} coincides with the $\asrr$-only formulation used implicitly in prior work.
 
 \begin{figure}[t]
 \centering
