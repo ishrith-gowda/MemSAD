@@ -779,7 +779,11 @@ where $H_{\cD}$ is the Hessian of the cosine similarity on the sphere. Under L2-
 
 \begin{theorem}[Generalization bound]
 \label{thm:generalization}
-For a novel attack with $W_1(P_{\text{new}}, P_j) \leq \epsilon_W$: $|\tpr_{\text{new}} - \tpr_j| \leq \epsilon_W/\hat{\sigma} + O(1/\sqrt{N})$.
+Suppose the novel-attack score density $f_{\text{new}}$ and the calibration score density $f_j$ are both bounded by $g_{\max}$. Then for $W_1(P_{\text{new}}, P_j) \leq \epsilon_W$,
+\[
+  |\tpr_{\text{new}} - \tpr_j| \;\leq\; \sqrt{2\,g_{\max}\,\epsilon_W} + O(N^{-1/2}).
+\]
+For Gaussian scores with std $\sigma$, $g_{\max} = (\sigma\sqrt{2\pi})^{-1}$, giving $|\tpr_{\text{new}} - \tpr_j| \leq \sqrt{\epsilon_W / (\sigma\sqrt{\pi/2})} + O(N^{-1/2})$.
 \end{theorem}
 
 \begin{remark}[Practical estimation of $\epsilon_W$]
@@ -789,13 +793,23 @@ In practice, $\epsilon_W$ can be estimated from a validation set via sorting-bas
 
 \paragraph{Proof setup.} Let $F_j$ and $F_{\text{new}}$ denote the CDFs of scores $s(c; \cH)$ under $P_j$ and $P_{\text{new}}$, respectively. The TPR at threshold $\tau$ is $\tpr(\tau) = 1 - F(\tau)$.
 
-\paragraph{Wasserstein coupling.} By Kantorovich-Rubinstein duality:
+\paragraph{Wasserstein-to-Kolmogorov bound.} The 1-Wasserstein distance is the integral of pointwise CDF difference:
 \begin{equation}
-  W_1(F_j, F_{\text{new}}) = \sup_{\|f\|_{\text{Lip}} \leq 1} |\EE_{F_j}[f] - \EE_{F_{\text{new}}}[f]| = \int_{-\infty}^{\infty} |F_j(s) - F_{\text{new}}(s)| \, ds.
+  W_1(F_j, F_{\text{new}}) \;=\; \int_{-\infty}^{\infty} |F_j(s) - F_{\text{new}}(s)| \, ds.
 \end{equation}
-Since $\tpr_j = 1 - F_j(\tau)$ and $\tpr_{\text{new}} = 1 - F_{\text{new}}(\tau)$:
-$|\tpr_j - \tpr_{\text{new}}| = |F_{\text{new}}(\tau) - F_j(\tau)| \leq W_1(F_j, F_{\text{new}})/\hat{\sigma}$.
-The $1/\hat{\sigma}$ factor arises because scores are standardized: the CDFs $F_j, F_{\text{new}}$ operate on $(s - \hat{\mu})/\hat{\sigma}$, so a shift of $\epsilon_W$ in raw score space corresponds to $\epsilon_W/\hat{\sigma}$ in standardized units. Equivalently, the score density is bounded by $1/\hat{\sigma}$ (Gaussian with variance $\hat{\sigma}^2$), and $|F(\tau + h) - F(\tau)| \leq |h|/\hat{\sigma}$ by the mean value theorem.
+This is an $L^1$ norm on the CDF gap and does \emph{not} linearly upper-bound the $L^\infty$ (pointwise sup) gap. The correct relationship under a uniform density bound is the standard $L^1$-to-$L^\infty$ trade for absolutely continuous distributions: if $|f_j|, |f_{\text{new}}| \leq g_{\max}$, then for any $\tau$ and any $h > 0$,
+\[
+  |F_j(\tau) - F_{\text{new}}(\tau)|
+  \;\leq\;
+  \frac{1}{2h}\!\int_{\tau-h}^{\tau+h}\! |F_j(s) - F_{\text{new}}(s)|\,ds + g_{\max} h
+  \;\leq\;
+  \frac{W_1}{2h} + g_{\max} h,
+\]
+where the first inequality applies because $|F_j(\tau) - F_j(s)| \leq g_{\max}|s-\tau|$ and likewise for $F_{\text{new}}$, and the second uses non-negativity of the integrand. Optimising over $h > 0$ at $h = \sqrt{W_1/(2g_{\max})}$ gives
+\[
+  |F_j(\tau) - F_{\text{new}}(\tau)| \;\leq\; \sqrt{2\,g_{\max}\,W_1}.
+\]
+Since $|\tpr_j - \tpr_{\text{new}}| = |F_j(\tau) - F_{\text{new}}(\tau)|$, the stated bound follows. The $\sqrt{\cdot}$ scaling is sharp: a localized mass shift of $m$ across the threshold over distance $h \to 0$ has $W_1 = m h \to 0$ but $|F-G|_\infty \to m$, and only the bounded-density assumption rules this out at the rate $\sqrt{W_1}$.
 
 \paragraph{Threshold estimation.} By Theorem~\ref{thm:calibration_bound}, $|\hat{\tau} - \tau^*| \leq \eta_N$ w.p.\ $\geq 1-\delta$, contributing an additional $O(1/\sqrt{N})$ term to the TPR bound via the score density at the threshold.
 
@@ -1179,33 +1193,41 @@ We extend \memsad{}'s guarantees to the distributionally robust setting where th
 
 \begin{proposition}[Distributionally robust detection]
 \label{prop:dro}
-Let $\hat{P}_0$ be the empirical benign score distribution from $N$ calibration samples. For any adversarial score distribution $P_1$ and perturbation class $\cU = \{Q : W_1(Q, P_1) \leq \epsilon\}$:
+Suppose the score density under $P_1$ and any $Q$ in the perturbation class $\cU = \{Q : W_1(Q, P_1) \leq \epsilon\}$ is bounded by $g_{\max}$. Then
 \begin{equation}
-  \inf_{Q \in \cU} \tpr(\tau; Q) \geq \tpr(\tau; P_1) - \frac{\epsilon}{\hat{\sigma}}.
+  \inf_{Q \in \cU} \tpr(\tau; Q) \;\geq\; \tpr(\tau; P_1) - \sqrt{2 g_{\max}\,\epsilon}.
 \end{equation}
+For Gaussian scores with std $\sigma$, $g_{\max} = (\sigma\sqrt{2\pi})^{-1}$, giving the closed-form bound $\sqrt{\epsilon / (\sigma\sqrt{\pi/2})}$.
 \end{proposition}
 
 \begin{proof}
-The indicator $\mathbf{1}[s > \tau]$ is not Lipschitz; we instead use the dual characterization directly. For any two distributions $Q, P_1$ on $\RR$ with $W_1(Q, P_1) \leq \epsilon$, we have $|\PP_Q(s > \tau) - \PP_{P_1}(s > \tau)| = |F_{P_1}(\tau) - F_Q(\tau)| \leq W_1(Q, P_1)/\hat{\sigma}$, where the last inequality follows because the score CDF $F$ has density bounded by $1/\hat{\sigma}$ (Gaussian scores with variance $\hat{\sigma}^2$), so $|F(\tau + h) - F(\tau)| \leq |h|/\hat{\sigma}$. Hence $\inf_{Q \in \cU} \tpr(\tau; Q) \geq \tpr(\tau; P_1) - \epsilon/\hat{\sigma}$.
+Apply the bounded-density Wasserstein-to-Kolmogorov inequality from Theorem~\ref{thm:generalization}: under $|f_{P_1}|, |f_Q| \leq g_{\max}$ and $W_1(Q,P_1) \leq \epsilon$, $|F_{P_1}(\tau) - F_Q(\tau)| \leq \sqrt{2 g_{\max}\,\epsilon}$ for every $\tau$. Since $|\tpr(\tau;P_1) - \tpr(\tau;Q)| = |F_{P_1}(\tau) - F_Q(\tau)|$, the bound follows.
 \end{proof}
 
-This guarantees that even if the adversary slightly perturbs their attack strategy (e.g., via randomized synonym selection), \memsad{}'s TPR degrades gracefully. For $\epsilon = 0.01\hat{\sigma}$: $\Delta\tpr \leq 0.01$, consistent with the observed stability in Table~\ref{tab:adaptive_sad}.
+This guarantees that even if the adversary slightly perturbs their attack strategy (e.g., via randomized synonym selection), \memsad{}'s TPR degrades gracefully under the bounded-density assumption. For $\epsilon = 0.01\hat\sigma$ and Gaussian scores ($g_{\max} = (\hat\sigma\sqrt{2\pi})^{-1}$): $\Delta\tpr \leq \sqrt{0.01 / \sqrt{\pi/2}} \approx 0.10$, an order of magnitude looser than the (incorrect) linear bound previously stated; this matches the empirical scale observed in Table~\ref{tab:adaptive_sad}.
 
-\begin{proposition}[PAC-style detection guarantee]
+\begin{proposition}[PAC-style FPR guarantee]
 \label{prop:pac}
-For $N$ i.i.d.\ calibration samples from $P_0$, with probability $\geq 1 - \delta$ over the calibration set, \memsad{}'s threshold $\hat{\tau}_N$ satisfies:
+For $N$ i.i.d.\ calibration samples from $P_0$, with probability $\geq 1 - \delta$ over the calibration set, \memsad{}'s threshold $\hat{\tau}_N$ satisfies the FPR-side bound
 \begin{equation}
-  \fpr(\hat{\tau}_N) \leq \fpr(\tau^*) + \sqrt{\frac{\log(2/\delta)}{2N}}, \qquad
-  \tpr(\hat{\tau}_N) \geq \tpr(\tau^*) - \sqrt{\frac{\log(2/\delta)}{2N}},
+  \big|\fpr(\hat{\tau}_N) - \fpr(\tau^*)\big| \;\leq\; \sqrt{\frac{\log(2/\delta)}{2N}},
 \end{equation}
-where $\tau^* = \mu + \kappa\sigma$ is the population-optimal threshold.
+where $\tau^* = \mu_0 + \kappa\sigma_0$ is the population-optimal threshold computed under the benign distribution. The TPR side requires the additional Wasserstein assumption of Theorem~\ref{thm:generalization}.
 \end{proposition}
 
 \begin{proof}
-By the DKW inequality, $\sup_t |F_N(t) - F(t)| \leq \sqrt{\log(2/\delta)/(2N)}$ w.p.\ $\geq 1-\delta$, where $F_N, F$ are empirical and population CDFs. Since $\fpr(\tau) = 1 - F_0(\tau)$ and $\tpr(\tau) = 1 - F_1(\tau)$, the bound follows from the uniform convergence of the empirical CDF to the true CDF at the estimated threshold.
+The DKW inequality~\citep{dvoretzky1956asymptotic,massart1990tight} bounds the uniform deviation of the empirical CDF from the true CDF for a sample drawn from a single distribution: $\sup_t |\widehat F_{0,N}(t) - F_0(t)| \leq \sqrt{\log(2/\delta)/(2N)}$ w.p.\ $\geq 1-\delta$. Since $\fpr(\tau) = 1 - F_0(\tau)$ and the calibration sample is drawn from $P_0$, applying DKW at $t = \hat\tau_N$ yields $|\widehat F_{0,N}(\hat\tau_N) - F_0(\hat\tau_N)|$ within the stated tolerance, and $|F_0(\hat\tau_N) - F_0(\tau^*)|$ is bounded via the score-density Lipschitz argument (Theorem~\ref{thm:calibration_bound}). The TPR side does \emph{not} follow from DKW alone because $\tpr(\tau) = 1 - F_1(\tau)$ depends on the adversarial distribution $P_1$, for which we have no calibration samples; use Theorem~\ref{thm:generalization}'s $\sqrt{W_1}$ bound instead.
 \end{proof}
 
-At $N = 200$, $\delta = 0.05$: the excess error is $\leq 0.096$, meaning \memsad{}'s empirical FPR of $0.000$ implies true FPR $\leq 0.096$ with 95\% confidence. The Clopper-Pearson validation (Table~\ref{tab:fpr_validation}) provides a tighter bound of $0.004$ by exploiting the binomial structure.
+\begin{proposition}[TPR robustness via Wasserstein]
+\label{prop:tpr_robust}
+Under the bounded-density assumption of Theorem~\ref{thm:generalization} and assuming $W_1(\widehat P_{1,n_1}, P_1) \leq \epsilon_W$ for an empirical adversarial estimate from $n_1$ poisoned samples,
+\[
+  \big|\tpr(\hat\tau_N) - \tpr(\tau^*)\big| \;\leq\; \sqrt{2 g_{\max}\,\epsilon_W} \;+\; O(N^{-1/2}).
+\]
+\end{proposition}
+
+At $N = 200$, $\delta = 0.05$: the FPR-side bound is $\leq 0.096$, meaning \memsad{}'s empirical FPR of $0.000$ implies true FPR $\leq 0.096$ with 95\% confidence. The Clopper-Pearson validation (Table~\ref{tab:fpr_validation}) provides a tighter bound of $0.004$ by exploiting the binomial structure.
 
 \section{OOD detection baseline comparison}
 \label{app:ood}
