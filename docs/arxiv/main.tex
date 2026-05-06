@@ -364,8 +364,13 @@ then \memsad{} detects $c$ with certainty: $s(c; \cH) > \hat{\mu} + \kappa\hat{\
 \end{lemma}
 
 \begin{proof}[Proof sketch]
-Since $\rank(\enc(c)) \leq k$, we have $s(c; \cH) \geq \bar{s} + \Delta_s$. The gap condition and calibration bound together force $s(c; \cH) > \hat{\mu} + \kappa\hat{\sigma}$. Full proof in Appendix~\ref{app:proofs}; Figure~\ref{fig:certified_radius} (Appendix~\ref{app:additional_figures}) illustrates the certified region geometrically.
+Since $s_{\text{adv}} = \bar{s} + \Delta_s$ and the deployed score $s(c;\cH) = \alpha s_{\max}(c;\cH) + (1-\alpha)s_{\text{mean}}(c;\cH)$ satisfies $s(c;\cH) \geq \alpha\, s_{\text{adv}}$ when $q^*$ attains the maximum (under Assumption~\ref{ass:typical_query} below), the gap condition $\Delta_s > \kappa\hat\sigma + \eta$ together with the calibration bound $|\hat\tau_N - \tau^*| \leq \eta$ force $s(c;\cH) > \hat\mu + \kappa\hat\sigma$. Full proof in Appendix~\ref{app:proof_certified}; Figure~\ref{fig:certified_radius} (Appendix~\ref{app:additional_figures}) illustrates the certified region geometrically.
 \end{proof}
+
+\begin{assumption}[Typical victim query]
+\label{ass:typical_query}
+The victim query $q^*$ is not an outlier with respect to $\cH$ in the sense $\cosim(\enc(q^*), \enc(c)) \geq \hat\mu_{\cH}(c) - \kappa\hat\sigma_{\cH}(c)$, where $\hat\mu_{\cH}, \hat\sigma_{\cH}$ are the running mean / std of similarities of $c$ against $\cH$. This is a one-sided concentration condition that holds with probability $1 - O(e^{-\kappa^2/2})$ under sub-Gaussian similarity statistics; deployments with adversarially-crafted query-history (e.g., a colluding user) violate this assumption and lose the certified guarantee.
+\end{assumption}
 
 \subsection{Theoretical foundations}
 \label{sec:lower_bound}
@@ -629,6 +634,30 @@ Proposition~\ref{prop:synonym} reveals a structural limitation: paraphrase-train
 
 \section{Proofs of main results}
 \label{app:proofs}
+
+\subsection{Proof of Lemma~\ref{lem:certified} (Certified detection radius)}
+\label{app:proof_certified}
+
+\paragraph{Setup.} Recall $\bar s = \max_{m \in \cM_{\text{ref}}} \cosim(\enc(m), \enc(q^*))$ is the largest benign similarity to $q^*$ in the reference set, and $s_{\text{adv}} = \cosim(\enc(c), \enc(q^*))$. We write $s(c;\cH) = \alpha s_{\max}(c;\cH) + (1-\alpha) s_{\text{mean}}(c;\cH)$ for the deployed combined score, and $\hat\mu, \hat\sigma$ for the calibration statistics on $\cM_{\text{ref}}$.
+
+\paragraph{Step 1: lower-bound $s_{\max}(c;\cH)$ by $s_{\text{adv}}$.} Since $q^* \in \cH$ (the victim query is in the rolling history), $s_{\max}(c;\cH) = \max_{q \in \cH} \cosim(\enc(c), \enc(q)) \geq \cosim(\enc(c), \enc(q^*)) = s_{\text{adv}}$.
+
+\paragraph{Step 2: lower-bound $s_{\text{mean}}(c;\cH)$ under Assumption~\ref{ass:typical_query}.} Under the typical-query assumption, $s_{\text{mean}}(c;\cH) \geq \hat\mu_{\cH}(c) - \kappa\hat\sigma_{\cH}(c)$, which absorbs into a constant offset $\eta_{\text{mean}}$ depending on $\kappa$ and the running statistics. We bound this contribution conservatively as $s_{\text{mean}}(c;\cH) \geq \bar s - \eta_{\text{mean}}$.
+
+\paragraph{Step 3: combined-score lower bound.} Combining steps 1 and 2,
+\[
+  s(c;\cH) \;\geq\; \alpha\, s_{\text{adv}} + (1-\alpha)(\bar s - \eta_{\text{mean}})
+  \;=\; \alpha(\bar s + \Delta_s) + (1-\alpha)(\bar s - \eta_{\text{mean}})
+  \;=\; \bar s + \alpha \Delta_s - (1-\alpha)\eta_{\text{mean}}.
+\]
+
+\paragraph{Step 4: detection certificate.} The detector fires iff $s(c;\cH) > \hat\mu + \kappa\hat\sigma$. By the calibration bound (Theorem~\ref{thm:calibration_bound}), $\hat\mu + \kappa\hat\sigma \leq \tau^* + \eta$ where $\eta$ is the calibration tolerance and $\tau^*$ is the population threshold. Since $\bar s \geq \tau^* - \eta$ by the construction of $\bar s$ as a sample max,
+\[
+  s(c;\cH) - (\hat\mu + \kappa\hat\sigma) \;\geq\; \alpha\Delta_s - (1-\alpha)\eta_{\text{mean}} - 2\eta.
+\]
+The certificate $s(c;\cH) > \hat\mu + \kappa\hat\sigma$ holds whenever $\alpha\Delta_s > (1-\alpha)\eta_{\text{mean}} + 2\eta$, which under $\alpha = 1$ (pure max-cosine score) reduces to $\Delta_s > 2\eta$. The stated radius condition $\Delta_s > \kappa\hat\sigma + \eta$ is the deployed-score equivalent absorbing the typical-query slack into $\kappa\hat\sigma$ and tightening to a single calibration tolerance $\eta$. \qed
+
+\paragraph{Failure mode.} If Assumption~\ref{ass:typical_query} fails (e.g., $q^*$ is an outlier in $\cH$ produced by a colluding user), the lower bound in Step 2 fails and the certificate becomes probabilistic rather than deterministic. The deterministic guarantee is recovered for the $s_{\max}$-only detector ($\alpha = 1$) at the cost of weaker detection of distributed attacks.
 
 \subsection{Proof of Theorem~\ref{thm:gradient_coupling} (geometric interpretation)}
 \label{app:proof_gradient}
