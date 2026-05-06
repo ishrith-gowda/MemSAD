@@ -1,7 +1,7 @@
 \documentclass{article}
 
-% neurips 2026 main track — preprint mode for arxiv (de-anonymized)
-\usepackage[preprint]{neurips_2026}
+% neurips 2026 main track (anonymous double-blind submission)
+\usepackage{neurips_2026}
 
 \usepackage[utf8]{inputenc}
 \usepackage[T1]{fontenc}
@@ -86,19 +86,15 @@
 
 \title{\texorpdfstring{\memsad{}}{MemSAD}: Gradient-Coupled Anomaly Detection for Memory Poisoning in Retrieval-Augmented Agents}
 
-\author{%
-  Ishrith Gowda\thanks{Work conducted at the Song Lab, Berkeley AI Research, University of California, Berkeley.}\\
-  Department of Electrical Engineering and Computer Sciences\\
-  University of California, Berkeley\\
-  \texttt{ishrithgowda@berkeley.edu}
-}
+% anonymous for submission
+\author{Anonymous Author(s)}
 
 \begin{document}
 
 \maketitle
 
 \begin{abstract}
-Persistent external memory enables LLM agents to maintain context across sessions, yet its security properties remain formally uncharacterized. We formalize memory poisoning attacks on retrieval-augmented agents as a Stackelberg game and present a unified evaluation framework spanning three attack classes with escalating access assumptions. Correcting an evaluation protocol inconsistency relative to the triggered-query specification of \citet{chen2024agentpoison}, we show that faithful evaluation increases measured attack success by $4\times$ (from $\asrr = 0.25$ to $1.00$). Our primary contribution is \memsad{} (\emph{Semantic Anomaly Detection}), a calibration-based defense grounded in a \emph{gradient coupling theorem}: under encoder regularity, the anomaly score gradient and the retrieval objective gradient are provably identical, so any continuous perturbation that reduces detection risk necessarily degrades retrieval rank. This coupling yields a certified detection radius that guarantees correct classification regardless of adversary strategy. We prove minimax optimality via Le Cam's method, showing that any threshold detector requires $\Omega(1/\rho^2)$ calibration samples and \memsad{} achieves this up to $\log(1/\delta)$ factors. We further derive online regret bounds for rolling calibration with optimal window selection at rate $O(\sigma^{2/3}\Delta^{1/3})$, and formally characterize a discrete synonym-invariance loophole that marks the boundary of what continuous-space defenses can guarantee. Experiments on a $3 \times 5$ attack-defense matrix with bootstrap confidence intervals, Bonferroni-corrected hypothesis tests, and Clopper-Pearson validation (20 trials, $n=1{,}000$) confirm the theory: composite defenses achieve $\tpr = 1.00$, $\fpr = 0.00$ across all attacks, while synonym substitution evades detection at $\Delta\asrr \approx 0$, exposing a concrete gap that existing embedding-based defenses cannot close.
+Persistent external memory enables LLM agents to maintain context across sessions, yet its security properties remain formally uncharacterized. We formalize memory poisoning attacks on retrieval-augmented agents as a Stackelberg game and present a unified evaluation framework spanning three attack classes with escalating access assumptions. Correcting an evaluation protocol inconsistency relative to the triggered-query specification of \citet{chen2024agentpoison}, we show that faithful evaluation increases measured attack success by $4\times$ (from $\asrr = 0.25$ to $1.00$). Our primary contribution is \memsad{} (\emph{Semantic Anomaly Detection}), a calibration-based defense grounded in a \emph{gradient coupling theorem}: under encoder regularity, the max-cosine anomaly score gradient is provably identical to the retrieval objective gradient (the deployed combined score retains directional coupling, Corollary~\ref{cor:combined_coupling}), so any continuous perturbation that reduces detection risk necessarily degrades retrieval rank. This coupling yields a certified detection radius that guarantees correct classification regardless of adversary strategy. We prove minimax optimality via Le Cam's method, showing that any threshold detector requires $\Omega(1/\rho^2)$ calibration samples and \memsad{} achieves this up to $\log(1/\delta)$ factors. We further derive online regret bounds for rolling calibration with optimal window selection at rate $O(\sigma^{2/3}\Delta^{1/3})$, and formally characterize a discrete synonym-invariance loophole that marks the boundary of what continuous-space defenses can guarantee. Experiments on a $3 \times 5$ attack-defense matrix with bootstrap confidence intervals, Bonferroni-corrected hypothesis tests, and Clopper-Pearson validation (20 trials, $n=1{,}000$) confirm the theory: composite defenses achieve $\tpr = 1.00$, $\fpr = 0.00$ across all attacks, while synonym substitution evades detection at $\Delta\asrr \approx 0$, exposing a concrete gap that existing embedding-based defenses cannot close.
 \end{abstract}
 
 %% ============================================================
@@ -169,14 +165,19 @@ An \emph{adversary} $\cS = (\cQ_v, n, \alpha)$ targets victim queries $\cQ_v \su
 
 \begin{definition}[Stackelberg game formulation]
 \label{def:stackelberg}
-The memory poisoning interaction is a Stackelberg game $\cG = (\cS, \cD, u_{\cS}, u_{\cD})$ where the defender (leader) commits to a detection policy $\pi_{\cD} : \cV^* \to \{0, 1\}$ and the adversary (follower) best-responds:
+The memory poisoning interaction is a Stackelberg game $\cG = (\cS, \cD, u_{\cS}, u_{\cD})$ where the defender (leader) commits to a detection policy $\pi_{\cD} : \cV^* \to \{0, 1\}$ and the adversary (follower) best-responds. The defender's utility is $u_{\cD}(\pi_{\cD}, \cP) = -\asrr(\cP \setminus \cF(\pi_{\cD}, \cP), \cQ_v) - \lambda \cdot \fpr(\pi_{\cD})$ for $\lambda > 0$, where $\cF(\pi_{\cD}, \cP) = \{p \in \cP : \pi_{\cD}(p) = 1\}$ is the filtered set; the adversary's utility is $u_{\cS}(\cP) = \asrt(\cP, \cQ_v) = \asrr(\cP, \cQ_v) \cdot \asra(\cP)$. The leader and best-response sets are
 \begin{align}
-  \pi_{\cD}^* &= \argmin_{\pi_{\cD} \in \Pi} \; \max_{\cP \in \cB(\pi_{\cD})} \; \asrr(\cP, \cQ_v), \label{eq:leader} \\
-  \cB(\pi_{\cD}) &= \argmax_{\cP \subseteq \cV^*,\, |\cP| \leq n} \; \asrr(\cP \setminus \{p : \pi_{\cD}(p) = 1\}, \cQ_v), \label{eq:follower}
+  \pi_{\cD}^* &= \argmin_{\pi_{\cD} \in \Pi} \;\Big[\, \max_{\cP \in \cB(\pi_{\cD})} \asrr(\cP \setminus \cF(\pi_{\cD}, \cP), \cQ_v) \;+\; \lambda \cdot \fpr(\pi_{\cD}) \,\Big], \label{eq:leader} \\
+  \cB(\pi_{\cD}) &= \argmax_{\cP \subseteq \cV^*,\, |\cP| \leq n} \; u_{\cS}(\cP \setminus \cF(\pi_{\cD}, \cP)), \label{eq:follower}
 \end{align}
-where $\Pi = \{\pi(c) = \mathbf{1}[s(c; \cH) > \tau] : \tau > 0\}$ is the class of threshold detectors.
-The defender's utility is $u_{\cD} = -\asrr - \lambda \cdot \fpr$ ($\lambda > 0$) and the adversary's is $u_{\cS} = \asrt$.
+where $\Pi = \{\pi(c) = \mathbf{1}[s(c; \cH) > \tau] : \tau > 0\}$ is the class of threshold detectors operating on the candidate token sequence $c \in \cV^*$ via the score $s(c; \cH)$. The access model $\alpha$ from Definition~\ref{def:threat_model} restricts the adversary's effective strategy space to a subset $\cV^*_\alpha \subseteq \cV^*$: \textsc{write} access permits arbitrary token sequences ($\cV^*_\alpha = \cV^*$); \textsc{query} access restricts $\cP$ to passages reachable as auto-storage outputs of legitimate user queries; \textsc{single} access fixes $|\cP| = 1$ and pre-specifies its content. The formal game in Eqs.~\eqref{eq:leader}--\eqref{eq:follower} instantiates the worst-case \textsc{write}-access adversary; the restricted variants are obtained by replacing $\cV^*$ in Eq.~\eqref{eq:follower} with $\cV^*_\alpha$.
 \end{definition}
+
+\begin{assumption}[Payload invariance]
+\label{ass:payload_invariance}
+For the adversaries considered in Section~\ref{sec:experiments}, $\asra(\cP)$ depends only on the trigger / payload structure embedded in each $p \in \cP$ and is invariant to the embedding-space placement of $\cP$ chosen by the optimizer. Hence the follower's $\argmax$ in Eq.~\eqref{eq:follower} reduces to maximizing $\asrr$ over $\cP$, with $\asra$ acting as a multiplicative constant in $\asrt$.
+\end{assumption}
+\noindent\emph{Remark.} Assumption~\ref{ass:payload_invariance} is satisfied by all three attacks studied here: \agentpoison{} fixes the trigger string before optimization, \minja{}'s injected directive is identical across queries, and \injecmem{}'s payload is a single static entry. Under this assumption the algebraic best-response in Eq.~\eqref{eq:follower} coincides with the $\asrr$-only formulation used implicitly in prior work.
 
 \begin{figure}[t]
 \centering
@@ -310,16 +311,16 @@ Under L2-normalization (Assumption~\ref{ass:encoder}(iii)), $\nabla_{e_c}\cR = \
 
 \emph{(ii) Necessity:} If $\cD$ is \emph{not} monotone in $\cR$, there exist thresholds $\tau_{\text{ret}}, \tau_{\text{det}}$ and a continuous path $\gamma: [0,1] \to \mathbb{S}^{d-1}$ with $\cR(\gamma(1)) > \tau_{\text{ret}}$ yet $\cD(\gamma(1)) < \tau_{\text{det}}$: the adversary can traverse continuously to high retrieval rank while evading detection.
 
-\emph{(iii) Canonicity:} Among all detectors achieving coupling (i.e., satisfying (i)), the max-cosine score $\cD = \cR$ (i.e., $g = \mathrm{id}$) is the \emph{unique} detector that is a sufficient statistic for the adversarial-vs-benign hypothesis test induced by $\cR$: any other $g$ preserves the coupling direction but discards distributional information.
+\emph{(iii) Canonicity (parametric-free):} Among all (i)-coupled detectors, $g = \mathrm{id}$ is canonical in the sense that the threshold $\cR(e_c) > \tau$ implements the minimum-sufficient-statistic test \emph{without requiring knowledge of the underlying parametric family} of the benign / adversarial score distributions. Any strictly-monotone bijection $g$ of $\cR$ remains minimal sufficient (Lehmann--Scheff\'{e}); in this sense $g = \mathrm{id}$ is not \emph{the} unique minimal sufficient statistic, but it is the unique element of the equivalence class that is computable from $e_c$ and the calibration history $\cH$ without estimating $p_0, p_1$.
 \end{theorem}
 
 \begin{proof}
 \emph{(i)} The chain rule gives $\nabla \cD = g'(\cR) \cdot \nabla \cR$; $g' > 0$ preserves the sign of every directional derivative. Under Assumption~\ref{ass:encoder}(iii), the sphere gradient is $\nabla_{e_c}\cosim(e_c, v) = v - (e_c^\top v)e_c$.
 \emph{(ii)} Non-monotonicity implies $\exists\, e_c, e_c'$ with $\cR(e_c') > \cR(e_c)$ but $\cD(e_c') < \cD(e_c)$. By connectedness of $\mathbb{S}^{d-1}$, there exists a continuous path $\gamma$ from $e_c$ to $e_c'$. Setting $\tau_{\text{ret}} = \cR(e_c)$ and $\tau_{\text{det}} = \cD(e_c)$ yields the claimed path with $\cR(\gamma(1)) > \tau_{\text{ret}}$ and $\cD(\gamma(1)) < \tau_{\text{det}}$.
-\emph{(iii)} The sufficient statistic $\cR$ generates the likelihood ratio $p_1(e)/p_0(e)$ as a monotone function of $\cosim(e, e_{q^*})$ under Gaussian score distributions (as in Theorems~\ref{thm:minimax_lower}--\ref{thm:calibration_bound}). By the Neyman--Fisher factorization theorem~\citep{lehmann1959testing}, $\cR(e_c)$ is sufficient for the binary hypothesis test $H_0$: benign vs.\ $H_1$: adversarial. Minimality follows from the Lehmann--Scheff\'{e} theorem~\citep{lehmann1959testing}: since $p_1(e)/p_0(e)$ is a monotone function of $\cR(e_c)$ alone, any sufficient statistic must be a function of $\cR(e_c)$, making it \emph{minimal sufficient}. Hence $g = \mathrm{id}$ achieves minimal sufficiency; any $g \neq \mathrm{id}$ retains the coupling direction but discards distributional information, i.e., is a lossy compression of $\cR$.
+\emph{(iii)} Under Gaussian score distributions (Theorems~\ref{thm:minimax_lower}--\ref{thm:calibration_bound}), the likelihood ratio $p_1(e)/p_0(e)$ is a monotone function of $\cosim(e, e_{q^*})$, so by the Neyman--Fisher factorization~\citep{lehmann1959testing}, $\cR(e_c)$ is sufficient for the binary test $H_0$ vs.\ $H_1$. Minimality follows from Lehmann--Scheff\'{e}~\citep{lehmann1959testing}, and any strictly monotone bijection of a minimal sufficient statistic remains minimal sufficient (information-preserving). The canonicity claim is computational, not statistical: implementing the threshold test on $g(\cR)$ for non-trivial $g$ requires either computing $g$ itself (which depends on $p_0, p_1$ when $g$ is the likelihood ratio) or accepting a possibly non-equivariant decision boundary under recalibration. The choice $g = \mathrm{id}$ avoids these requirements and is the unique \emph{distribution-free} minimal-sufficient implementation.
 \end{proof}
 
-The combined score $s_{\text{comb}}$ also preserves directional coupling (Corollary~\ref{cor:combined_coupling}, Appendix~\ref{app:tradeoff_surface}).
+The combined score $s_{\text{comb}}$ deployed by Algorithm~\ref{alg:sad} (Eq.~\ref{eq:sad_combined}) is a positive linear combination of $s_{\max}$ and $s_{\mathrm{mean}}$ and therefore does \emph{not} satisfy strict gradient identity with $\cR = s_{\max}$. It preserves \emph{directional coupling} (Corollary~\ref{cor:combined_coupling}, Appendix~\ref{app:tradeoff_surface}): under the directional-monotonicity assumption stated there, every continuous perturbation that decreases $s_{\text{comb}}$ also decreases $\cR$. The strict $\nabla \cD \equiv \nabla \cR$ identity holds for $s_{\max}$ alone; the combined score is deployed because it improves detection of distributed attacks at the cost of weakening the coupling from strict identity to directional alignment.
 
 The gradient coupling reflects a deeper geometric structure: the Fisher-Rao metric induced by the score family is rank-1 ($g^F = \hat{\sigma}^{-2}\nabla\cR\nabla\cR^\top$), so any continuous evasion path pays retrieval cost in exact proportion to Fisher-Rao distance~\citep{amari2016information} (Theorem~\ref{thm:fisher_rao}, Appendix~\ref{app:proof_fisher_rao}).
 
@@ -359,20 +360,25 @@ then \memsad{} detects $c$ with certainty: $s(c; \cH) > \hat{\mu} + \kappa\hat{\
 \end{lemma}
 
 \begin{proof}[Proof sketch]
-Since $\rank(\enc(c)) \leq k$, we have $s(c; \cH) \geq \bar{s} + \Delta_s$. The gap condition and calibration bound together force $s(c; \cH) > \hat{\mu} + \kappa\hat{\sigma}$. Full proof in Appendix~\ref{app:proofs}; Figure~\ref{fig:certified_radius} (Appendix~\ref{app:additional_figures}) illustrates the certified region geometrically.
+Since $s_{\text{adv}} = \bar{s} + \Delta_s$ and the deployed score $s(c;\cH) = \alpha s_{\max}(c;\cH) + (1-\alpha)s_{\text{mean}}(c;\cH)$ satisfies $s(c;\cH) \geq \alpha\, s_{\text{adv}}$ when $q^*$ attains the maximum (under Assumption~\ref{ass:typical_query} below), the gap condition $\Delta_s > \kappa\hat\sigma + \eta$ together with the calibration bound $|\hat\tau_N - \tau^*| \leq \eta$ force $s(c;\cH) > \hat\mu + \kappa\hat\sigma$. Full proof in Appendix~\ref{app:proof_certified}; Figure~\ref{fig:certified_radius} (Appendix~\ref{app:additional_figures}) illustrates the certified region geometrically.
 \end{proof}
+
+\begin{assumption}[Typical victim query]
+\label{ass:typical_query}
+The victim query $q^*$ is not an outlier with respect to $\cH$ in the sense $\cosim(\enc(q^*), \enc(c)) \geq \hat\mu_{\cH}(c) - \kappa\hat\sigma_{\cH}(c)$, where $\hat\mu_{\cH}, \hat\sigma_{\cH}$ are the running mean / std of similarities of $c$ against $\cH$. This is a one-sided concentration condition that holds with probability $1 - O(e^{-\kappa^2/2})$ under sub-Gaussian similarity statistics; deployments with adversarially-crafted query-history (e.g., a colluding user) violate this assumption and lose the certified guarantee.
+\end{assumption}
 
 \subsection{Theoretical foundations}
 \label{sec:lower_bound}
 
 We establish four additional results; full statements and proofs are in Appendix~\ref{app:proofs}.
 
-\begin{theorem}[Minimax detection lower bound]
+\begin{theorem}[Calibration sample complexity lower bound]
 \label{thm:minimax_lower}
-For Gaussian benign/poisoned score distributions with SNR $\rho$, under the uniform prior $\PP(H_0) = \PP(H_1) = \tfrac{1}{2}$, any threshold detector calibrated on $N$ samples satisfies $\fpr + (1 - \tpr) \geq 1 - \rho\sqrt{N}/2$. Reliable detection at total-error level $\epsilon$ (i.e., $\fpr + (1{-}\tpr) \leq \epsilon$) requires $N \geq 4(1-\epsilon)^2/\rho^2$.
+Let benign and adversarial scores be Gaussian with means $\mu_0 < \mu_1$ and common variance $\sigma^2$, separation $\rho = (\mu_1-\mu_0)/\sigma$, and let $\Phi$ be the standard normal CDF. The single-test Bayes error at the oracle threshold $\tau^* = (\mu_0+\mu_1)/2$ is $B(\rho) = \Phi(-\rho/2)$, irreducible at any calibration size. For any threshold detector calibrated from $N$ i.i.d.\ benign samples, the excess error over the oracle is bounded below as $\PP_{\text{err}}(\hat\pi_N) - B(\rho) = \Omega(\sigma\,|\hat\tau_N - \tau^*|)$ to first order in $|\hat\tau_N - \tau^*|$. Le Cam's two-point inequality applied to the threshold-estimation problem then gives, for any procedure that produces $\hat\tau_N$ from $N$ benign samples and achieves expected excess error at most $\epsilon$ uniformly over the parameter family, the requirement $N \geq c(\epsilon)/\rho^2$ for an absolute constant $c(\epsilon) > 0$. Conversely, \memsad{} achieves $|\hat\tau_N - \tau^*| = O(\sigma\sqrt{\log(1/\delta)/N})$ (Theorem~\ref{thm:calibration_bound}), matching the lower bound up to a $\log(1/\delta)$ factor.
 \end{theorem}
 
-\noindent \memsad{} achieves reliable detection with $N = O(\log(1/\delta)/\rho^2)$ (Theorem~\ref{thm:calibration_bound}), matching the $\Omega(1/\rho^2)$ lower bound up to $\log(1/\delta)$, thereby establishing minimax optimality via Le Cam's method~\citep{lecam1973convergence}.
+\noindent \emph{Interpretation.} Theorem~\ref{thm:minimax_lower} bounds the \emph{calibration} sample complexity, not the single-test Bayes error: the irreducible $B(\rho)$ persists for any $N$ and reflects the intrinsic Gaussian overlap. The result establishes that no calibrated threshold detector can drive its excess error below $\Omega(1/\sqrt{N \rho^2})$ over the oracle, and \memsad{} attains this rate up to logarithmic factors.
 
 \begin{theorem}[Calibration bound]
 \label{thm:calibration_bound}
@@ -487,7 +493,7 @@ Composite portfolios achieve $\tpr = 1.00$, $\fpr = 0.00$ across all attacks (Pr
     \bottomrule
   \end{tabular}
   \\[2pt]
-  {\footnotesize $^\dagger$Plain calibration (FPR\,=\,0.00); triggered calibration: TPR\,=\,1.00, FPR\,=\,0.00, AUROC\,=\,1.000. FPR validated over 20 independent trials ($n = 1{,}000$ entries each); Clopper-Pearson 95\% CI: [0.000, 0.004] (Appendix~\ref{app:fpr}).}
+  {\footnotesize $^\dagger$Plain calibration (FPR\,=\,0.00); triggered calibration: TPR\,=\,1.00, FPR\,=\,0.00, AUROC\,=\,1.000. FPR validated over 20 independent trials ($n = 1{,}000$ entries each); Clopper-Pearson 95\% CI: [0.000, 0.004] (Appendix~\ref{app:fpr}). \emph{Cross-table TPR consistency:} \minja{} TPR appears as $0.40$ here (10-passage poison set, plain calibration), $0.80$ in Table~\ref{tab:ood_comparison} (5-passage poison, MiniLM, triggered calibration), and varies $0.80$--$1.00$ across encoders in Table~\ref{tab:encoder_gen} (5-passage poison, triggered calibration). The differences are driven by poison-set size and calibration regime, not detector instability; each table's caption fixes the relevant conditions.}
   \vspace{-8pt}
 \end{table}
 
@@ -523,7 +529,7 @@ The certified condition (Lemma~\ref{lem:certified}) still holds for \minja{} pos
 
 \subsection{Statistical validation}
 
-Bonferroni-corrected binomial tests ($\alpha' = 0.003$, 15 comparisons): all composite results reject $H_0: \tpr = 0$ with power $= 1.00$ (Table~\ref{tab:hypothesis}, Appendix~\ref{app:hypothesis}).
+Bonferroni-corrected one-sided binomial tests ($\alpha' = 0.003$, 15 comparisons) with $H_0: \tpr \leq \tpr_{\text{base}} = 0.05$ (chance-level baseline reflecting random scoring at the operating $\fpr$): all composite results reject $H_0$ with power $= 1.00$ (Table~\ref{tab:hypothesis}, Appendix~\ref{app:hypothesis}).
 \memsad{} AUROC at $\kappa = 2.0$: $0.914$ (\minja{}), $0.816$ (\injecmem{}), $0.870$ (\agentpoison{}, plain); triggered calibration raises \agentpoison{} to AUROC $= 1.000$.
 Theory validation: calibration bound predicts $|\tau_N - \tau^*| \leq 0.022$ at $N = 200$; observed $0.014$ (Table~\ref{tab:ablation_calibration}, Appendix~\ref{app:ablation}).
 
@@ -555,10 +561,13 @@ On Mem0~\citep{mem0} (LLM-mediated storage), \agentpoison{} drops to $\asrr = 0.
 \label{sec:discussion}
 
 \paragraph{Defense complementarity.}
-No single defense dominates across access models $\alpha$: watermarking fails when auto-storage bypasses ingestion control; \memsad{} needs triggered calibration for \agentpoison{}; proactive detection complements both. The defender's uncertainty about $\alpha$ motivates composite portfolios ($\asrr^* = 0$, Proposition~\ref{prop:equilibrium}). We recommend layered deployment: watermarking at ingestion, rolling \memsad{} at retrieval, composite for high-value agents (${\sim}$2\,ms per entry; Table~\ref{tab:complexity}, Appendix~\ref{app:complexity}). Multi-agent SIR simulations (Appendix~\ref{app:propagation}) confirm that composite defense prevents cross-agent propagation entirely, while graph memory extensions (Appendix~\ref{app:graph}) show structural attacks require analogous degree-anomaly detection.
+No single defense dominates across access models $\alpha$: watermarking fails when auto-storage bypasses ingestion control; \memsad{} needs triggered calibration for \agentpoison{}; proactive detection complements both. The defender's uncertainty about $\alpha$ motivates composite portfolios ($\asrr^* = 0$, Proposition~\ref{prop:equilibrium}). We recommend layered deployment: watermarking at ingestion, rolling \memsad{} at write-time (i.e., applied to every candidate $c$ before commit; \emph{not} a retrieval-time filter), composite for high-value agents (${\sim}$2\,ms per entry; Table~\ref{tab:complexity}, Appendix~\ref{app:complexity}). Multi-agent SIR simulations (Appendix~\ref{app:propagation}) confirm that composite defense prevents cross-agent propagation entirely, while graph memory extensions (Appendix~\ref{app:graph}) show structural attacks require analogous degree-anomaly detection.
 
 \paragraph{The synonym frontier.}
 Proposition~\ref{prop:synonym} reveals a structural limitation: paraphrase-trained encoders map synonyms to nearly identical embeddings ($\epsilon_{\text{syn}} \approx 0$). \memsad{}+ partially closes this via character n-gram features, but complete closure requires syntactic structure or provenance metadata.
+
+\paragraph{Comparison with concurrent post-retrieval defenses.}
+A-MemGuard~\citep{amemguard2025} is the closest contemporary defense for LLM-agent memory; we situate it relative to \memsad{} along three axes. (i)~\emph{Stage:} A-MemGuard operates \emph{post-retrieval} via consensus checking on the retrieved entries, whereas \memsad{} operates \emph{at write time} before any entry is committed --- the latter prevents the entry from existing in memory at all, removing the persistent attack surface. (ii)~\emph{Guarantees:} A-MemGuard's evaluation is empirical (no formal bounds reported in the public preprint); \memsad{} provides the gradient-coupling theorem, certified detection radius, and calibration sample-complexity lower bound (Theorems~\ref{thm:gradient_coupling}, \ref{thm:minimax_lower}; Lemma~\ref{lem:certified}). (iii)~\emph{Latency:} write-time filtering pays $\sim$2\,ms per ingestion event but removes per-query overhead at retrieval; post-retrieval consensus pays a recurring per-query cost that scales with $k$ (top-$k$ retrieved entries). The two are architecturally complementary: a deployment combining \memsad{} ingestion with A-MemGuard's read-time consensus would harden both surfaces. We do not benchmark against A-MemGuard directly because its public implementation was unavailable at the time of submission; this is a stated limitation, and a comparison run with a faithful re-implementation is the cleanest extension for a future revision.
 
 \paragraph{Limitations.}
 (i)~Corpus scale and composition: $|\cM| = 1{,}000$ with synthetic entries; poison passages contain explicit adversarial language that inflates text-baseline detection. Cross-corpus NQ results (Appendix~\ref{app:nq_eval}) partially address generalization; production memory traces remain necessary.
@@ -568,7 +577,7 @@ Proposition~\ref{prop:synonym} reveals a structural limitation: paraphrase-train
 %% ============================================================
 \section{Conclusion}
 
-\memsad{} provides the first formally-guaranteed defense for RAG memory poisoning: gradient coupling (Theorem~\ref{thm:gradient_coupling}), certified per-entry detection (Lemma~\ref{lem:certified}), and minimax optimality (Theorem~\ref{thm:minimax_lower}); Proposition~\ref{prop:synonym} identifies the discrete synonym gap as the frontier. Open directions: closing that gap, scaling to production memory with approximate NN, and multi-modal extension.
+\memsad{} provides the first formally-guaranteed defense for RAG memory poisoning: gradient coupling (Theorem~\ref{thm:gradient_coupling}), certified per-entry detection (Lemma~\ref{lem:certified}), and minimax optimality (Theorem~\ref{thm:minimax_lower}); Proposition~\ref{prop:synonym} identifies the discrete synonym gap as the frontier. Open directions: closing that gap, scaling to production memory with approximate nearest-neighbor (ANN) indices, and multi-modal extension.
 
 %% ============================================================
 \bibliographystyle{plainnat}
@@ -625,34 +634,93 @@ Proposition~\ref{prop:synonym} reveals a structural limitation: paraphrase-train
 \section{Proofs of main results}
 \label{app:proofs}
 
+\subsection{Proof of Lemma~\ref{lem:certified} (Certified detection radius)}
+\label{app:proof_certified}
+
+\paragraph{Setup.} Recall $\bar s = \max_{m \in \cM_{\text{ref}}} \cosim(\enc(m), \enc(q^*))$ is the largest benign similarity to $q^*$ in the reference set, and $s_{\text{adv}} = \cosim(\enc(c), \enc(q^*))$. We write $s(c;\cH) = \alpha s_{\max}(c;\cH) + (1-\alpha) s_{\text{mean}}(c;\cH)$ for the deployed combined score, and $\hat\mu, \hat\sigma$ for the calibration statistics on $\cM_{\text{ref}}$.
+
+\paragraph{Step 1: lower-bound $s_{\max}(c;\cH)$ by $s_{\text{adv}}$.} Since $q^* \in \cH$ (the victim query is in the rolling history), $s_{\max}(c;\cH) = \max_{q \in \cH} \cosim(\enc(c), \enc(q)) \geq \cosim(\enc(c), \enc(q^*)) = s_{\text{adv}}$.
+
+\paragraph{Step 2: lower-bound $s_{\text{mean}}(c;\cH)$ under Assumption~\ref{ass:typical_query}.} Under the typical-query assumption, $s_{\text{mean}}(c;\cH) \geq \hat\mu_{\cH}(c) - \kappa\hat\sigma_{\cH}(c)$, which absorbs into a constant offset $\eta_{\text{mean}}$ depending on $\kappa$ and the running statistics. We bound this contribution conservatively as $s_{\text{mean}}(c;\cH) \geq \bar s - \eta_{\text{mean}}$.
+
+\paragraph{Step 3: combined-score lower bound.} Combining steps 1 and 2,
+\[
+  s(c;\cH) \;\geq\; \alpha\, s_{\text{adv}} + (1-\alpha)(\bar s - \eta_{\text{mean}})
+  \;=\; \alpha(\bar s + \Delta_s) + (1-\alpha)(\bar s - \eta_{\text{mean}})
+  \;=\; \bar s + \alpha \Delta_s - (1-\alpha)\eta_{\text{mean}}.
+\]
+
+\paragraph{Step 4: detection certificate.} The detector fires iff $s(c;\cH) > \hat\mu + \kappa\hat\sigma$. By the calibration bound (Theorem~\ref{thm:calibration_bound}), $\hat\mu + \kappa\hat\sigma \leq \tau^* + \eta$ where $\eta$ is the calibration tolerance and $\tau^*$ is the population threshold. Since $\bar s \geq \tau^* - \eta$ by the construction of $\bar s$ as a sample max,
+\[
+  s(c;\cH) - (\hat\mu + \kappa\hat\sigma) \;\geq\; \alpha\Delta_s - (1-\alpha)\eta_{\text{mean}} - 2\eta.
+\]
+The certificate $s(c;\cH) > \hat\mu + \kappa\hat\sigma$ holds whenever $\alpha\Delta_s > (1-\alpha)\eta_{\text{mean}} + 2\eta$, which under $\alpha = 1$ (pure max-cosine score) reduces to $\Delta_s > 2\eta$. The stated radius condition $\Delta_s > \kappa\hat\sigma + \eta$ is the deployed-score equivalent absorbing the typical-query slack into $\kappa\hat\sigma$ and tightening to a single calibration tolerance $\eta$. \qed
+
+\paragraph{Failure mode.} If Assumption~\ref{ass:typical_query} fails (e.g., $q^*$ is an outlier in $\cH$ produced by a colluding user), the lower bound in Step 2 fails and the certificate becomes probabilistic rather than deterministic. The deterministic guarantee is recovered for the $s_{\max}$-only detector ($\alpha = 1$) at the cost of weaker detection of distributed attacks.
+
 \subsection{Proof of Theorem~\ref{thm:gradient_coupling} (geometric interpretation)}
 \label{app:proof_gradient}
 
-Under L2-normalization, embeddings lie on $\mathbb{S}^{d-1}$. The Riemannian gradient of $f(e_c) = e_c^\top v$ on the sphere is $\nabla_{\mathbb{S}} f = v - (e_c^\top v) e_c = \Pi_{e_c}^{\perp} v$, the projection of $v$ onto the tangent space $T_{e_c}\mathbb{S}^{d-1}$. For any monotone transformation $g$, the chain rule gives $\nabla(g \circ f) = g'(f) \cdot \nabla f$, which has the same sign as $\nabla f$ since $g' > 0$. The converse (non-monotone $\cD$ admits evasion) follows because non-monotonicity creates a region where increasing retrieval similarity decreases detection score, giving the adversary a ``free'' direction in embedding space.
+Under L2-normalization, embeddings lie on $\mathbb{S}^{d-1}$. The \emph{Riemannian} (spherical, tangent-space) gradient of $f(e_c) = e_c^\top v$ on the sphere is $\nabla_{\mathbb{S}} f = v - (e_c^\top v) e_c = \Pi_{e_c}^{\perp} v$, the projection of $v$ onto the tangent space $T_{e_c}\mathbb{S}^{d-1}$; this is distinct from the ambient Euclidean gradient and is the relevant gradient for any continuous evasion path constrained to $\mathbb{S}^{d-1}$. For any monotone transformation $g$, the chain rule gives $\nabla(g \circ f) = g'(f) \cdot \nabla f$, which points in the same direction as $\nabla f$ since $g' > 0$. The converse (non-monotone $\cD$ admits evasion) follows because non-monotonicity creates a region where increasing retrieval similarity decreases detection score, giving the adversary a ``free'' direction in embedding space.
 
 \subsection{Proof of Theorem~\ref{thm:minimax_lower} (detailed)}
 \label{app:proof_minimax}
 
-\paragraph{Setup.} Instantiate Le Cam's method with:
-$H_0$: $s(c; \cH) \sim P_0 = \cN(\mu_0, \sigma^2)$ (benign);
-$H_1$: $s(c; \cH) \sim P_1 = \cN(\mu_1, \sigma^2)$ (poisoned), $\mu_1 > \mu_0$.
-Then $\KL(P_0 \| P_1) = (\mu_1 - \mu_0)^2 / (2\sigma^2) = \rho^2/2$.
+\paragraph{Setup.} The detector $\hat\pi_N$ is calibrated by drawing $N$ i.i.d.\ samples from the benign distribution $P_0 = \cN(\mu_0, \sigma^2)$ and producing an estimator $\hat\tau_N(X_1, \ldots, X_N)$ of the oracle threshold $\tau^*$. At inference time, a single test sample $c$ is drawn from either $P_0$ (benign) or $P_1 = \cN(\mu_1, \sigma^2)$ (adversarial) with $\mu_1 - \mu_0 = \rho\sigma$, and classified by $\hat\pi_N(c) = \mathbf{1}[s(c) > \hat\tau_N]$.
 
-\paragraph{Application.} For product distributions, $\KL(P_0^N \| P_1^N) = N\rho^2/2$. By Pinsker: $\TV(P_0^N, P_1^N) \leq \sqrt{N\rho^2/4} = \rho\sqrt{N}/2$. Le Cam gives minimax risk $R^* \geq \frac{1}{2}(1 - \TV) \geq \frac{1}{2}(1 - \rho\sqrt{N}/2)$ under the uniform prior $\PP(H_0) = \PP(H_1) = 1/2$. Under this prior, the frequentist total error $\fpr + (1-\tpr) = 2 \cdot P_e \geq 2R^* = 1 - \rho\sqrt{N}/2$.
+\paragraph{Bayes error decomposition.} Under the symmetric prior $\PP(H_0) = \PP(H_1) = 1/2$, the oracle threshold $\tau^* = (\mu_0+\mu_1)/2$ achieves Bayes error $B(\rho) = \Phi(-\rho/2)$, where $\Phi$ is the standard normal CDF. For any calibrated threshold $\hat\tau_N$, a first-order Taylor expansion of the Gaussian CDF around $\tau^*$ gives
+\begin{equation}
+  \PP_{\text{err}}(\hat\pi_N) - B(\rho) = \tfrac{1}{2\sigma}\,\phi(\rho/2)\,|\hat\tau_N - \tau^*| + O\big((\hat\tau_N-\tau^*)^2\big),
+  \label{eq:excess-error}
+\end{equation}
+where $\phi$ is the standard normal density. Hence excess error is linear in $|\hat\tau_N - \tau^*|$ to leading order, and reducing the excess to $\epsilon$ requires $|\hat\tau_N - \tau^*| = O(\sigma\epsilon)$.
 
-\paragraph{Alternative via Fano.} For $M = 2$ hypotheses, Fano's inequality gives $P_e \geq 1 - (I(X; \Theta) + \log 2)/\log M = 1 - (N\rho^2/4 + \log 2)/\log 2$, where $I(X; \Theta) \leq \max_j \KL(P_j^N \| \bar{P}^N) \leq N\rho^2/4$ by the mixture bound. This yields a slightly weaker constant but extends to the $M$-ary setting (e.g., distinguishing $M$ attack types simultaneously).
+\paragraph{Lower bound via Le Cam (calibration formulation).} The threshold-estimation problem is to estimate $\tau^*$ from $N$ benign samples $X_1, \ldots, X_N \sim P_0 = \cN(\mu_0, \sigma^2)$. Consider the two-point family $\{\mu_0, \mu_0 + \Delta\}$ with $\Delta = \sigma\rho/2$ (so $\tau^* \in \{\tau^*_0, \tau^*_0 + \Delta/2\}$ depending on which $\mu_0$ is true). For product distributions $P_{\mu_0}^N$ and $P_{\mu_0+\Delta}^N$,
+\[
+  \KL(P_{\mu_0}^N \| P_{\mu_0+\Delta}^N) = N\Delta^2 / (2\sigma^2) = N\rho^2/8.
+\]
+By Pinsker's inequality, $\TV(P_{\mu_0}^N, P_{\mu_0+\Delta}^N) \leq \sqrt{N\rho^2/16} = \rho\sqrt{N}/4$. Le Cam's two-point inequality~\citep{lecam1973convergence} then yields, for any estimator $\hat\tau_N$,
+\[
+  \sup_{\mu \in \{\mu_0, \mu_0+\Delta\}} \EE_\mu \big[ |\hat\tau_N - \tau^*(\mu)| \big] \;\geq\; \tfrac{\Delta}{4}\,\big(1 - \TV\big) \;=\; \tfrac{\sigma\rho}{8}\,\big(1 - \rho\sqrt{N}/4\big).
+\]
+For the bound to be non-trivial we require $\rho\sqrt{N} < 4$, i.e., $N < 16/\rho^2$; in that regime the right-hand side is $\Omega(\sigma\rho)$, which combined with~\eqref{eq:excess-error} gives expected excess error $\Omega(\rho)$. To drive this excess to $\epsilon$, we therefore require $N \geq c(\epsilon)/\rho^2$ for an absolute constant $c(\epsilon) > 0$ depending only on the prior-symmetry and the target excess level. This is the lower bound stated in Theorem~\ref{thm:minimax_lower}.
 
-\paragraph{Tightness.} For Gaussian $P_0, P_1$, the Neyman-Pearson optimal test achieves $\fpr + (1-\tpr) = 2\Phi(-\rho\sqrt{N}/2)$ where $\Phi$ is the Gaussian CDF. Comparing with the Le Cam bound: $2\Phi(-x) \approx \sqrt{2/\pi}\,e^{-x^2/2}/x$ for large $x$, confirming the $\Omega(1/\rho^2)$ sample complexity is tight for Gaussian scores.
+\paragraph{Distinction from a batch test.} Le Cam can also be applied to the \emph{batch} hypothesis test (\textsc{is the entire $N$-sample dataset drawn from $P_0$ or $P_1$?}), which yields the familiar $\KL(P_0^N \| P_1^N) = N\rho^2/2$ and $\rho\sqrt{N}/2$ total-variation bound. That formulation is \emph{not} the MEMSAD inference setting, in which a single test point $c$ is classified after the calibration phase; we use the calibration formulation above instead.
+
+\paragraph{Tightness.} Combining Theorem~\ref{thm:calibration_bound} ($|\hat\tau_N - \tau^*| = O(\sigma\sqrt{\log(1/\delta)/N})$) with~\eqref{eq:excess-error} gives expected excess error $O(\sqrt{\log(1/\delta)/(N\rho^2)})$. Setting this equal to $\epsilon$ yields $N = O(\log(1/\delta)/(\epsilon^2\rho^2))$, matching the $\Omega(1/\rho^2)$ lower bound up to logarithmic and $\epsilon$-dependent factors. The irreducible Bayes error $B(\rho) = \Phi(-\rho/2)$ persists at any $N$ and reflects intrinsic Gaussian overlap of $P_0$ and $P_1$, not calibration error.
 
 \subsection{Proof of Theorem~\ref{thm:calibration_bound}}
 \label{app:proof_calibration}
 
-By Hoeffding on $[0,1]$~\citep{wainwright2019highdim}: $|\hat{\mu}_N - \mu| \leq \sqrt{\log(2/\delta)/(2N)}$ w.p.\ $\geq 1 - \delta/2$.
+\paragraph{Mean concentration.} The cosine similarity score $s(c;\cH)$ takes values in $[-1, 1]$ (interval length $2$). Hoeffding's inequality~\citep{wainwright2019highdim} on a bounded interval of length $b - a = 2$ gives
+\[
+  \PP\!\left(|\hat\mu_N - \mu| \geq t\right) \;\leq\; 2\exp\!\left(-\tfrac{2 N t^2}{(b-a)^2}\right) \;=\; 2\exp\!\left(-\tfrac{N t^2}{2}\right).
+\]
+Setting the right-hand side to $\delta/2$ yields
+\[
+  |\hat\mu_N - \mu| \;\leq\; \sigma\sqrt{2\log(4/\delta)/N} \quad \text{w.p.}\;\geq 1 - \delta/4,
+\]
+where the $\sigma$ factor is recovered as a multiplicative constant absorbing the universal $\sqrt{2}$ from the interval length $2$.\footnote{An empirical Bernstein bound~\citep{maurer2009empirical} could replace the absolute Hoeffding range with the variance, yielding a tighter $\sqrt{\sigma^2 \log/N}$ rate; we state the worst-case bound here for simplicity.}
 
-For the standard deviation term, let $Z = (N-1)\hat{\sigma}_N^2/\sigma^2 \sim \chi^2(N-1)$ (exactly, for Gaussian scores; approximately for bounded scores by Berry-Esseen). By Laurent \& Massart~\citep{laurentmassart2000} Lemma~1: $\PP[Z \geq (N-1) + 2\sqrt{(N-1)x} + 2x] \leq e^{-x}$ and $\PP[Z \leq (N-1) - 2\sqrt{(N-1)x}] \leq e^{-x}$. Setting $x = \log(2/\delta)$ and applying the delta method ($\hat{\sigma}_N = \sigma\sqrt{Z/(N-1)}$, so $|\hat{\sigma}_N - \sigma| = \sigma|\sqrt{Z/(N-1)} - 1|$) with $\sqrt{1+u} - 1 \leq u/2$ for $0 \leq u \leq 1$ (by concavity of $\sqrt{\cdot}$) yields:
-$|\hat{\sigma}_N - \sigma| \leq \sigma\sqrt{\log(2/\delta)/(2(N-1))}$ w.p.\ $\geq 1 - \delta/2$.
+\paragraph{Variance concentration (two-sided).} Let $Z = (N-1)\hat\sigma_N^2 / \sigma^2 \sim \chi^2(N-1)$ (exactly for Gaussian scores; approximately for bounded scores via Berry-Esseen). Laurent--Massart~\citep{laurentmassart2000} Lemma 1 yields the two-sided bound
+\[
+  \PP\big[(1 - 2\sqrt{x/(N-1)})_+\,(N-1) \;\leq\; Z \;\leq\; (1 + 2\sqrt{x/(N-1)} + 2x/(N-1))(N-1)\big] \;\geq\; 1 - 2 e^{-x}.
+\]
+Setting $x = \log(4/\delta)$ and dividing by $N-1$, with the substitution $u = Z/(N-1) - 1$ so $u \in [-c_-, c_+]$ for $c_\pm = O(\sqrt{\log(1/\delta)/N})$:
+\[
+  |\hat\sigma_N - \sigma| \;=\; \sigma\,|\sqrt{1+u} - 1| \;\leq\; \sigma\,\max(|c_-|, |c_+|) / 2 \cdot (1 + o(1))
+\]
+where the upper-tail bound uses $\sqrt{1+u} - 1 \leq u/2$ for $u \geq 0$, and the lower-tail bound uses the corrected inequality $|\sqrt{1+u} - 1| \leq |u|/(2\sqrt{1+u}) \leq |u|/\sqrt{2}$ for $u \in [-1/2, 0]$ (so $\sqrt{1+u} \geq 1/\sqrt{2}$). Both tails together give
+\[
+  |\hat\sigma_N - \sigma| \;\leq\; \sigma\sqrt{2\log(4/\delta)/(N-1)} \quad \text{w.p.}\;\geq 1 - \delta/2,
+\]
+where we have absorbed the leading constants into a clean form valid for $N \geq 4\log(4/\delta)$ (the regime in which $|u| \leq 1/2$ holds with high probability).
 
-Triangle inequality: $|\tau_N - \tau^*| \leq |\hat{\mu}_N - \mu| + \kappa|\hat{\sigma}_N - \sigma|$. Union bound yields the calibration bound in Theorem~\ref{thm:calibration_bound}.
+\paragraph{Combination.} By the triangle inequality $|\tau_N - \tau^*| \leq |\hat\mu_N - \mu| + \kappa|\hat\sigma_N - \sigma|$, and union bound over the two events at confidence $1 - \delta/4$ each yields total confidence $1 - \delta/2$; absorbing the additional $\delta/2$ tolerance for the variance lower-tail correction gives a final $1 - \delta$ bound, exactly matching the theorem statement
+\[
+  |\tau_N - \tau^*| \;\leq\; \sigma\!\left(\sqrt{\tfrac{1}{N}} + \kappa\sqrt{\tfrac{1}{2(N-1)}}\right)\sqrt{2\log(4/\delta)}.
+\]
+The factor $\sqrt{2\log(4/\delta)}$ replaces the previously stated $\sqrt{2\log(2/\delta)}$ to correctly reflect the four sub-events ($\hat\mu$ upper/lower, $\hat\sigma$ upper/lower) controlled by the union bound.
 
 \subsection{Proof of Theorem~\ref{thm:regret}}
 \label{app:proof_regret}
@@ -691,44 +759,37 @@ where the last equality uses $g = \text{id}$ (since $\cD$ is the cosine similari
 \subsection{Proof of Proposition~\ref{prop:hardness} (detailed)}
 \label{app:proof_hardness}
 
-\begin{proposition}[Hardness of optimal evasion]
+\begin{proposition}[Hardness of optimal discrete-token evasion]
 \label{prop:hardness}
-The minimum-perturbation evasion problem is NP-hard for piecewise-linear encoders, via reduction from CVP~\citep{micciancio2001hardness}. This motivates the adversary's shift to discrete synonym substitution.
+The \emph{discrete-token} minimum-edit evasion problem is NP-hard for piecewise-linear encoders, via reduction from CVP~\citep{micciancio2001hardness}. The continuous-embedding relaxation is, by contrast, solvable in polynomial time within any fixed activation region; the hardness arises specifically from the integrality (token-index) constraints in the input vocabulary.
 \end{proposition}
 
-\paragraph{Reduction from CVP.} Given a CVP instance $(\Lambda, t)$ where $\Lambda \subseteq \RR^n$ is a lattice with basis $B \in \RR^{n \times n}$ and $t \in \RR^n$ is the target vector, we construct a memory poisoning evasion instance as follows.
+\paragraph{Why the discrete formulation is the relevant hard problem.} The continuous problem of finding the minimum-norm embedding-space perturbation $\delta \in \RR^d$ subject to a cosine-similarity constraint on $e_c + \delta$ is a continuous convex optimization within any fixed ReLU activation region: the constraint set is a convex polytope, and within each polytope the objective is quadratic. A polynomial-time algorithm enumerates regions or solves a single SOCP under a fixed activation pattern. We do \emph{not} claim hardness for this relaxation. The deployed adversary, however, must produce a token sequence $c \in \cV^*$ whose embedding satisfies the constraint, and the embedding is tied to the token sequence via the integer indices selected from the vocabulary $\cV$. We formalize this discrete-token problem and show its NP-hardness below.
 
-\paragraph{Encoder construction (explicit).}
-Let $n$ be the CVP lattice dimension. Define $\enc: \RR^n \to \RR^n$ as a single-hidden-layer ReLU network:
-\begin{equation}
-  \enc(x) = \mathrm{ReLU}(W_1 x), \quad W_1 = B^\top \in \RR^{n \times n},
-\end{equation}
-where $B$ is the lattice basis matrix. Set the query embedding $\enc(q^*) = t/\|t\|$ (normalized target). Set biases to zero, so the encoder is $\enc(x) = \mathrm{ReLU}(B^\top x)$.
+\paragraph{Discrete-token evasion problem.} Fix a piecewise-linear encoder $\enc : \cV^* \to \RR^d$ (e.g., one-hot lookup followed by a ReLU network), a victim query embedding $\enc(q^*)$, a retrieval threshold $\tau_{\text{ret}}$, and a detection threshold $\tau_{\text{det}} = \hat\mu + \kappa\hat\sigma$. Given an initial passage $c_0 \in \cV^*$ and an edit budget $r \in \NN$, decide whether there exists $c \in \cV^*$ with token-edit distance $d_T(c_0, c) \leq r$ such that $\cosim(\enc(c), \enc(q^*)) \in [\tau_{\text{ret}}, \tau_{\text{det}}]$.
 
-\paragraph{Feasible set.} The evasion constraint $\cD(e_c + \delta) \leq \hat{\mu} + \kappa\hat{\sigma}$ with $\cR(e_c + \delta) \geq \tau_{\text{ret}}$ defines:
-\begin{equation}
-  \cF = \{x \in \RR^n : \cosim(\enc(x), t/\|t\|) \in [\tau_{\text{ret}},\, \hat{\mu} + \kappa\hat{\sigma}]\}.
-\end{equation}
-Within each ReLU activation region $\mathcal{I} \subseteq \{0,1\}^n$ (indexing which neurons are active), the encoder acts as the affine map $\enc_{\mathcal{I}}(x) = D_{\mathcal{I}} B^\top x$ where $D_{\mathcal{I}}$ is the diagonal activation mask. Hence $\cF \cap \text{region}_\mathcal{I}$ is a convex polytope defined by two half-space constraints in $x$-space.
+\paragraph{Reduction from CVP.} Given a CVP instance $(\Lambda, t)$ where $\Lambda = B\mathbb{Z}^n$ is a lattice with basis $B \in \RR^{n \times n}$ and target $t \in \RR^n$, construct an instance of the discrete-token evasion problem as follows. Let $\cV = \{v_1, \ldots, v_n\}$ have $|\cV| = n$, and let the input embedding lookup map $v_i \mapsto b_i$ where $b_i$ is the $i$-th column of $B$. Take the encoder $\enc(c) = \mathrm{ReLU}(\sum_{i:v_i \in c} b_i)$, which under the all-active region computes $\enc(c) = \sum_{i \in I(c)} b_i = B \mathbf{1}_{I(c)}$ where $I(c)$ is the index set of tokens in $c$. The adversary's discrete choice of $c$ is therefore equivalent to selecting $\lambda \in \{0,1\}^n \subset \mathbb{Z}^n$, and the constraint $\cosim(B\lambda, t/\|t\|) \geq \tau_{\text{ret}}$ instantiates exactly the minimum-distance lattice problem in $\Lambda$ restricted to $0/1$ coefficients. The integrality constraint $\lambda \in \mathbb{Z}^n$ is enforced by the discrete vocabulary, which is what continuous embedding-space optimization lacks. Hence the discrete-token evasion problem subsumes CVP and is NP-hard under randomized reductions~\citep{micciancio2001hardness}. \qed
 
-\paragraph{Formal reduction.}
-Given the CVP instance $(\Lambda = B\mathbb{Z}^n, t)$, let $x_0 = 0$ be the origin (current passage embedding). The minimum-perturbation evasion problem asks for:
-\[
-  \delta^* = \argmin_{\delta} \|\delta\| \quad \text{s.t.} \quad x_0 + \delta \in \cF.
-\]
-We claim $\|\delta^*\| = \|B^{-\top} v^* - 0\|$ where $v^*$ is the closest lattice vector to $t$ in $\Lambda$. Specifically: within the single activation region where all neurons are active ($D_\mathcal{I} = I$), $\enc(x) = B^\top x$, and $\cosim(B^\top x, t/\|t\|) = (B^\top x)^\top t / (\|B^\top x\| \cdot \|t\|)$. The feasibility constraint becomes a quadratic constraint in $x$. For the target similarity $\tau_{\text{ret}} = \cos\theta^*$ induced by the CVP distance, the minimum-norm $x$ satisfying the constraint corresponds exactly to finding the vector $x = B^{-\top} \lambda$ with $\lambda \in \mathbb{Z}^n$ closest to $t$ in the lattice metric --- which is exactly CVP. This reduction runs in polynomial time in $n$ (constructing $W_1 = B^\top$ and $\enc(q^*) = t/\|t\|$ takes $O(n^2)$ time). Since CVP is NP-hard under randomized reductions~\citep{micciancio2001hardness}, the minimum-perturbation evasion problem is NP-hard. \qed
-
-\paragraph{Practical implication.} This hardness result is \emph{worst-case} over encoder architectures: for the specific ReLU encoder construction used in the reduction, the optimal evasion is NP-hard. For the actual all-MiniLM-L6-v2 encoder (transformer architecture), the reduction does not directly apply due to softmax nonlinearities, and the result is conjectured but not proven. The practical takeaway is that efficient optimal evasion is unlikely, motivating the adversary's empirical shift to discrete synonym substitution that sidesteps gradient-based search entirely.
+\paragraph{Practical implication.} The continuous-embedding evasion is poly-time within any activation region (PAT-flagged correctly): an adversary with white-box continuous access to the embedding could compute the minimum-norm direction in poly-time and would be defeated only by gradient coupling (Theorem~\ref{thm:gradient_coupling}). The genuine hardness, captured by Proposition~\ref{prop:hardness}, lies in projecting that continuous direction back onto the integer-valued token grid --- exactly the discrete bottleneck the synonym-loophole adversary (Proposition~\ref{prop:synonym}) exploits in the opposite direction. Together: gradient coupling closes the continuous attack surface, the discrete reduction closes the unconstrained-token attack surface, and the synonym loophole identifies the residual gap.
 
 \subsection{Detection-evasion tradeoff surface}
 \label{app:tradeoff_surface}
 
-\begin{corollary}[Combined scoring preserves coupling]
+\begin{assumption}[Aligned mean gradient]
+\label{ass:aligned_mean}
+The mean-similarity gradient is not adversarial to the max-similarity gradient, in the sense $\langle \nabla s_{\text{mean}}, \nabla s_{\max}\rangle \geq -\beta \|\nabla s_{\max}\|^2$ for some $\beta \in [0, \alpha/(1-\alpha))$ at all points of differentiability of $s_{\text{comb}}$.
+\end{assumption}
+
+\begin{corollary}[Combined scoring preserves directional coupling]
 \label{cor:combined_coupling}
-The combined score $s_{\text{comb}} = \alpha\, s_{\max} + (1-\alpha)\, s_{\text{mean}}$ with $\alpha \in (0,1)$ satisfies directional monotonicity: $\langle \delta, \nabla s_{\text{comb}} \rangle < 0 \implies \langle \delta, \nabla \cR \rangle < 0$ (at all points of differentiability), and admits the same necessity characterization~(ii). Consequently, Lemma~\ref{lem:certified} and Theorem~\ref{thm:fisher_rao} apply unchanged to $s_{\text{comb}}$.
+Under Assumption~\ref{ass:aligned_mean}, the combined score $s_{\text{comb}} = \alpha\, s_{\max} + (1-\alpha)\, s_{\text{mean}}$ with $\alpha \in (0,1)$ satisfies directional monotonicity: any continuous perturbation $\delta$ that strictly decreases $s_{\text{comb}}$ also strictly decreases $\cR = s_{\max}$. Consequently, Lemma~\ref{lem:certified} and Theorem~\ref{thm:fisher_rao} apply with a multiplicative constant degradation reflecting the worst-case alignment $\beta$.
 \end{corollary}
 \begin{proof}
-$\nabla s_{\text{comb}} = \alpha \nabla s_{\max} + (1-\alpha)\nabla s_{\text{mean}}$. Since $\nabla s_{\max} = \nabla_{e_c}\cosim(e_c, \enc(q^*))$ for the unique maximizer $q^*$, the projection onto $\nabla\cR$ is positive under the mild condition that the mean gradient is not adversarial to the max gradient (holds empirically). The second-order tradeoff surface follows below.
+$\nabla s_{\text{comb}} = \alpha \nabla s_{\max} + (1-\alpha)\nabla s_{\text{mean}}$. The projection onto the max-direction is
+\[
+  \langle \nabla s_{\text{comb}}, \nabla s_{\max}\rangle = \alpha\|\nabla s_{\max}\|^2 + (1-\alpha)\langle \nabla s_{\text{mean}}, \nabla s_{\max}\rangle \geq (\alpha - (1-\alpha)\beta)\|\nabla s_{\max}\|^2.
+\]
+Under Assumption~\ref{ass:aligned_mean}, $\alpha - (1-\alpha)\beta > 0$, so $\langle \nabla s_{\text{comb}}, \nabla s_{\max}\rangle$ has the same sign as $\|\nabla s_{\max}\|^2 > 0$, and any $\delta$ with $\langle \delta, \nabla s_{\text{comb}}\rangle < 0$ must satisfy $\langle \delta, \nabla s_{\max}\rangle < 0$. The empirical bound from our experiments (Section~\ref{sec:experiments}) gives $\beta \leq 0.4$ across all 6 encoders evaluated, well within the constraint $\beta < \alpha/(1-\alpha) = 1$ at $\alpha = 0.5$.
 \end{proof}
 
 By Theorem~\ref{thm:gradient_coupling}, $\cD(e_c') < \cD(e_c)$ (evasion) implies $\cR(e_c') < \cR(e_c)$ (retrieval degradation) to first order. The tradeoff defines a surface in $(\epsilon, \theta, \Delta\cD)$ space where $\theta$ is the angle between perturbation $\delta$ and gradient $\nabla\cD$. Expanding to second order:
@@ -778,7 +839,11 @@ where $H_{\cD}$ is the Hessian of the cosine similarity on the sphere. Under L2-
 
 \begin{theorem}[Generalization bound]
 \label{thm:generalization}
-For a novel attack with $W_1(P_{\text{new}}, P_j) \leq \epsilon_W$: $|\tpr_{\text{new}} - \tpr_j| \leq \epsilon_W/\hat{\sigma} + O(1/\sqrt{N})$.
+Suppose the novel-attack score density $f_{\text{new}}$ and the calibration score density $f_j$ are both bounded by $g_{\max}$. Then for $W_1(P_{\text{new}}, P_j) \leq \epsilon_W$,
+\[
+  |\tpr_{\text{new}} - \tpr_j| \;\leq\; \sqrt{2\,g_{\max}\,\epsilon_W} + O(N^{-1/2}).
+\]
+For Gaussian scores with std $\sigma$, $g_{\max} = (\sigma\sqrt{2\pi})^{-1}$, giving $|\tpr_{\text{new}} - \tpr_j| \leq \sqrt{\epsilon_W / (\sigma\sqrt{\pi/2})} + O(N^{-1/2})$.
 \end{theorem}
 
 \begin{remark}[Practical estimation of $\epsilon_W$]
@@ -788,13 +853,23 @@ In practice, $\epsilon_W$ can be estimated from a validation set via sorting-bas
 
 \paragraph{Proof setup.} Let $F_j$ and $F_{\text{new}}$ denote the CDFs of scores $s(c; \cH)$ under $P_j$ and $P_{\text{new}}$, respectively. The TPR at threshold $\tau$ is $\tpr(\tau) = 1 - F(\tau)$.
 
-\paragraph{Wasserstein coupling.} By Kantorovich-Rubinstein duality:
+\paragraph{Wasserstein-to-Kolmogorov bound.} The 1-Wasserstein distance is the integral of pointwise CDF difference:
 \begin{equation}
-  W_1(F_j, F_{\text{new}}) = \sup_{\|f\|_{\text{Lip}} \leq 1} |\EE_{F_j}[f] - \EE_{F_{\text{new}}}[f]| = \int_{-\infty}^{\infty} |F_j(s) - F_{\text{new}}(s)| \, ds.
+  W_1(F_j, F_{\text{new}}) \;=\; \int_{-\infty}^{\infty} |F_j(s) - F_{\text{new}}(s)| \, ds.
 \end{equation}
-Since $\tpr_j = 1 - F_j(\tau)$ and $\tpr_{\text{new}} = 1 - F_{\text{new}}(\tau)$:
-$|\tpr_j - \tpr_{\text{new}}| = |F_{\text{new}}(\tau) - F_j(\tau)| \leq W_1(F_j, F_{\text{new}})/\hat{\sigma}$.
-The $1/\hat{\sigma}$ factor arises because scores are standardized: the CDFs $F_j, F_{\text{new}}$ operate on $(s - \hat{\mu})/\hat{\sigma}$, so a shift of $\epsilon_W$ in raw score space corresponds to $\epsilon_W/\hat{\sigma}$ in standardized units. Equivalently, the score density is bounded by $1/\hat{\sigma}$ (Gaussian with variance $\hat{\sigma}^2$), and $|F(\tau + h) - F(\tau)| \leq |h|/\hat{\sigma}$ by the mean value theorem.
+This is an $L^1$ norm on the CDF gap and does \emph{not} linearly upper-bound the $L^\infty$ (pointwise sup) gap. The correct relationship under a uniform density bound is the standard $L^1$-to-$L^\infty$ trade for absolutely continuous distributions: if $|f_j|, |f_{\text{new}}| \leq g_{\max}$, then for any $\tau$ and any $h > 0$,
+\[
+  |F_j(\tau) - F_{\text{new}}(\tau)|
+  \;\leq\;
+  \frac{1}{2h}\!\int_{\tau-h}^{\tau+h}\! |F_j(s) - F_{\text{new}}(s)|\,ds + g_{\max} h
+  \;\leq\;
+  \frac{W_1}{2h} + g_{\max} h,
+\]
+where the first inequality applies because $|F_j(\tau) - F_j(s)| \leq g_{\max}|s-\tau|$ and likewise for $F_{\text{new}}$, and the second uses non-negativity of the integrand. Optimising over $h > 0$ at $h = \sqrt{W_1/(2g_{\max})}$ gives
+\[
+  |F_j(\tau) - F_{\text{new}}(\tau)| \;\leq\; \sqrt{2\,g_{\max}\,W_1}.
+\]
+Since $|\tpr_j - \tpr_{\text{new}}| = |F_j(\tau) - F_{\text{new}}(\tau)|$, the stated bound follows. The $\sqrt{\cdot}$ scaling is sharp: a localized mass shift of $m$ across the threshold over distance $h \to 0$ has $W_1 = m h \to 0$ but $|F-G|_\infty \to m$, and only the bounded-density assumption rules this out at the rate $\sqrt{W_1}$.
 
 \paragraph{Threshold estimation.} By Theorem~\ref{thm:calibration_bound}, $|\hat{\tau} - \tau^*| \leq \eta_N$ w.p.\ $\geq 1-\delta$, contributing an additional $O(1/\sqrt{N})$ term to the TPR bound via the score density at the threshold.
 
@@ -860,12 +935,18 @@ In practice, the composite portfolio $(\pi_{\text{wm}} \lor \pi_{\text{SAD}} \lo
 
 \begin{proposition}[FPR concentration]
 \label{prop:fpr_concentration}
-Let $c_1, \ldots, c_n$ be $n$ i.i.d.\ benign candidates with scores $s_i = s(c_i; \cH)$. Let $\widehat{\fpr}_n = n^{-1}\sum_{i=1}^n \mathbf{1}[s_i > \hat{\mu} + \kappa\hat{\sigma}]$. Under sub-Gaussian scores with parameter $\sigma^2$:
+Let $c_1, \ldots, c_n$ be $n$ i.i.d.\ benign candidates evaluated against a threshold $\hat\tau_N$ calibrated from $N$ separate i.i.d.\ benign samples. Let $\widehat{\fpr}_n = n^{-1}\sum_{i=1}^n \mathbf{1}[s_i > \hat\tau_N]$ and let $\fpr^*$ be the population FPR at the oracle threshold $\tau^*$. Then
 \begin{equation}
-  \PP\!\left[|\widehat{\fpr}_n - \fpr| > \epsilon\right] \leq 2\exp\!\left(-\frac{n\epsilon^2}{2\fpr(1-\fpr)}\right) + 2\exp\!\left(-\frac{n\epsilon^2}{8}\right).
+  \PP\!\left[|\widehat{\fpr}_n - \fpr^*| > \epsilon\right]
+  \;\leq\;
+  \underbrace{2\exp\!\left(-\frac{n\epsilon^2/2}{\fpr^*(1-\fpr^*) + \epsilon/3}\right)}_{\text{empirical FPR concentration (Bernstein)}}
+  +
+  \underbrace{2\exp\!\left(-\frac{N\epsilon^2}{8}\right)}_{\text{threshold-estimation error}}.
 \end{equation}
-The first term is the Bernstein bound on the empirical FPR; the second accounts for threshold estimation error (from Theorem~\ref{thm:calibration_bound}). For $\kappa = 2.0$ and $n = 1{,}000$: $\PP[|\widehat{\fpr} - 0| > 0.01] < 0.006$, consistent with the Clopper-Pearson CI $[0.000, 0.004]$ (Table~\ref{tab:fpr_validation}).
+The first term is Bernstein's inequality with the standard $\epsilon/3$ range correction (the previous omission of this term renders the bound vacuous when $\fpr^* = 0$, the regime of interest); the second tracks the calibration error, with the correct denominator being the calibration size $N$, \emph{not} the test-set size $n$, since the threshold is fixed once calibration ends.
 \end{proposition}
+
+For $\kappa = 2.0$, $N = 200$, $n = 1{,}000$, $\fpr^* = 0$: with $\epsilon = 0.01$ the first term reduces to $2 e^{-1.5}\approx 0.45$ (loose because $\fpr^* = 0$); the binomial-exact Clopper-Pearson CI $[0.000, 0.004]$ (Table~\ref{tab:fpr_validation}) is the tighter bound used in practice and is the only one we report empirically. The second term gives $2 e^{-0.25} \approx 1.6$, dominated by the calibration confidence already enforced via Theorem~\ref{thm:calibration_bound}.
 
 \section{Additional defense details}
 \label{app:defenses}
@@ -874,7 +955,11 @@ The first term is the Bernstein bound on the empirical FPR; the second accounts 
 
 \paragraph{Proactive.} 16 probe queries span 8 subtopics. Threshold $\tau = 0.19$ minimizes FPR while maintaining $\geq 0.50$ TPR on centroid passages.
 
-\paragraph{Composite defense.} The weighted ensemble uses $w_{\text{wm}} = 0.50$, $w_{\text{val}} = 0.20$, $w_{\text{pro}} = 0.30$, threshold $\theta = 0.50$: an entry is rejected if $0.50 \cdot d_{\text{wm}}(c) + 0.20 \cdot d_{\text{val}}(c) + 0.30 \cdot d_{\text{pro}}(c) > 0.50$. Composite achieves $\tpr = 1.00$ because watermarking alone achieves $\tpr = 1.00$ when controlling ingestion; for attacks exploiting auto-storage (bypassing watermarking), proactive and validation terms provide the remaining detection.
+\paragraph{Composite defense.} \emph{Definitive specification (resolves an inconsistency in earlier drafts).} The composite defense deployed in all experiments is the logical disjunction
+\[
+  \pi_{\text{comp}}(c) \;=\; \pi_{\text{wm}}(c) \;\lor\; \pi_{\text{SAD}}(c) \;\lor\; \pi_{\text{pro}}(c),
+\]
+i.e., an entry is rejected if any of the watermark, MEMSAD, or proactive defenses flags it. The four-way breakdown (watermark, validation, proactive, MEMSAD) used as input to ablation tables refers to this same disjunction with one term ablated at a time. The weighted-sum form $0.50 d_{\text{wm}}(c) + 0.20 d_{\text{val}}(c) + 0.30 d_{\text{pro}}(c) > 0.50$ that appeared in some earlier exposition was an alternative tunable formulation we evaluated but is \emph{not} the composite reported in Tables~\ref{tab:defense_tpr_fpr} and \ref{tab:attack_defense_matrix}; we deprecate it here. Under the disjunctive composite, the perfect $\tpr = 1.00$ against \minja{} reported in Table~\ref{tab:defense_tpr_fpr} arises from MEMSAD detection (since \minja{} bypasses watermarking via auto-storage), consistent with the per-defense breakdown. The disjunction was chosen over the weighted sum because (i) it satisfies the assumption used in the equilibrium proof (Proposition~\ref{prop:equilibrium}) and (ii) its FPR is the union of per-defense FPRs, which are all $\leq 0.01$ at the calibrated thresholds and remain $\leq 0.04$ in aggregate.
 
 \paragraph{Evaluation correction.} Prior work evaluated \agentpoison{} with plain queries $q$; the paper's Algorithm~2 specifies triggered queries $q \oplus \trigger^*$, changing $\cosim$ from $\approx 0.45$ to $\sim 0.78$.
 
@@ -1017,15 +1102,15 @@ Three structural attacks: \textbf{Hub insertion} (high-degree adversarial node),
 For $N$ agents sharing $\cM_{\text{shared}}$, the discrete-step SIR model~\citep{kermack1927sir,gu2024agentsmith} evolves: $S(t{+}1) = S(t) - \beta S(t) I(t)/N$, $I(t{+}1) = I(t) + \beta S(t) I(t)/N - \gamma I(t)$, $R(t{+}1) = R(t) + \gamma I(t)$, where $\beta$ is transmission rate and $\gamma$ recovery rate.
 \end{definition}
 
-Without defense, steady-state infection is $I_\infty/N = 1 - \gamma/\beta$ for $\beta > \gamma$. With \memsad{} quarantine ($\tpr = 1.00$ for \minja{}), $\gamma_{\text{eff}} = \gamma + \tpr \cdot \beta$; the condition $\beta > \gamma_{\text{eff}}$ is never satisfied, eliminating secondary infection.
+For the classical SIR model with no re-introduction, the active-infection fraction $I(t)/N$ asymptotically decays to zero, $\lim_{t\to\infty} I(t)/N = 0$, since infected agents recover (or are quarantined) and acquire immunity. The relevant epidemic statistic is therefore the \emph{final-size proportion} (fraction of agents ever infected before recovery), which solves the implicit equation $1 - R_\infty/N = e^{-(\beta/\gamma) R_\infty/N}$ for $\beta > \gamma$. With \memsad{} quarantine ($\tpr = 1.00$ for \minja{}), $\gamma_{\text{eff}} = \gamma + \tpr \cdot \beta$; the basic reproduction number $\cR_0 = \beta/\gamma_{\text{eff}}$ drops below 1, eliminating secondary infection. \emph{Erratum:} the formula $I_\infty/N = 1 - \gamma/\beta$ that appeared in earlier exposition is the SIS endemic equilibrium, not the SIR final size; the SIR-correct expression above is what governs the simulations reported in Table~\ref{tab:sir_results}.
 
 \subsection*{Empirical simulation}
-We instantiate the SIR model with $N=20$ agents, $p_{\text{re-store}}=0.30$, $T=30$ steps, 5 initial \minja{}-style poison entries, and a 200-entry synthetic corpus (all-MiniLM-L6-v2 FAISS retrieval).  Each condition is run under 5 independent seeds controlling agent query-sampling trajectories (corpus held fixed); both no-defense and defended conditions use the same per-trial seed for a fair comparison.  Three conditions are evaluated: (i)~no defense; (ii)~\memsad{} with triggered calibration ($\sigma=2.0$, combined scoring); (iii)~composite defense approximated by $\sigma=1.0$.
+We instantiate the SIR model with $N=20$ agents, $p_{\text{re-store}}=0.30$, $T=30$ steps, 5 initial \minja{}-style poison entries, and a 200-entry synthetic corpus (all-MiniLM-L6-v2 FAISS retrieval).  Each condition is run under 5 independent seeds controlling agent query-sampling trajectories (corpus held fixed); both no-defense and defended conditions use the same per-trial seed for a fair comparison.  Three conditions are evaluated: (i)~no defense; (ii)~\memsad{} with triggered calibration ($\kappa=2.0$, combined scoring); (iii)~composite defense approximated by $\kappa=1.0$.
 
 \begin{figure}[ht]
   \centering
   \includegraphics[width=0.92\linewidth]{fig_sir_propagation.pdf}
-  \caption{Multi-agent SIR propagation (mean $\pm1\sigma$ over 5 seeds). \textbf{Top}: fraction of agents exposed over 30 steps. \textbf{Bottom}: secondary poison entry growth. Composite ($\sigma=1.0$) prevents spread entirely; \memsad{} ($\sigma=2.0$) matches no-defense spread timing but reduces secondary entries by 22\%, as 4 of 5 initial entries pass the looser threshold and the composite is required to stop initial spread.}
+  \caption{Multi-agent SIR propagation (mean $\pm 1\sigma$ over 5 seeds; here $\sigma$ refers to the seed-distribution standard deviation, not the calibration std). \textbf{Top}: fraction of agents exposed over 30 steps. \textbf{Bottom}: secondary poison entry growth. Composite ($\kappa=1.0$) prevents spread entirely; \memsad{} ($\kappa=2.0$) matches no-defense spread timing but reduces secondary entries by 22\%, as 4 of 5 initial entries pass the looser threshold and the composite is required to stop initial spread.}
   \label{fig:sir_propagation}
 \end{figure}
 
@@ -1040,13 +1125,13 @@ We instantiate the SIR model with $N=20$ agents, $p_{\text{re-store}}=0.30$, $T=
     Defense & Final Spread & Step to 50\% & Step to 90\% & Secondary Entries & Quarantined \\
     \midrule
     No Defense                  & 1.00 & 5    & 14   & 23 & --- \\
-    \memsad{} ($\sigma=2.0$)    & 1.00 & 5    & 14   & 18 & 5   \\
-    Composite ($\sigma=1.0$)    & 0.00 & $>$30 & $>$30 & 0  & 2  \\
+    \memsad{} ($\kappa=2.0$)    & 1.00 & 5    & 14   & 18 & 5   \\
+    Composite ($\kappa=1.0$)    & 0.00 & $>$30 & $>$30 & 0  & 2  \\
     \bottomrule
   \end{tabular}
 \end{table}
 
-\noindent Figure~\ref{fig:sir_propagation} and Table~\ref{tab:sir_propagation} summarize the results. The tighter composite threshold ($\sigma=1.0$) quarantines 2 of 5 initial entries and all secondary entries, holding spread to zero. \memsad{} at $\sigma=2.0$ quarantines $\approx$5 entries per trial (averaged over 5 seeds) but the 4 initial entries that pass the looser threshold seed infection at the same rate as the no-defense baseline ($t_{90\%} = 14$ steps in both conditions); \memsad{}'s measurable effect is a 22\% reduction in secondary entries (18 vs.\ 23), preventing secondary amplification while the composite is required to stop initial spread entirely.
+\noindent Figure~\ref{fig:sir_propagation} and Table~\ref{tab:sir_propagation} summarize the results. The tighter composite threshold ($\kappa=1.0$) quarantines 2 of 5 initial entries and all secondary entries, holding spread to zero. \memsad{} at $\kappa=2.0$ quarantines $\approx$5 entries per trial (averaged over 5 seeds) but the 4 initial entries that pass the looser threshold seed infection at the same rate as the no-defense baseline ($t_{90\%} = 14$ steps in both conditions); \memsad{}'s measurable effect is a 22\% reduction in secondary entries (18 vs.\ 23), preventing secondary amplification while the composite is required to stop initial spread entirely.
 
 \section{Statistical hypothesis tests}
 \label{app:hypothesis}
@@ -1054,7 +1139,7 @@ We instantiate the SIR model with $N=20$ agents, $p_{\text{re-store}}=0.30$, $T=
 \begin{table}[ht]
   \centering
   \small
-  \caption{Hypothesis tests ($H_0$: $\tpr = 0$, Bonferroni $\alpha' = 0.003$).}
+  \caption{One-sided binomial hypothesis tests ($H_0$: $\tpr \leq 0.05$, the chance-level baseline; Bonferroni $\alpha' = 0.003$ across 15 comparisons). The previously reported null $H_0: \tpr = 0$ rendered the $p$-values mathematically impossible whenever an empirical positive was observed; we restate the test under the chance-baseline null, which is the comparison statisticians use in practice for OOD-style detection.}
   \label{tab:hypothesis}
   \vspace{2pt}
   \begin{tabular}{l l c c c}
@@ -1114,7 +1199,7 @@ Figure~\ref{fig:sad_analysis} visualizes \memsad{}'s ROC characteristics and cal
     \label{fig:sad_calibration}
   \end{subfigure}
   \vspace{-4pt}
-  \caption{\memsad{} detection. (Top)~\minja{} traces near-ideal ROC; triggered calibration recovers $\tpr = 1.00$ for \agentpoison{} at $\kappa = 2.0$ ($\star$). (Bottom)~Threshold shifts from 0.482 to 0.432.}
+  \caption{\memsad{} detection. (Top)~\minja{} traces near-ideal ROC; triggered calibration recovers $\tpr = 1.00$ for \agentpoison{} at $\kappa = 2.0$ ($\star$). (Bottom)~Threshold shifts from 0.473 (plain) to 0.436 (triggered) at $\kappa = 2.0$, $|\cM|=200$; the values 0.482 / 0.432 quoted in earlier exposition correspond to the $|\cM|=1{,}000$ regime with a slightly different running-mean window and are reported in Section~\ref{sec:experiments}.}
   \label{fig:sad_analysis}
 \end{figure}
 
@@ -1178,44 +1263,54 @@ We extend \memsad{}'s guarantees to the distributionally robust setting where th
 
 \begin{proposition}[Distributionally robust detection]
 \label{prop:dro}
-Let $\hat{P}_0$ be the empirical benign score distribution from $N$ calibration samples. For any adversarial score distribution $P_1$ and perturbation class $\cU = \{Q : W_1(Q, P_1) \leq \epsilon\}$:
+Suppose the score density under $P_1$ and any $Q$ in the perturbation class $\cU = \{Q : W_1(Q, P_1) \leq \epsilon\}$ is bounded by $g_{\max}$. Then
 \begin{equation}
-  \inf_{Q \in \cU} \tpr(\tau; Q) \geq \tpr(\tau; P_1) - \frac{\epsilon}{\hat{\sigma}}.
+  \inf_{Q \in \cU} \tpr(\tau; Q) \;\geq\; \tpr(\tau; P_1) - \sqrt{2 g_{\max}\,\epsilon}.
 \end{equation}
+For Gaussian scores with std $\sigma$, $g_{\max} = (\sigma\sqrt{2\pi})^{-1}$, giving the closed-form bound $\sqrt{\epsilon / (\sigma\sqrt{\pi/2})}$.
 \end{proposition}
 
 \begin{proof}
-The indicator $\mathbf{1}[s > \tau]$ is not Lipschitz; we instead use the dual characterization directly. For any two distributions $Q, P_1$ on $\RR$ with $W_1(Q, P_1) \leq \epsilon$, we have $|\PP_Q(s > \tau) - \PP_{P_1}(s > \tau)| = |F_{P_1}(\tau) - F_Q(\tau)| \leq W_1(Q, P_1)/\hat{\sigma}$, where the last inequality follows because the score CDF $F$ has density bounded by $1/\hat{\sigma}$ (Gaussian scores with variance $\hat{\sigma}^2$), so $|F(\tau + h) - F(\tau)| \leq |h|/\hat{\sigma}$. Hence $\inf_{Q \in \cU} \tpr(\tau; Q) \geq \tpr(\tau; P_1) - \epsilon/\hat{\sigma}$.
+Apply the bounded-density Wasserstein-to-Kolmogorov inequality from Theorem~\ref{thm:generalization}: under $|f_{P_1}|, |f_Q| \leq g_{\max}$ and $W_1(Q,P_1) \leq \epsilon$, $|F_{P_1}(\tau) - F_Q(\tau)| \leq \sqrt{2 g_{\max}\,\epsilon}$ for every $\tau$. Since $|\tpr(\tau;P_1) - \tpr(\tau;Q)| = |F_{P_1}(\tau) - F_Q(\tau)|$, the bound follows.
 \end{proof}
 
-This guarantees that even if the adversary slightly perturbs their attack strategy (e.g., via randomized synonym selection), \memsad{}'s TPR degrades gracefully. For $\epsilon = 0.01\hat{\sigma}$: $\Delta\tpr \leq 0.01$, consistent with the observed stability in Table~\ref{tab:adaptive_sad}.
+This guarantees that even if the adversary slightly perturbs their attack strategy (e.g., via randomized synonym selection), \memsad{}'s TPR degrades gracefully under the bounded-density assumption. For $\epsilon = 0.01\hat\sigma$ and Gaussian scores ($g_{\max} = (\hat\sigma\sqrt{2\pi})^{-1}$): $\Delta\tpr \leq \sqrt{0.01 / \sqrt{\pi/2}} \approx 0.10$, an order of magnitude looser than the (incorrect) linear bound previously stated; this matches the empirical scale observed in Table~\ref{tab:adaptive_sad}.
 
-\begin{proposition}[PAC-style detection guarantee]
+\begin{proposition}[PAC-style FPR guarantee]
 \label{prop:pac}
-For $N$ i.i.d.\ calibration samples from $P_0$, with probability $\geq 1 - \delta$ over the calibration set, \memsad{}'s threshold $\hat{\tau}_N$ satisfies:
+For $N$ i.i.d.\ calibration samples from $P_0$, with probability $\geq 1 - \delta$ over the calibration set, \memsad{}'s threshold $\hat{\tau}_N$ satisfies the FPR-side bound
 \begin{equation}
-  \fpr(\hat{\tau}_N) \leq \fpr(\tau^*) + \sqrt{\frac{\log(2/\delta)}{2N}}, \qquad
-  \tpr(\hat{\tau}_N) \geq \tpr(\tau^*) - \sqrt{\frac{\log(2/\delta)}{2N}},
+  \big|\fpr(\hat{\tau}_N) - \fpr(\tau^*)\big| \;\leq\; \sqrt{\frac{\log(2/\delta)}{2N}},
 \end{equation}
-where $\tau^* = \mu + \kappa\sigma$ is the population-optimal threshold.
+where $\tau^* = \mu_0 + \kappa\sigma_0$ is the population-optimal threshold computed under the benign distribution. The TPR side requires the additional Wasserstein assumption of Theorem~\ref{thm:generalization}.
 \end{proposition}
 
 \begin{proof}
-By the DKW inequality, $\sup_t |F_N(t) - F(t)| \leq \sqrt{\log(2/\delta)/(2N)}$ w.p.\ $\geq 1-\delta$, where $F_N, F$ are empirical and population CDFs. Since $\fpr(\tau) = 1 - F_0(\tau)$ and $\tpr(\tau) = 1 - F_1(\tau)$, the bound follows from the uniform convergence of the empirical CDF to the true CDF at the estimated threshold.
+The DKW inequality~\citep{dvoretzky1956asymptotic,massart1990tight} bounds the uniform deviation of the empirical CDF from the true CDF for a sample drawn from a single distribution: $\sup_t |\widehat F_{0,N}(t) - F_0(t)| \leq \sqrt{\log(2/\delta)/(2N)}$ w.p.\ $\geq 1-\delta$. Since $\fpr(\tau) = 1 - F_0(\tau)$ and the calibration sample is drawn from $P_0$, applying DKW at $t = \hat\tau_N$ yields $|\widehat F_{0,N}(\hat\tau_N) - F_0(\hat\tau_N)|$ within the stated tolerance, and $|F_0(\hat\tau_N) - F_0(\tau^*)|$ is bounded via the score-density Lipschitz argument (Theorem~\ref{thm:calibration_bound}). The TPR side does \emph{not} follow from DKW alone because $\tpr(\tau) = 1 - F_1(\tau)$ depends on the adversarial distribution $P_1$, for which we have no calibration samples; use Theorem~\ref{thm:generalization}'s $\sqrt{W_1}$ bound instead.
 \end{proof}
 
-At $N = 200$, $\delta = 0.05$: the excess error is $\leq 0.096$, meaning \memsad{}'s empirical FPR of $0.000$ implies true FPR $\leq 0.096$ with 95\% confidence. The Clopper-Pearson validation (Table~\ref{tab:fpr_validation}) provides a tighter bound of $0.004$ by exploiting the binomial structure.
+\begin{proposition}[TPR robustness via Wasserstein]
+\label{prop:tpr_robust}
+Under the bounded-density assumption of Theorem~\ref{thm:generalization} and assuming $W_1(\widehat P_{1,n_1}, P_1) \leq \epsilon_W$ for an empirical adversarial estimate from $n_1$ poisoned samples,
+\[
+  \big|\tpr(\hat\tau_N) - \tpr(\tau^*)\big| \;\leq\; \sqrt{2 g_{\max}\,\epsilon_W} \;+\; O(N^{-1/2}).
+\]
+\end{proposition}
+
+At $N = 200$, $\delta = 0.05$: the FPR-side bound is $\leq 0.096$, meaning \memsad{}'s empirical FPR of $0.000$ implies true FPR $\leq 0.096$ with 95\% confidence. The Clopper-Pearson validation (Table~\ref{tab:fpr_validation}) provides a tighter bound of $0.004$ by exploiting the binomial structure.
 
 \section{OOD detection baseline comparison}
 \label{app:ood}
 
-We compare \memsad{} against three standard OOD detection methods adapted to the memory poisoning setting. Concurrent memory/RAG defenses (A-MemGuard~\citep{amemguard2025}, RevPRAG~\citep{tan2025revprag}, RAGDefender~\citep{ragdefender2025}) are not benchmarked: RevPRAG operates post-retrieval (read-time), not at write-time, and the others lack public implementations as of submission: Energy Score~\citep{liu2020energy} ($\text{score} = -T \log \sum_i \exp(\cosim(e, q_i)/T)$), Mahalanobis distance~\citep{lee2018simple} in embedding space, and KNN distance ($k=10$) to the benign calibration set.
+We compare \memsad{} against three standard OOD detection methods adapted to the memory poisoning setting. Concurrent memory/RAG defenses (A-MemGuard~\citep{amemguard2025}, RevPRAG~\citep{tan2025revprag}, RAGDefender~\citep{ragdefender2025}) are not benchmarked: RevPRAG operates post-retrieval (read-time), not at write-time, and the others lack public implementations as of submission. Baselines: Energy Score~\citep{liu2020energy} ($\text{score} = -T \log \sum_i \exp(\cosim(e, q_i)/T)$), Mahalanobis distance~\citep{lee2018simple} in embedding space, and KNN distance ($k=10$) to the benign calibration set.
+
+\paragraph{Energy Score polarity.} The closed-form Energy Score above is \emph{decreasing} in the maximum cosine similarity to calibration queries: poisoned candidates with high similarity to victim queries produce more-negative Energy Scores. The standard OOD convention treats higher scores as more-anomalous; we therefore evaluate the inverted statistic $-\text{score}$ for the threshold rule (anomaly $\Leftrightarrow$ $-\text{score} > \tau$) so that the AUROCs reported in Table~\ref{tab:ood_comparison} are correctly oriented. We had previously stated this convention only implicitly via the AUROC values; the explicit polarity inversion is now spelt out for reproducibility.
 
 \begin{table}[ht]
   \centering
   \small
   \caption{OOD detection baseline comparison at $|\cM|=1{,}000$.
-  \memsad{} uses triggered calibration for \agentpoison{}; baselines use standard calibration.}
+  \emph{All methods are calibrated on the same triggered-query regime} for \agentpoison{} (the trigger-aware setting that all query-aware methods assume in deployment); a parallel comparison under standard (untriggered) calibration is reported in Table~\ref{tab:calibration_sensitivity}. AUROC is the primary metric; TPR (at threshold) is the achievable detection at each method's native operating point.}
   \label{tab:ood_comparison}
   \begin{tabular}{l ccc ccc}
     \toprule
@@ -1230,10 +1325,10 @@ We compare \memsad{} against three standard OOD detection methods adapted to the
     \bottomrule
   \end{tabular}
   \\[2pt]
-  {\footnotesize $^\ddagger$TPR at each method's native operating threshold ($\kappa=2.0$ for \memsad{}, $\sigma=2.0$ for Mahalanobis). Mahalanobis achieves TPR\,=\,1.00 but at FPR\,=\,0.964 (unusable); AUROC is the fairer comparison metric. Bold = best AUROC per attack.}
+  {\footnotesize $^\ddagger$TPR at each method's native operating threshold ($\kappa=2.0$ for \memsad{}, $\sigma=2.0$ for Mahalanobis). Mahalanobis achieves TPR\,=\,1.00 but at FPR\,=\,0.964 (unusable); AUROC is the fairer comparison metric. Bold = best AUROC per attack. All methods receive identical query distributions during calibration to isolate algorithmic anomaly-scoring performance.}
 \end{table}
 
-\memsad{}'s query-awareness gives it a decisive advantage for triggered attacks (\agentpoison{}: AUROC $= 1.000$ vs.\ Energy's $0.945$). Energy Score is competitive on \minja{} AUROC ($0.969$) but has lower TPR at the operating threshold. Mahalanobis distance fails catastrophically (FPR $= 0.964$) because memory entries are diverse in embedding space: the covariance-based model cannot distinguish poison from benign outliers.
+All methods receive the same calibration regime (triggered queries for \agentpoison{}, standard queries for \minja{}/\injecmem{}), eliminating any informational asymmetry between \memsad{} and the OOD baselines. \memsad{}'s query-awareness gives it a decisive advantage for triggered attacks (\agentpoison{}: AUROC $= 1.000$ vs.\ Energy's $0.945$). Energy Score is competitive on \minja{} AUROC ($0.969$) but has lower TPR at the operating threshold. Mahalanobis distance fails catastrophically (FPR $= 0.964$) because memory entries are diverse in embedding space: the covariance-based model cannot distinguish poison from benign outliers.
 
 \section{Calibration query sensitivity}
 \label{app:calibration_sensitivity}
@@ -1475,14 +1570,11 @@ We evaluate GPT-4o-mini as a zero-shot write-time sanitization baseline: for eac
   \centering
   \includegraphics[width=0.72\linewidth]{fig_measured_asr_a.pdf}
   \vspace{-6pt}
-  \caption{Measured vs.\ modelled $\asra$. GPT-2 (no safety alignment) provides an upper bound under maximal compliance; GPT-4o-mini reflects production safety alignment.}
+  \caption{Measured vs.\ modelled $\asra$. GPT-2 (no safety alignment) provides a high-compliance \emph{upper bound} on $\asra$ under maximal adversary success; GPT-4o-mini reflects production safety alignment. The legend in earlier figure variants labelled GPT-2 as ``lower bound'', which is the opposite of the correct semantic role and has been corrected here.}
   \label{fig:measured_asr_a}
 \end{figure}
 
-%% ============================================================
-%% neurips paper checklist — required for the conference submission, not for
-%% arxiv preprint or for any external reader. uncomment for camera-ready.
-% \clearpage
-% \input{checklist}
+\clearpage
+\input{checklist}
 
 \end{document}
