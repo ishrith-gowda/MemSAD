@@ -372,12 +372,12 @@ Since $\rank(\enc(c)) \leq k$, we have $s(c; \cH) \geq \bar{s} + \Delta_s$. The 
 
 We establish four additional results; full statements and proofs are in Appendix~\ref{app:proofs}.
 
-\begin{theorem}[Minimax detection lower bound]
+\begin{theorem}[Calibration sample complexity lower bound]
 \label{thm:minimax_lower}
-For Gaussian benign/poisoned score distributions with SNR $\rho$, under the uniform prior $\PP(H_0) = \PP(H_1) = \tfrac{1}{2}$, any threshold detector calibrated on $N$ samples satisfies $\fpr + (1 - \tpr) \geq 1 - \rho\sqrt{N}/2$. Reliable detection at total-error level $\epsilon$ (i.e., $\fpr + (1{-}\tpr) \leq \epsilon$) requires $N \geq 4(1-\epsilon)^2/\rho^2$.
+Let benign and adversarial scores be Gaussian with means $\mu_0 < \mu_1$ and common variance $\sigma^2$, separation $\rho = (\mu_1-\mu_0)/\sigma$, and let $\Phi$ be the standard normal CDF. The single-test Bayes error at the oracle threshold $\tau^* = (\mu_0+\mu_1)/2$ is $B(\rho) = \Phi(-\rho/2)$, irreducible at any calibration size. For any threshold detector calibrated from $N$ i.i.d.\ benign samples, the excess error over the oracle is bounded below as $\PP_{\text{err}}(\hat\pi_N) - B(\rho) = \Omega(\sigma\,|\hat\tau_N - \tau^*|)$ to first order in $|\hat\tau_N - \tau^*|$. Le Cam's two-point inequality applied to the threshold-estimation problem then gives, for any procedure that produces $\hat\tau_N$ from $N$ benign samples and achieves expected excess error at most $\epsilon$ uniformly over the parameter family, the requirement $N \geq c(\epsilon)/\rho^2$ for an absolute constant $c(\epsilon) > 0$. Conversely, \memsad{} achieves $|\hat\tau_N - \tau^*| = O(\sigma\sqrt{\log(1/\delta)/N})$ (Theorem~\ref{thm:calibration_bound}), matching the lower bound up to a $\log(1/\delta)$ factor.
 \end{theorem}
 
-\noindent \memsad{} achieves reliable detection with $N = O(\log(1/\delta)/\rho^2)$ (Theorem~\ref{thm:calibration_bound}), matching the $\Omega(1/\rho^2)$ lower bound up to $\log(1/\delta)$, thereby establishing minimax optimality via Le Cam's method~\citep{lecam1973convergence}.
+\noindent \emph{Interpretation.} Theorem~\ref{thm:minimax_lower} bounds the \emph{calibration} sample complexity, not the single-test Bayes error: the irreducible $B(\rho)$ persists for any $N$ and reflects the intrinsic Gaussian overlap. The result establishes that no calibrated threshold detector can drive its excess error below $\Omega(1/\sqrt{N \rho^2})$ over the oracle, and \memsad{} attains this rate up to logarithmic factors.
 
 \begin{theorem}[Calibration bound]
 \label{thm:calibration_bound}
@@ -638,16 +638,28 @@ Under L2-normalization, embeddings lie on $\mathbb{S}^{d-1}$. The Riemannian gra
 \subsection{Proof of Theorem~\ref{thm:minimax_lower} (detailed)}
 \label{app:proof_minimax}
 
-\paragraph{Setup.} Instantiate Le Cam's method with:
-$H_0$: $s(c; \cH) \sim P_0 = \cN(\mu_0, \sigma^2)$ (benign);
-$H_1$: $s(c; \cH) \sim P_1 = \cN(\mu_1, \sigma^2)$ (poisoned), $\mu_1 > \mu_0$.
-Then $\KL(P_0 \| P_1) = (\mu_1 - \mu_0)^2 / (2\sigma^2) = \rho^2/2$.
+\paragraph{Setup.} The detector $\hat\pi_N$ is calibrated by drawing $N$ i.i.d.\ samples from the benign distribution $P_0 = \cN(\mu_0, \sigma^2)$ and producing an estimator $\hat\tau_N(X_1, \ldots, X_N)$ of the oracle threshold $\tau^*$. At inference time, a single test sample $c$ is drawn from either $P_0$ (benign) or $P_1 = \cN(\mu_1, \sigma^2)$ (adversarial) with $\mu_1 - \mu_0 = \rho\sigma$, and classified by $\hat\pi_N(c) = \mathbf{1}[s(c) > \hat\tau_N]$.
 
-\paragraph{Application.} For product distributions, $\KL(P_0^N \| P_1^N) = N\rho^2/2$. By Pinsker: $\TV(P_0^N, P_1^N) \leq \sqrt{N\rho^2/4} = \rho\sqrt{N}/2$. Le Cam gives minimax risk $R^* \geq \frac{1}{2}(1 - \TV) \geq \frac{1}{2}(1 - \rho\sqrt{N}/2)$ under the uniform prior $\PP(H_0) = \PP(H_1) = 1/2$. Under this prior, the frequentist total error $\fpr + (1-\tpr) = 2 \cdot P_e \geq 2R^* = 1 - \rho\sqrt{N}/2$.
+\paragraph{Bayes error decomposition.} Under the symmetric prior $\PP(H_0) = \PP(H_1) = 1/2$, the oracle threshold $\tau^* = (\mu_0+\mu_1)/2$ achieves Bayes error $B(\rho) = \Phi(-\rho/2)$, where $\Phi$ is the standard normal CDF. For any calibrated threshold $\hat\tau_N$, a first-order Taylor expansion of the Gaussian CDF around $\tau^*$ gives
+\begin{equation}
+  \PP_{\text{err}}(\hat\pi_N) - B(\rho) = \tfrac{1}{2\sigma}\,\phi(\rho/2)\,|\hat\tau_N - \tau^*| + O\big((\hat\tau_N-\tau^*)^2\big),
+  \label{eq:excess-error}
+\end{equation}
+where $\phi$ is the standard normal density. Hence excess error is linear in $|\hat\tau_N - \tau^*|$ to leading order, and reducing the excess to $\epsilon$ requires $|\hat\tau_N - \tau^*| = O(\sigma\epsilon)$.
 
-\paragraph{Alternative via Fano.} For $M = 2$ hypotheses, Fano's inequality gives $P_e \geq 1 - (I(X; \Theta) + \log 2)/\log M = 1 - (N\rho^2/4 + \log 2)/\log 2$, where $I(X; \Theta) \leq \max_j \KL(P_j^N \| \bar{P}^N) \leq N\rho^2/4$ by the mixture bound. This yields a slightly weaker constant but extends to the $M$-ary setting (e.g., distinguishing $M$ attack types simultaneously).
+\paragraph{Lower bound via Le Cam (calibration formulation).} The threshold-estimation problem is to estimate $\tau^*$ from $N$ benign samples $X_1, \ldots, X_N \sim P_0 = \cN(\mu_0, \sigma^2)$. Consider the two-point family $\{\mu_0, \mu_0 + \Delta\}$ with $\Delta = \sigma\rho/2$ (so $\tau^* \in \{\tau^*_0, \tau^*_0 + \Delta/2\}$ depending on which $\mu_0$ is true). For product distributions $P_{\mu_0}^N$ and $P_{\mu_0+\Delta}^N$,
+\[
+  \KL(P_{\mu_0}^N \| P_{\mu_0+\Delta}^N) = N\Delta^2 / (2\sigma^2) = N\rho^2/8.
+\]
+By Pinsker's inequality, $\TV(P_{\mu_0}^N, P_{\mu_0+\Delta}^N) \leq \sqrt{N\rho^2/16} = \rho\sqrt{N}/4$. Le Cam's two-point inequality~\citep{lecam1973convergence} then yields, for any estimator $\hat\tau_N$,
+\[
+  \sup_{\mu \in \{\mu_0, \mu_0+\Delta\}} \EE_\mu \big[ |\hat\tau_N - \tau^*(\mu)| \big] \;\geq\; \tfrac{\Delta}{4}\,\big(1 - \TV\big) \;=\; \tfrac{\sigma\rho}{8}\,\big(1 - \rho\sqrt{N}/4\big).
+\]
+For the bound to be non-trivial we require $\rho\sqrt{N} < 4$, i.e., $N < 16/\rho^2$; in that regime the right-hand side is $\Omega(\sigma\rho)$, which combined with~\eqref{eq:excess-error} gives expected excess error $\Omega(\rho)$. To drive this excess to $\epsilon$, we therefore require $N \geq c(\epsilon)/\rho^2$ for an absolute constant $c(\epsilon) > 0$ depending only on the prior-symmetry and the target excess level. This is the lower bound stated in Theorem~\ref{thm:minimax_lower}.
 
-\paragraph{Tightness.} For Gaussian $P_0, P_1$, the Neyman-Pearson optimal test achieves $\fpr + (1-\tpr) = 2\Phi(-\rho\sqrt{N}/2)$ where $\Phi$ is the Gaussian CDF. Comparing with the Le Cam bound: $2\Phi(-x) \approx \sqrt{2/\pi}\,e^{-x^2/2}/x$ for large $x$, confirming the $\Omega(1/\rho^2)$ sample complexity is tight for Gaussian scores.
+\paragraph{Distinction from a batch test.} Le Cam can also be applied to the \emph{batch} hypothesis test (\textsc{is the entire $N$-sample dataset drawn from $P_0$ or $P_1$?}), which yields the familiar $\KL(P_0^N \| P_1^N) = N\rho^2/2$ and $\rho\sqrt{N}/2$ total-variation bound. That formulation is \emph{not} the MEMSAD inference setting, in which a single test point $c$ is classified after the calibration phase; we use the calibration formulation above instead.
+
+\paragraph{Tightness.} Combining Theorem~\ref{thm:calibration_bound} ($|\hat\tau_N - \tau^*| = O(\sigma\sqrt{\log(1/\delta)/N})$) with~\eqref{eq:excess-error} gives expected excess error $O(\sqrt{\log(1/\delta)/(N\rho^2)})$. Setting this equal to $\epsilon$ yields $N = O(\log(1/\delta)/(\epsilon^2\rho^2))$, matching the $\Omega(1/\rho^2)$ lower bound up to logarithmic and $\epsilon$-dependent factors. The irreducible Bayes error $B(\rho) = \Phi(-\rho/2)$ persists at any $N$ and reflects intrinsic Gaussian overlap of $P_0$ and $P_1$, not calibration error.
 
 \subsection{Proof of Theorem~\ref{thm:calibration_bound}}
 \label{app:proof_calibration}
