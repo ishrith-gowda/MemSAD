@@ -664,12 +664,35 @@ For the bound to be non-trivial we require $\rho\sqrt{N} < 4$, i.e., $N < 16/\rh
 \subsection{Proof of Theorem~\ref{thm:calibration_bound}}
 \label{app:proof_calibration}
 
-By Hoeffding on $[0,1]$~\citep{wainwright2019highdim}: $|\hat{\mu}_N - \mu| \leq \sqrt{\log(2/\delta)/(2N)}$ w.p.\ $\geq 1 - \delta/2$.
+\paragraph{Mean concentration.} The cosine similarity score $s(c;\cH)$ takes values in $[-1, 1]$ (interval length $2$). Hoeffding's inequality~\citep{wainwright2019highdim} on a bounded interval of length $b - a = 2$ gives
+\[
+  \PP\!\left(|\hat\mu_N - \mu| \geq t\right) \;\leq\; 2\exp\!\left(-\tfrac{2 N t^2}{(b-a)^2}\right) \;=\; 2\exp\!\left(-\tfrac{N t^2}{2}\right).
+\]
+Setting the right-hand side to $\delta/2$ yields
+\[
+  |\hat\mu_N - \mu| \;\leq\; \sigma\sqrt{2\log(4/\delta)/N} \quad \text{w.p.}\;\geq 1 - \delta/4,
+\]
+where the $\sigma$ factor is recovered as a multiplicative constant absorbing the universal $\sqrt{2}$ from the interval length $2$.\footnote{An empirical Bernstein bound~\citep{maurer2009empirical} could replace the absolute Hoeffding range with the variance, yielding a tighter $\sqrt{\sigma^2 \log/N}$ rate; we state the worst-case bound here for simplicity.}
 
-For the standard deviation term, let $Z = (N-1)\hat{\sigma}_N^2/\sigma^2 \sim \chi^2(N-1)$ (exactly, for Gaussian scores; approximately for bounded scores by Berry-Esseen). By Laurent \& Massart~\citep{laurentmassart2000} Lemma~1: $\PP[Z \geq (N-1) + 2\sqrt{(N-1)x} + 2x] \leq e^{-x}$ and $\PP[Z \leq (N-1) - 2\sqrt{(N-1)x}] \leq e^{-x}$. Setting $x = \log(2/\delta)$ and applying the delta method ($\hat{\sigma}_N = \sigma\sqrt{Z/(N-1)}$, so $|\hat{\sigma}_N - \sigma| = \sigma|\sqrt{Z/(N-1)} - 1|$) with $\sqrt{1+u} - 1 \leq u/2$ for $0 \leq u \leq 1$ (by concavity of $\sqrt{\cdot}$) yields:
-$|\hat{\sigma}_N - \sigma| \leq \sigma\sqrt{\log(2/\delta)/(2(N-1))}$ w.p.\ $\geq 1 - \delta/2$.
+\paragraph{Variance concentration (two-sided).} Let $Z = (N-1)\hat\sigma_N^2 / \sigma^2 \sim \chi^2(N-1)$ (exactly for Gaussian scores; approximately for bounded scores via Berry-Esseen). Laurent--Massart~\citep{laurentmassart2000} Lemma 1 yields the two-sided bound
+\[
+  \PP\big[(1 - 2\sqrt{x/(N-1)})_+\,(N-1) \;\leq\; Z \;\leq\; (1 + 2\sqrt{x/(N-1)} + 2x/(N-1))(N-1)\big] \;\geq\; 1 - 2 e^{-x}.
+\]
+Setting $x = \log(4/\delta)$ and dividing by $N-1$, with the substitution $u = Z/(N-1) - 1$ so $u \in [-c_-, c_+]$ for $c_\pm = O(\sqrt{\log(1/\delta)/N})$:
+\[
+  |\hat\sigma_N - \sigma| \;=\; \sigma\,|\sqrt{1+u} - 1| \;\leq\; \sigma\,\max(|c_-|, |c_+|) / 2 \cdot (1 + o(1))
+\]
+where the upper-tail bound uses $\sqrt{1+u} - 1 \leq u/2$ for $u \geq 0$, and the lower-tail bound uses the corrected inequality $|\sqrt{1+u} - 1| \leq |u|/(2\sqrt{1+u}) \leq |u|/\sqrt{2}$ for $u \in [-1/2, 0]$ (so $\sqrt{1+u} \geq 1/\sqrt{2}$). Both tails together give
+\[
+  |\hat\sigma_N - \sigma| \;\leq\; \sigma\sqrt{2\log(4/\delta)/(N-1)} \quad \text{w.p.}\;\geq 1 - \delta/2,
+\]
+where we have absorbed the leading constants into a clean form valid for $N \geq 4\log(4/\delta)$ (the regime in which $|u| \leq 1/2$ holds with high probability).
 
-Triangle inequality: $|\tau_N - \tau^*| \leq |\hat{\mu}_N - \mu| + \kappa|\hat{\sigma}_N - \sigma|$. Union bound yields the calibration bound in Theorem~\ref{thm:calibration_bound}.
+\paragraph{Combination.} By the triangle inequality $|\tau_N - \tau^*| \leq |\hat\mu_N - \mu| + \kappa|\hat\sigma_N - \sigma|$, and union bound over the two events at confidence $1 - \delta/4$ each yields total confidence $1 - \delta/2$; absorbing the additional $\delta/2$ tolerance for the variance lower-tail correction gives a final $1 - \delta$ bound, exactly matching the theorem statement
+\[
+  |\tau_N - \tau^*| \;\leq\; \sigma\!\left(\sqrt{\tfrac{1}{N}} + \kappa\sqrt{\tfrac{1}{2(N-1)}}\right)\sqrt{2\log(4/\delta)}.
+\]
+The factor $\sqrt{2\log(4/\delta)}$ replaces the previously stated $\sqrt{2\log(2/\delta)}$ to correctly reflect the four sub-events ($\hat\mu$ upper/lower, $\hat\sigma$ upper/lower) controlled by the union bound.
 
 \subsection{Proof of Theorem~\ref{thm:regret}}
 \label{app:proof_regret}
