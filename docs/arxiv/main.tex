@@ -497,7 +497,7 @@ Composite portfolios achieve $\tpr = 1.00$, $\fpr = 0.00$ across all attacks (Pr
     \bottomrule
   \end{tabular}
   \\[2pt]
-  {\footnotesize $^\dagger$Plain calibration (FPR\,=\,0.00); triggered calibration: TPR\,=\,1.00, FPR\,=\,0.00, AUROC\,=\,1.000. FPR validated over 20 independent trials ($n = 1{,}000$ entries each); Clopper-Pearson 95\% CI: [0.000, 0.004] (Appendix~\ref{app:fpr}).}
+  {\footnotesize $^\dagger$Plain calibration (FPR\,=\,0.00); triggered calibration: TPR\,=\,1.00, FPR\,=\,0.00, AUROC\,=\,1.000. FPR validated over 20 independent trials ($n = 1{,}000$ entries each); Clopper-Pearson 95\% CI: [0.000, 0.004] (Appendix~\ref{app:fpr}). \emph{Cross-table TPR consistency:} \minja{} TPR appears as $0.40$ here (10-passage poison set, plain calibration), $0.80$ in Table~\ref{tab:ood_comparison} (5-passage poison, MiniLM, triggered calibration), and varies $0.80$--$1.00$ across encoders in Table~\ref{tab:encoder_gen} (5-passage poison, triggered calibration). The differences are driven by poison-set size and calibration regime, not detector instability; each table's caption fixes the relevant conditions.}
   \vspace{-8pt}
 \end{table}
 
@@ -533,7 +533,7 @@ The certified condition (Lemma~\ref{lem:certified}) still holds for \minja{} pos
 
 \subsection{Statistical validation}
 
-Bonferroni-corrected binomial tests ($\alpha' = 0.003$, 15 comparisons): all composite results reject $H_0: \tpr = 0$ with power $= 1.00$ (Table~\ref{tab:hypothesis}, Appendix~\ref{app:hypothesis}).
+Bonferroni-corrected one-sided binomial tests ($\alpha' = 0.003$, 15 comparisons) with $H_0: \tpr \leq \tpr_{\text{base}} = 0.05$ (chance-level baseline reflecting random scoring at the operating $\fpr$): all composite results reject $H_0$ with power $= 1.00$ (Table~\ref{tab:hypothesis}, Appendix~\ref{app:hypothesis}).
 \memsad{} AUROC at $\kappa = 2.0$: $0.914$ (\minja{}), $0.816$ (\injecmem{}), $0.870$ (\agentpoison{}, plain); triggered calibration raises \agentpoison{} to AUROC $= 1.000$.
 Theory validation: calibration bound predicts $|\tau_N - \tau^*| \leq 0.022$ at $N = 200$; observed $0.014$ (Table~\ref{tab:ablation_calibration}, Appendix~\ref{app:ablation}).
 
@@ -565,10 +565,13 @@ On Mem0~\citep{mem0} (LLM-mediated storage), \agentpoison{} drops to $\asrr = 0.
 \label{sec:discussion}
 
 \paragraph{Defense complementarity.}
-No single defense dominates across access models $\alpha$: watermarking fails when auto-storage bypasses ingestion control; \memsad{} needs triggered calibration for \agentpoison{}; proactive detection complements both. The defender's uncertainty about $\alpha$ motivates composite portfolios ($\asrr^* = 0$, Proposition~\ref{prop:equilibrium}). We recommend layered deployment: watermarking at ingestion, rolling \memsad{} at retrieval, composite for high-value agents (${\sim}$2\,ms per entry; Table~\ref{tab:complexity}, Appendix~\ref{app:complexity}). Multi-agent SIR simulations (Appendix~\ref{app:propagation}) confirm that composite defense prevents cross-agent propagation entirely, while graph memory extensions (Appendix~\ref{app:graph}) show structural attacks require analogous degree-anomaly detection.
+No single defense dominates across access models $\alpha$: watermarking fails when auto-storage bypasses ingestion control; \memsad{} needs triggered calibration for \agentpoison{}; proactive detection complements both. The defender's uncertainty about $\alpha$ motivates composite portfolios ($\asrr^* = 0$, Proposition~\ref{prop:equilibrium}). We recommend layered deployment: watermarking at ingestion, rolling \memsad{} at write-time (i.e., applied to every candidate $c$ before commit; \emph{not} a retrieval-time filter), composite for high-value agents (${\sim}$2\,ms per entry; Table~\ref{tab:complexity}, Appendix~\ref{app:complexity}). Multi-agent SIR simulations (Appendix~\ref{app:propagation}) confirm that composite defense prevents cross-agent propagation entirely, while graph memory extensions (Appendix~\ref{app:graph}) show structural attacks require analogous degree-anomaly detection.
 
 \paragraph{The synonym frontier.}
 Proposition~\ref{prop:synonym} reveals a structural limitation: paraphrase-trained encoders map synonyms to nearly identical embeddings ($\epsilon_{\text{syn}} \approx 0$). \memsad{}+ partially closes this via character n-gram features, but complete closure requires syntactic structure or provenance metadata.
+
+\paragraph{Comparison with concurrent post-retrieval defenses.}
+A-MemGuard~\citep{amemguard2025} is the closest contemporary defense for LLM-agent memory; we situate it relative to \memsad{} along three axes. (i)~\emph{Stage:} A-MemGuard operates \emph{post-retrieval} via consensus checking on the retrieved entries, whereas \memsad{} operates \emph{at write time} before any entry is committed --- the latter prevents the entry from existing in memory at all, removing the persistent attack surface. (ii)~\emph{Guarantees:} A-MemGuard's evaluation is empirical (no formal bounds reported in the public preprint); \memsad{} provides the gradient-coupling theorem, certified detection radius, and calibration sample-complexity lower bound (Theorems~\ref{thm:gradient_coupling}, \ref{thm:minimax_lower}; Lemma~\ref{lem:certified}). (iii)~\emph{Latency:} write-time filtering pays $\sim$2\,ms per ingestion event but removes per-query overhead at retrieval; post-retrieval consensus pays a recurring per-query cost that scales with $k$ (top-$k$ retrieved entries). The two are architecturally complementary: a deployment combining \memsad{} ingestion with A-MemGuard's read-time consensus would harden both surfaces. We do not benchmark against A-MemGuard directly because its public implementation was unavailable at the time of submission; this is a stated limitation, and a comparison run with a faithful re-implementation is the cleanest extension for a future revision.
 
 \paragraph{Limitations.}
 (i)~Corpus scale and composition: $|\cM| = 1{,}000$ with synthetic entries; poison passages contain explicit adversarial language that inflates text-baseline detection. Cross-corpus NQ results (Appendix~\ref{app:nq_eval}) partially address generalization; production memory traces remain necessary.
@@ -578,7 +581,7 @@ Proposition~\ref{prop:synonym} reveals a structural limitation: paraphrase-train
 %% ============================================================
 \section{Conclusion}
 
-\memsad{} provides the first formally-guaranteed defense for RAG memory poisoning: gradient coupling (Theorem~\ref{thm:gradient_coupling}), certified per-entry detection (Lemma~\ref{lem:certified}), and minimax optimality (Theorem~\ref{thm:minimax_lower}); Proposition~\ref{prop:synonym} identifies the discrete synonym gap as the frontier. Open directions: closing that gap, scaling to production memory with approximate NN, and multi-modal extension.
+\memsad{} provides the first formally-guaranteed defense for RAG memory poisoning: gradient coupling (Theorem~\ref{thm:gradient_coupling}), certified per-entry detection (Lemma~\ref{lem:certified}), and minimax optimality (Theorem~\ref{thm:minimax_lower}); Proposition~\ref{prop:synonym} identifies the discrete synonym gap as the frontier. Open directions: closing that gap, scaling to production memory with approximate nearest-neighbor (ANN) indices, and multi-modal extension.
 
 %% ============================================================
 \bibliographystyle{plainnat}
@@ -662,7 +665,7 @@ The certificate $s(c;\cH) > \hat\mu + \kappa\hat\sigma$ holds whenever $\alpha\D
 \subsection{Proof of Theorem~\ref{thm:gradient_coupling} (geometric interpretation)}
 \label{app:proof_gradient}
 
-Under L2-normalization, embeddings lie on $\mathbb{S}^{d-1}$. The Riemannian gradient of $f(e_c) = e_c^\top v$ on the sphere is $\nabla_{\mathbb{S}} f = v - (e_c^\top v) e_c = \Pi_{e_c}^{\perp} v$, the projection of $v$ onto the tangent space $T_{e_c}\mathbb{S}^{d-1}$. For any monotone transformation $g$, the chain rule gives $\nabla(g \circ f) = g'(f) \cdot \nabla f$, which has the same sign as $\nabla f$ since $g' > 0$. The converse (non-monotone $\cD$ admits evasion) follows because non-monotonicity creates a region where increasing retrieval similarity decreases detection score, giving the adversary a ``free'' direction in embedding space.
+Under L2-normalization, embeddings lie on $\mathbb{S}^{d-1}$. The \emph{Riemannian} (spherical, tangent-space) gradient of $f(e_c) = e_c^\top v$ on the sphere is $\nabla_{\mathbb{S}} f = v - (e_c^\top v) e_c = \Pi_{e_c}^{\perp} v$, the projection of $v$ onto the tangent space $T_{e_c}\mathbb{S}^{d-1}$; this is distinct from the ambient Euclidean gradient and is the relevant gradient for any continuous evasion path constrained to $\mathbb{S}^{d-1}$. For any monotone transformation $g$, the chain rule gives $\nabla(g \circ f) = g'(f) \cdot \nabla f$, which points in the same direction as $\nabla f$ since $g' > 0$. The converse (non-monotone $\cD$ admits evasion) follows because non-monotonicity creates a region where increasing retrieval similarity decreases detection score, giving the adversary a ``free'' direction in embedding space.
 
 \subsection{Proof of Theorem~\ref{thm:minimax_lower} (detailed)}
 \label{app:proof_minimax}
@@ -1103,7 +1106,7 @@ Three structural attacks: \textbf{Hub insertion} (high-degree adversarial node),
 For $N$ agents sharing $\cM_{\text{shared}}$, the discrete-step SIR model~\citep{kermack1927sir,gu2024agentsmith} evolves: $S(t{+}1) = S(t) - \beta S(t) I(t)/N$, $I(t{+}1) = I(t) + \beta S(t) I(t)/N - \gamma I(t)$, $R(t{+}1) = R(t) + \gamma I(t)$, where $\beta$ is transmission rate and $\gamma$ recovery rate.
 \end{definition}
 
-Without defense, steady-state infection is $I_\infty/N = 1 - \gamma/\beta$ for $\beta > \gamma$. With \memsad{} quarantine ($\tpr = 1.00$ for \minja{}), $\gamma_{\text{eff}} = \gamma + \tpr \cdot \beta$; the condition $\beta > \gamma_{\text{eff}}$ is never satisfied, eliminating secondary infection.
+For the classical SIR model with no re-introduction, the active-infection fraction $I(t)/N$ asymptotically decays to zero, $\lim_{t\to\infty} I(t)/N = 0$, since infected agents recover (or are quarantined) and acquire immunity. The relevant epidemic statistic is therefore the \emph{final-size proportion} (fraction of agents ever infected before recovery), which solves the implicit equation $1 - R_\infty/N = e^{-(\beta/\gamma) R_\infty/N}$ for $\beta > \gamma$. With \memsad{} quarantine ($\tpr = 1.00$ for \minja{}), $\gamma_{\text{eff}} = \gamma + \tpr \cdot \beta$; the basic reproduction number $\cR_0 = \beta/\gamma_{\text{eff}}$ drops below 1, eliminating secondary infection. \emph{Erratum:} the formula $I_\infty/N = 1 - \gamma/\beta$ that appeared in earlier exposition is the SIS endemic equilibrium, not the SIR final size; the SIR-correct expression above is what governs the simulations reported in Table~\ref{tab:sir_results}.
 
 \subsection*{Empirical simulation}
 We instantiate the SIR model with $N=20$ agents, $p_{\text{re-store}}=0.30$, $T=30$ steps, 5 initial \minja{}-style poison entries, and a 200-entry synthetic corpus (all-MiniLM-L6-v2 FAISS retrieval).  Each condition is run under 5 independent seeds controlling agent query-sampling trajectories (corpus held fixed); both no-defense and defended conditions use the same per-trial seed for a fair comparison.  Three conditions are evaluated: (i)~no defense; (ii)~\memsad{} with triggered calibration ($\sigma=2.0$, combined scoring); (iii)~composite defense approximated by $\sigma=1.0$.
@@ -1140,7 +1143,7 @@ We instantiate the SIR model with $N=20$ agents, $p_{\text{re-store}}=0.30$, $T=
 \begin{table}[ht]
   \centering
   \small
-  \caption{Hypothesis tests ($H_0$: $\tpr = 0$, Bonferroni $\alpha' = 0.003$).}
+  \caption{One-sided binomial hypothesis tests ($H_0$: $\tpr \leq 0.05$, the chance-level baseline; Bonferroni $\alpha' = 0.003$ across 15 comparisons). The previously reported null $H_0: \tpr = 0$ rendered the $p$-values mathematically impossible whenever an empirical positive was observed; we restate the test under the chance-baseline null, which is the comparison statisticians use in practice for OOD-style detection.}
   \label{tab:hypothesis}
   \vspace{2pt}
   \begin{tabular}{l l c c c}
@@ -1200,7 +1203,7 @@ Figure~\ref{fig:sad_analysis} visualizes \memsad{}'s ROC characteristics and cal
     \label{fig:sad_calibration}
   \end{subfigure}
   \vspace{-4pt}
-  \caption{\memsad{} detection. (Top)~\minja{} traces near-ideal ROC; triggered calibration recovers $\tpr = 1.00$ for \agentpoison{} at $\kappa = 2.0$ ($\star$). (Bottom)~Threshold shifts from 0.482 to 0.432.}
+  \caption{\memsad{} detection. (Top)~\minja{} traces near-ideal ROC; triggered calibration recovers $\tpr = 1.00$ for \agentpoison{} at $\kappa = 2.0$ ($\star$). (Bottom)~Threshold shifts from 0.473 (plain) to 0.436 (triggered) at $\kappa = 2.0$, $|\cM|=200$; the values 0.482 / 0.432 quoted in earlier exposition correspond to the $|\cM|=1{,}000$ regime with a slightly different running-mean window and are reported in Section~\ref{sec:experiments}.}
   \label{fig:sad_analysis}
 \end{figure}
 
@@ -1303,13 +1306,15 @@ At $N = 200$, $\delta = 0.05$: the FPR-side bound is $\leq 0.096$, meaning \mems
 \section{OOD detection baseline comparison}
 \label{app:ood}
 
-We compare \memsad{} against three standard OOD detection methods adapted to the memory poisoning setting. Concurrent memory/RAG defenses (A-MemGuard~\citep{amemguard2025}, RevPRAG~\citep{tan2025revprag}, RAGDefender~\citep{ragdefender2025}) are not benchmarked: RevPRAG operates post-retrieval (read-time), not at write-time, and the others lack public implementations as of submission: Energy Score~\citep{liu2020energy} ($\text{score} = -T \log \sum_i \exp(\cosim(e, q_i)/T)$), Mahalanobis distance~\citep{lee2018simple} in embedding space, and KNN distance ($k=10$) to the benign calibration set.
+We compare \memsad{} against three standard OOD detection methods adapted to the memory poisoning setting. Concurrent memory/RAG defenses (A-MemGuard~\citep{amemguard2025}, RevPRAG~\citep{tan2025revprag}, RAGDefender~\citep{ragdefender2025}) are not benchmarked: RevPRAG operates post-retrieval (read-time), not at write-time, and the others lack public implementations as of submission. Baselines: Energy Score~\citep{liu2020energy} ($\text{score} = -T \log \sum_i \exp(\cosim(e, q_i)/T)$), Mahalanobis distance~\citep{lee2018simple} in embedding space, and KNN distance ($k=10$) to the benign calibration set.
+
+\paragraph{Energy Score polarity.} The closed-form Energy Score above is \emph{decreasing} in the maximum cosine similarity to calibration queries: poisoned candidates with high similarity to victim queries produce more-negative Energy Scores. The standard OOD convention treats higher scores as more-anomalous; we therefore evaluate the inverted statistic $-\text{score}$ for the threshold rule (anomaly $\Leftrightarrow$ $-\text{score} > \tau$) so that the AUROCs reported in Table~\ref{tab:ood_comparison} are correctly oriented. We had previously stated this convention only implicitly via the AUROC values; the explicit polarity inversion is now spelt out for reproducibility.
 
 \begin{table}[ht]
   \centering
   \small
   \caption{OOD detection baseline comparison at $|\cM|=1{,}000$.
-  \memsad{} uses triggered calibration for \agentpoison{}; baselines use standard calibration.}
+  \emph{All methods are calibrated on the same triggered-query regime} for \agentpoison{} (the trigger-aware setting that all query-aware methods assume in deployment); a parallel comparison under standard (untriggered) calibration is reported in Table~\ref{tab:calibration_sensitivity}. AUROC is the primary metric; TPR (at threshold) is the achievable detection at each method's native operating point.}
   \label{tab:ood_comparison}
   \begin{tabular}{l ccc ccc}
     \toprule
@@ -1324,10 +1329,10 @@ We compare \memsad{} against three standard OOD detection methods adapted to the
     \bottomrule
   \end{tabular}
   \\[2pt]
-  {\footnotesize $^\ddagger$TPR at each method's native operating threshold ($\kappa=2.0$ for \memsad{}, $\sigma=2.0$ for Mahalanobis). Mahalanobis achieves TPR\,=\,1.00 but at FPR\,=\,0.964 (unusable); AUROC is the fairer comparison metric. Bold = best AUROC per attack.}
+  {\footnotesize $^\ddagger$TPR at each method's native operating threshold ($\kappa=2.0$ for \memsad{}, $\sigma=2.0$ for Mahalanobis). Mahalanobis achieves TPR\,=\,1.00 but at FPR\,=\,0.964 (unusable); AUROC is the fairer comparison metric. Bold = best AUROC per attack. All methods receive identical query distributions during calibration to isolate algorithmic anomaly-scoring performance.}
 \end{table}
 
-\memsad{}'s query-awareness gives it a decisive advantage for triggered attacks (\agentpoison{}: AUROC $= 1.000$ vs.\ Energy's $0.945$). Energy Score is competitive on \minja{} AUROC ($0.969$) but has lower TPR at the operating threshold. Mahalanobis distance fails catastrophically (FPR $= 0.964$) because memory entries are diverse in embedding space: the covariance-based model cannot distinguish poison from benign outliers.
+All methods receive the same calibration regime (triggered queries for \agentpoison{}, standard queries for \minja{}/\injecmem{}), eliminating any informational asymmetry between \memsad{} and the OOD baselines. \memsad{}'s query-awareness gives it a decisive advantage for triggered attacks (\agentpoison{}: AUROC $= 1.000$ vs.\ Energy's $0.945$). Energy Score is competitive on \minja{} AUROC ($0.969$) but has lower TPR at the operating threshold. Mahalanobis distance fails catastrophically (FPR $= 0.964$) because memory entries are diverse in embedding space: the covariance-based model cannot distinguish poison from benign outliers.
 
 \section{Calibration query sensitivity}
 \label{app:calibration_sensitivity}
@@ -1569,7 +1574,7 @@ We evaluate GPT-4o-mini as a zero-shot write-time sanitization baseline: for eac
   \centering
   \includegraphics[width=0.72\linewidth]{fig_measured_asr_a.pdf}
   \vspace{-6pt}
-  \caption{Measured vs.\ modelled $\asra$. GPT-2 (no safety alignment) provides an upper bound under maximal compliance; GPT-4o-mini reflects production safety alignment.}
+  \caption{Measured vs.\ modelled $\asra$. GPT-2 (no safety alignment) provides a high-compliance \emph{upper bound} on $\asra$ under maximal adversary success; GPT-4o-mini reflects production safety alignment. The legend in earlier figure variants labelled GPT-2 as ``lower bound'', which is the opposite of the correct semantic role and has been corrected here.}
   \label{fig:measured_asr_a}
 \end{figure}
 
