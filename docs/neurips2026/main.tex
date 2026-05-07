@@ -493,7 +493,7 @@ Composite portfolios achieve $\tpr = 1.00$, $\fpr = 0.00$ across all attacks (Pr
     \bottomrule
   \end{tabular}
   \\[2pt]
-  {\footnotesize $^\dagger$Plain calibration (FPR\,=\,0.00); triggered calibration: TPR\,=\,1.00, FPR\,=\,0.00, AUROC\,=\,1.000. FPR validated over 20 independent trials ($n = 1{,}000$ entries each); Clopper-Pearson 95\% CI: [0.000, 0.004] (Appendix~\ref{app:fpr}). \emph{Cross-table TPR consistency:} \minja{} TPR appears as $0.40$ here (10-passage poison set, plain calibration), $0.80$ in Table~\ref{tab:ood_comparison} (5-passage poison, MiniLM, triggered calibration), and varies $0.80$--$1.00$ across encoders in Table~\ref{tab:encoder_gen} (5-passage poison, triggered calibration). The differences are driven by poison-set size and calibration regime, not detector instability; each table's caption fixes the relevant conditions.}
+  {\footnotesize $^\dagger$Plain calibration; triggered: TPR\,=\,1.00, FPR\,=\,0.00, AUROC\,=\,1.000. FPR validated over 20 trials ($n = 1{,}000$ each); Clopper-Pearson 95\% CI: [0.000, 0.004] (Appendix~\ref{app:fpr}). \minja{} TPR varies across tables (here $0.40$, Table~\ref{tab:ood_comparison} $0.80$, Table~\ref{tab:encoder_gen} $0.80$--$1.00$) due to poison-set size and calibration regime; each caption fixes its conditions.}
   \vspace{-8pt}
 \end{table}
 
@@ -535,49 +535,15 @@ Theory validation: calibration bound predicts $|\tau_N - \tau^*| \leq 0.022$ at 
 
 \subsection{Ablation highlights}
 
-Key results (full tables in Appendix~\ref{app:ablation}):
-\textbf{Threshold:} $\kappa = 2.0$ with combined scoring is optimal (Table~\ref{tab:ablation_threshold}).
-\textbf{Corpus size:} \agentpoison{} is robust ($\asrr = 1.00$) across $|\cM| \in \{200, \ldots, 1000\}$; untriggered attacks (\minja{}, \injecmem{}) degrade $4$--$7\times$ at $|\cM| = 1{,}000$ (Table~\ref{tab:ablation_corpus}, Figure~\ref{fig:corpus_scaling}).
-\textbf{Poison count:} $\asrr$ saturates by $n_{\text{base}}{=}5$; additional entries yield diminishing returns (Table~\ref{tab:ablation_poison}).
-\textbf{Encoder generalization:} \memsad{} validated across 6 encoders including Contriever, E5-Base, and BGE-Large ($d{=}1024$) at $|\cM|=1{,}000$; triggered calibration achieves $\tpr = 1.000$ for \agentpoison{} on all (Table~\ref{tab:encoder_gen}, Appendix~\ref{app:encoder_gen}).
-\textbf{OOD baselines:} Energy Score~\citep{liu2020energy} is competitive on \minja{} AUROC ($0.969$) but \memsad{}'s query-awareness yields decisive advantage on triggered attacks (AUROC $1.000$ vs.\ $0.945$); Mahalanobis~\citep{lee2018simple} and KNN fail ($\fpr > 0.96$; Table~\ref{tab:ood_comparison}, Appendix~\ref{app:ood}).
-\textbf{LLM sanitization baseline:} GPT-4o-mini zero-shot classifier achieves $\tpr = 1.000$, $\fpr = 0.000$ on the synthetic corpus, but this reflects the explicit adversarial language in our templates (e.g., ``disable audit logging''); real-world paraphrased injections would likely degrade text-level detection. Mean latency is $1.2$\,s/entry (${\approx}1{,}000\times$ \memsad{}). The two are complementary: text-level flagging catches explicit commands; \memsad{} catches embedding-level anomalies that survive paraphrasing (Table~\ref{tab:llm_sanitization}, Appendix~\ref{app:llm_sanitization}).
-\textbf{Calibration sensitivity:} AUROC is stable across calibration regimes; threshold tuning requires domain-matched queries (Table~\ref{tab:calibration_sensitivity}, Appendix~\ref{app:calibration_sensitivity}).
-\textbf{Cross-corpus (NQ):} On a Natural-Questions-based corpus, \agentpoison{} retains $\asrr = 1.00 \pm 0.00$ and \minja{}'s $\asrr$ increases to $0.58 \pm 0.06$ under topical homogeneity (Table~\ref{tab:nq_eval}, Appendix~\ref{app:nq_eval}).
+Key results (full tables in Appendix~\ref{app:ablation}): $\kappa = 2.0$ with combined scoring optimal; \agentpoison{} robust across $|\cM|\in\{200,\ldots,1000\}$ while untriggered attacks degrade $4$--$7\times$; $\asrr$ saturates at $n_{\text{base}}{=}5$; triggered \memsad{} achieves $\tpr=1.000$ for \agentpoison{} on all 6 encoders incl. BGE-Large (Appendix~\ref{app:encoder_gen}); \memsad{} dominates OOD baselines on triggered attacks (AUROC $1.000$ vs.\ $0.945$ Energy Score; Appendix~\ref{app:ood}); GPT-4o-mini text-level sanitization is complementary but $1000\times$ slower (Appendix~\ref{app:llm_sanitization}); cross-corpus (NQ): \agentpoison{} retains $\asrr=1.00\pm 0.00$, \minja{} rises to $0.58\pm 0.06$ under topical homogeneity (Appendix~\ref{app:nq_eval}).
 
-\subsection{Extended evaluations}
-
-\paragraph{Compound exposure.}
-Memory poisoning compounds over sessions: $P(\text{compromise in } N \text{ sessions}) = 1 - (1 - \asrr)^{Nq}$ for $q$ queries/session.\footnote{This assumes i.i.d.\ Bernoulli trials, which is a lower bound on true risk: persistent memory means a successfully retrieved adversarial entry may influence subsequent queries. Uncertainty in $\asrr$ (bootstrap 95\% CIs in Table~\ref{tab:attack_results}) propagates to compound probability via $\partial P / \partial \asrr = Nq(1-\asrr)^{Nq-1}$, yielding compound-exposure CIs that are conservative.} Even \minja{} at $\asrr = 0.14$ reaches 90\% compromise in 4 sessions; composite defense ($\asrr^* = 0$) is necessary (Table~\ref{tab:compound_exposure}, Appendix~\ref{app:compound}).
-
-\paragraph{Tool-use agent.}
-GPT-4o-mini with 5 tool definitions achieves $\asra = 0.48$ [0.34, 0.62] for \agentpoison{}; \minja{} and \injecmem{} show $\asra = 0.00$ [0.00, 0.07] at $|\cM| = 1{,}000$ (sparse-event CI, not detector failure; Table~\ref{tab:tool_agent}, Appendix~\ref{app:tool_agent}).
-
-\paragraph{Production validation.}
-On Mem0~\citep{mem0} (LLM-mediated storage), \agentpoison{} drops to $\asrr = 0.00$ via internal reformulation; raw vector stores remain fully exposed (Table~\ref{tab:mem0_validation}, Appendix~\ref{app:mem0}).
+\textbf{Extended evaluations.} Compound exposure (Appendix~\ref{app:compound}): \minja{} at $\asrr=0.14$ reaches 90\% compromise in 4 sessions; composite defense ($\asrr^*=0$) is necessary. Tool-use agent (GPT-4o-mini, 5 tools): \agentpoison{} achieves $\asra=0.48$ [0.34, 0.62] (Appendix~\ref{app:tool_agent}). Mem0 production: LLM-mediated storage drops \agentpoison{} to $\asrr=0.00$ via reformulation; raw vector stores remain fully exposed (Appendix~\ref{app:mem0}).
 
 %% ============================================================
-\section{Discussion and limitations}
+\section{Discussion, limitations, and conclusion}
 \label{sec:discussion}
 
-\paragraph{Defense complementarity.}
-No single defense dominates across access models $\alpha$: watermarking fails when auto-storage bypasses ingestion control; \memsad{} needs triggered calibration for \agentpoison{}; proactive detection complements both. The defender's uncertainty about $\alpha$ motivates composite portfolios ($\asrr^* = 0$, Proposition~\ref{prop:equilibrium}). We recommend layered deployment: watermarking at ingestion, rolling \memsad{} at write-time (i.e., applied to every candidate $c$ before commit; \emph{not} a retrieval-time filter), composite for high-value agents (${\sim}$2\,ms per entry; Table~\ref{tab:complexity}, Appendix~\ref{app:complexity}). Multi-agent SIR simulations (Appendix~\ref{app:propagation}) confirm that composite defense prevents cross-agent propagation entirely, while graph memory extensions (Appendix~\ref{app:graph}) show structural attacks require analogous degree-anomaly detection.
-
-\paragraph{The synonym frontier.}
-Proposition~\ref{prop:synonym} reveals a structural limitation: paraphrase-trained encoders map synonyms to nearly identical embeddings ($\epsilon_{\text{syn}} \approx 0$). \memsad{}+ partially closes this via character n-gram features, but complete closure requires syntactic structure or provenance metadata.
-
-\paragraph{Comparison with concurrent post-retrieval defenses.}
-A-MemGuard~\citep{amemguard2025} is the closest contemporary defense for LLM-agent memory; we situate it relative to \memsad{} along three axes. (i)~\emph{Stage:} A-MemGuard operates \emph{post-retrieval} via consensus checking on the retrieved entries, whereas \memsad{} operates \emph{at write time} before any entry is committed --- the latter prevents the entry from existing in memory at all, removing the persistent attack surface. (ii)~\emph{Guarantees:} A-MemGuard's evaluation is empirical (no formal bounds reported in the public preprint); \memsad{} provides the gradient-coupling theorem, certified detection radius, and calibration sample-complexity lower bound (Theorems~\ref{thm:gradient_coupling}, \ref{thm:minimax_lower}; Lemma~\ref{lem:certified}). (iii)~\emph{Latency:} write-time filtering pays $\sim$2\,ms per ingestion event but removes per-query overhead at retrieval; post-retrieval consensus pays a recurring per-query cost that scales with $k$ (top-$k$ retrieved entries). The two are architecturally complementary: a deployment combining \memsad{} ingestion with A-MemGuard's read-time consensus would harden both surfaces. We do not benchmark against A-MemGuard directly because its public implementation was unavailable at the time of submission; this is a stated limitation, and a comparison run with a faithful re-implementation is the cleanest extension for a future revision.
-
-\paragraph{Limitations.}
-(i)~Corpus scale and composition: $|\cM| = 1{,}000$ with synthetic entries; poison passages contain explicit adversarial language that inflates text-baseline detection. Cross-corpus NQ results (Appendix~\ref{app:nq_eval}) partially address generalization; production memory traces remain necessary.
-(ii)~Regret bound assumes slow drift; abrupt distribution shifts degrade calibration.
-(iii)~Hardness result applies to piecewise-linear encoders; transformer extension is conjectured.
-
-%% ============================================================
-\section{Conclusion}
-
-\memsad{} provides the first formally-guaranteed defense for RAG memory poisoning: gradient coupling (Theorem~\ref{thm:gradient_coupling}), certified per-entry detection (Lemma~\ref{lem:certified}), and minimax optimality (Theorem~\ref{thm:minimax_lower}); Proposition~\ref{prop:synonym} identifies the discrete synonym gap as the frontier. Open directions: closing that gap, scaling to production memory with approximate nearest-neighbor (ANN) indices, and multi-modal extension.
+No single defense dominates across access models: watermarking fails under auto-storage; \memsad{} needs triggered calibration for \agentpoison{}; proactive complements both. Defender uncertainty over $\alpha$ motivates composite portfolios ($\asrr^*=0$, Proposition~\ref{prop:equilibrium}); recommended deployment is watermarking at ingestion plus rolling \memsad{} at write-time ($\sim$2\,ms/entry); A-MemGuard~\citep{amemguard2025} is architecturally complementary at retrieval (Appendix~\ref{app:amemguard}). \textbf{Limitations:} Proposition~\ref{prop:synonym} marks the structural frontier (paraphrase-trained encoders make synonyms near-isometric; \memsad{}+ closes this only partially); $|\cM|{=}1{,}000$ synthetic entries (NQ in Appendix~\ref{app:nq_eval} partially addresses); slow-drift regret assumption; piecewise-linear hardness. \textbf{Conclusion:} \memsad{} is the first formally-guaranteed RAG memory-poisoning defense; open directions are closing the synonym gap, ANN scaling, and multi-modal extension.
 
 %% ============================================================
 \bibliographystyle{plainnat}
@@ -1298,6 +1264,11 @@ Under the bounded-density assumption of Theorem~\ref{thm:generalization} and ass
 \end{proposition}
 
 At $N = 200$, $\delta = 0.05$: the FPR-side bound is $\leq 0.096$, meaning \memsad{}'s empirical FPR of $0.000$ implies true FPR $\leq 0.096$ with 95\% confidence. The Clopper-Pearson validation (Table~\ref{tab:fpr_validation}) provides a tighter bound of $0.004$ by exploiting the binomial structure.
+
+\section{Comparison with concurrent post-retrieval defenses}
+\label{app:amemguard}
+
+A-MemGuard~\citep{amemguard2025} is the closest contemporary defense for LLM-agent memory; we situate it relative to \memsad{} along three axes. (i)~\emph{Stage:} A-MemGuard operates \emph{post-retrieval} via consensus checking on the retrieved entries, whereas \memsad{} operates \emph{at write time} before any entry is committed --- the latter prevents the entry from existing in memory at all, removing the persistent attack surface. (ii)~\emph{Guarantees:} A-MemGuard's evaluation is empirical (no formal bounds reported in the public preprint); \memsad{} provides the gradient-coupling theorem, certified detection radius, and calibration sample-complexity lower bound (Theorems~\ref{thm:gradient_coupling}, \ref{thm:minimax_lower}; Lemma~\ref{lem:certified}). (iii)~\emph{Latency:} write-time filtering pays $\sim$2\,ms per ingestion event but removes per-query overhead at retrieval; post-retrieval consensus pays a recurring per-query cost that scales with $k$ (top-$k$ retrieved entries). The two are architecturally complementary: a deployment combining \memsad{} ingestion with A-MemGuard's read-time consensus would harden both surfaces. We do not benchmark against A-MemGuard directly because its public implementation was unavailable at the time of submission; this is a stated limitation, and a comparison run with a faithful re-implementation is the cleanest extension for a future revision.
 
 \section{OOD detection baseline comparison}
 \label{app:ood}
