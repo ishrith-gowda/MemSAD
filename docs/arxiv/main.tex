@@ -1,7 +1,7 @@
 \documentclass{article}
 
-% neurips 2026 main track (anonymous double-blind submission)
-\usepackage{neurips_2026}
+% neurips 2026 main track — preprint mode for arxiv (de-anonymized)
+\usepackage[preprint]{neurips_2026}
 
 \usepackage[utf8]{inputenc}
 \usepackage[T1]{fontenc}
@@ -86,8 +86,12 @@
 
 \title{\texorpdfstring{\memsad{}}{MemSAD}: Gradient-Coupled Anomaly Detection for Memory Poisoning in Retrieval-Augmented Agents}
 
-% anonymous for submission
-\author{Anonymous Author(s)}
+\author{%
+  Ishrith Gowda\thanks{Work conducted at the Song Lab, Berkeley AI Research, University of California, Berkeley.}\\
+  Department of Electrical Engineering and Computer Sciences\\
+  University of California, Berkeley\\
+  \texttt{ishrithgowda@berkeley.edu}
+}
 
 \begin{document}
 
@@ -1544,8 +1548,5 @@ We evaluate GPT-4o-mini as a zero-shot write-time sanitization baseline: for eac
   \caption{Measured vs.\ modelled $\asra$. GPT-2 (no safety alignment) provides a high-compliance \emph{upper bound} on $\asra$ under maximal adversary success; GPT-4o-mini reflects production safety alignment. The legend in earlier figure variants labelled GPT-2 as ``lower bound'', which is the opposite of the correct semantic role and has been corrected here.}
   \label{fig:measured_asr_a}
 \end{figure}
-
-\clearpage
-\input{checklist}
 
 \end{document}

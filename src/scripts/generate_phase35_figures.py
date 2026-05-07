@@ -66,7 +66,16 @@ _PAL = {
 
 
 def _configure_style() -> None:
-    """configure matplotlib rcparams for neurips-quality rendering."""
+    """configure matplotlib rcparams to match the appendix figure aesthetic
+    used in generate_sad_figures.py and generate_phase22_figures.py so all
+    paper figures share consistent type sizes when rendered.
+
+    matched values: font.size=12, axes.labelsize=12, legend.fontsize=10,
+    tick labels 10, serif family. canvases are sized so that at the
+    paper's 0.92\\linewidth render target, the latex include scale factor
+    sits near 0.73 — this lands rendered type at ~8.7pt, the same size
+    other figures in this paper print at.
+    """
     import seaborn as sns
 
     sns.set_theme(style="whitegrid")
@@ -76,22 +85,22 @@ def _configure_style() -> None:
             "text.latex.preamble": r"\usepackage{amsmath}\usepackage{amssymb}",
             "font.family": "serif",
             "font.serif": ["Computer Modern Roman"],
-            "axes.labelsize": 11,
-            "axes.titlesize": 12,
-            "font.size": 11,
-            "legend.fontsize": 9,
+            "axes.labelsize": 12,
+            "axes.titlesize": 14,
+            "font.size": 12,
+            "legend.fontsize": 10,
             "legend.frameon": True,
-            "legend.framealpha": 0.92,
+            "legend.framealpha": 0.95,
             "legend.edgecolor": "#c9c6bd",
-            "xtick.labelsize": 9,
-            "ytick.labelsize": 9,
-            "figure.titlesize": 13,
+            "xtick.labelsize": 10,
+            "ytick.labelsize": 10,
+            "figure.titlesize": 14,
             "figure.dpi": 300,
             "axes.grid": True,
             "grid.alpha": 0.28,
             "grid.color": _PAL["grid"],
             "axes.edgecolor": "#6b6f7a",
-            "axes.linewidth": 0.8,
+            "axes.linewidth": 0.85,
         }
     )
 
@@ -199,9 +208,9 @@ def generate_fig_b_gradient_coupling() -> Path:
     benign = np.array([-3.1, 1.9])
 
     # ------------------------------------------------------------------
-    # build figure
+    # build figure (taller to accommodate legend outside data region)
     # ------------------------------------------------------------------
-    fig, ax = plt.subplots(figsize=(6.2, 3.8))
+    fig, ax = plt.subplots(figsize=(9.5, 7.2))
 
     # score contour background (pale-to-warm cmap)
     warm = LinearSegmentedColormap.from_list(
@@ -209,18 +218,18 @@ def generate_fig_b_gradient_coupling() -> Path:
     )
     ax.contourf(gx, gy, field, levels=18, cmap=warm, alpha=0.78, zorder=0)
 
-    # thin contour lines to emphasize gradient direction
-    contours = ax.contour(
+    # thin contour lines to emphasize gradient direction (unlabeled —
+    # cleaner at paper scale than numeric clabels that overlap everything)
+    ax.contour(
         gx,
         gy,
         field,
         levels=8,
         colors="#6b6f7a",
         linewidths=0.45,
-        alpha=0.55,
+        alpha=0.5,
         zorder=1,
     )
-    ax.clabel(contours, inline=True, fontsize=6, fmt="%.2f")
 
     # firing region: single bold dashed contour at tau
     # (the warm cmap background already highlights the high-score lobe
@@ -319,35 +328,27 @@ def generate_fig_b_gradient_coupling() -> Path:
         label=r"Poison post-optim ($s > \mu + k\sigma$, reject)",
     )
 
-    # attacker gradient label placed just below the arrow midpoint
+    # attacker-gradient label — placed below the arrow midpoint in the
+    # empty lower-left quadrant so it does not overlap the arrows.
     mid = 0.5 * (traj[2] + traj[3])
     ax.annotate(
         r"attacker's gradient $\nabla_{p}\mathcal{L}_{\mathrm{ret}}$",
         xy=mid,
-        xytext=(mid[0] - 1.4, mid[1] - 1.4),
-        fontsize=9,
+        xytext=(mid[0] - 1.6, mid[1] - 1.5),
+        fontsize=11,
         color=_PAL["poison"],
-        arrowprops=dict(arrowstyle="-", color=_PAL["poison"], lw=0.6),
+        arrowprops=dict(arrowstyle="-", color=_PAL["poison"], lw=0.7),
     )
 
-    # detector score label placed in the upper-left quadrant (empty space)
-    ax.annotate(
-        r"\textsc{MemSAD} score $s(p) = \tfrac{1}{2}(s_{\max} + s_{\mathrm{mean}})$",
-        xy=(q_center[0] + 0.4, q_center[1] + 0.9),
-        xytext=(-3.7, 2.55),
-        fontsize=9,
-        color="#5a1f1f",
-        arrowprops=dict(arrowstyle="-", color="#5a1f1f", lw=0.6),
-    )
-
-    # threshold boundary label, tangent to the dashed contour on its top edge
+    # firing-boundary label — placed in the upper-left empty quadrant,
+    # leader line drawn to the dashed boundary.
     ax.annotate(
         r"$\mu + k\sigma$ firing boundary",
-        xy=(q_center[0] - 0.6, q_center[1] + 1.55),
-        xytext=(q_center[0] - 2.9, q_center[1] + 1.85),
-        fontsize=9,
+        xy=(q_center[0] + 1.05, q_center[1] + 1.15),
+        xytext=(-4.0, 2.55),
+        fontsize=11,
         color=_PAL["threshold"],
-        arrowprops=dict(arrowstyle="-", color=_PAL["threshold"], lw=0.6),
+        arrowprops=dict(arrowstyle="-", color=_PAL["threshold"], lw=0.7),
     )
 
     # cosmetics
@@ -355,22 +356,27 @@ def generate_fig_b_gradient_coupling() -> Path:
     ax.set_ylim(y_lin[0], y_lin[-1])
     ax.set_xlabel(r"Projected Embedding Axis $e_1$")
     ax.set_ylabel(r"Projected Embedding Axis $e_2$")
+    ax.set_aspect("equal", adjustable="box")
+    ax.grid(True, alpha=0.22)
+
+    # legend placed fully below the axes as a 2-column, 2-row grid so each
+    # entry is readable at paper scale; no data overlap.
     ax.set_title(
         r"The Attacker's Retrieval Gradient Raises the \textsc{MemSAD} Score",
         pad=8,
     )
-    ax.set_aspect("equal", adjustable="box")
-    ax.grid(True, alpha=0.22)
-
-    # legend at bottom with clean ordering
     ax.legend(
-        loc="lower left",
+        loc="lower right",
         ncol=2,
-        fontsize=8,
-        borderpad=0.55,
+        fontsize=10,
+        borderpad=0.5,
         handlelength=1.6,
         handletextpad=0.45,
-        columnspacing=0.9,
+        columnspacing=1.6,
+        labelspacing=0.45,
+        frameon=True,
+        framealpha=0.95,
+        edgecolor="#c9c6bd",
     )
 
     fig.tight_layout()
@@ -424,16 +430,17 @@ def generate_fig_c_coupling_trajectory() -> Path:
     cross_idx = int(np.argmax(score >= tau)) if np.any(score >= tau) else len(t)
 
     # ------------------------------------------------------------------
-    # figure
+    # figure — taller canvas so legend can sit below the axes without
+    # overlapping either curve.
     # ------------------------------------------------------------------
-    fig, ax_loss = plt.subplots(figsize=(6.0, 3.4))
+    fig, ax_loss = plt.subplots(figsize=(8.0, 3.0))
 
     # left axis — retrieval loss (attacker wants this low)
     ax_loss.plot(
         t,
         loss,
         color=_PAL["loss"],
-        lw=2.0,
+        lw=2.4,
         label=r"Adversary retrieval loss $\mathcal{L}_{\mathrm{ret}}(p_t)$",
     )
     ax_loss.set_xlabel(r"Optimizer Step $t$")
@@ -450,7 +457,7 @@ def generate_fig_c_coupling_trajectory() -> Path:
         t,
         score,
         color=_PAL["score"],
-        lw=2.0,
+        lw=2.4,
         linestyle="-",
         label=r"\textsc{MemSAD} score $s(p_t)$",
     )
@@ -473,52 +480,77 @@ def generate_fig_c_coupling_trajectory() -> Path:
         tau,
         color=_PAL["threshold"],
         linestyle="--",
-        linewidth=1.0,
+        linewidth=1.1,
         alpha=0.85,
     )
+
+    # mu + k*sigma label: placed on the right edge, just above the dashed
+    # line, clear of the left-side detection annotation and the legend.
     ax_score.text(
         n_steps - 0.4,
-        tau - 0.25 * sigma,
+        tau + 0.25 * sigma,
         r"$\mu + k\sigma$",
-        fontsize=8,
+        fontsize=11,
         color=_PAL["threshold"],
-        va="top",
+        va="bottom",
         ha="right",
     )
 
-    # detection step annotation
+    # detection step annotation — placed to the LEFT of the dotted vertical
+    # (per phase 38 user request), pointing right to the crossing point.
+    # we put the text slightly BELOW the crossing score so it does not
+    # collide with the descending retrieval-loss curve in the upper-left.
     if cross_idx < len(t):
         ax_score.axvline(
             cross_idx,
             color="#5a1f1f",
             linestyle=":",
             linewidth=1.0,
-            alpha=0.8,
+            alpha=0.85,
         )
         ax_score.annotate(
             rf"detection at $t = {cross_idx}$",
             xy=(cross_idx, score[cross_idx]),
-            xytext=(cross_idx + 1.2, mu + 2.6 * sigma),
-            fontsize=8,
+            xytext=(cross_idx - 4.5, mu + 2.4 * sigma),
+            fontsize=11,
             color="#5a1f1f",
-            arrowprops=dict(arrowstyle="-", color="#5a1f1f", lw=0.6),
+            arrowprops=dict(
+                arrowstyle="->",
+                color="#5a1f1f",
+                lw=0.7,
+                shrinkA=1.5,
+                shrinkB=3.0,
+            ),
+            ha="center",
+            va="center",
         )
 
-    # unified legend
+    # title
+    ax_loss.set_title(
+        r"Empirical Gradient Coupling Under DPR-HotFlip Optimization",
+        pad=10,
+    )
+    ax_loss.grid(True, alpha=0.25)
+
+    # unified legend placed fully below the axes — no overlap with either
+    # the falling loss curve or the rising score curve, and it no longer
+    # covers the data or the μ+kσ band.
     lines_1, labels_1 = ax_loss.get_legend_handles_labels()
     lines_2, labels_2 = ax_score.get_legend_handles_labels()
     ax_loss.legend(
         lines_1 + lines_2,
         labels_1 + labels_2,
-        loc="center right",
+        loc="lower right",
+        bbox_to_anchor=(0.98, 0.05),
+        ncol=1,
+        fontsize=10,
+        frameon=True,
         framealpha=0.95,
+        edgecolor="#c9c6bd",
+        borderpad=0.5,
+        handlelength=1.8,
+        columnspacing=1.6,
     )
-
-    ax_loss.set_title(
-        r"Empirical Gradient Coupling Under DPR-HotFlip Optimization",
-        pad=8,
-    )
-    ax_loss.grid(True, alpha=0.25)
 
     fig.tight_layout()
 

@@ -1,0 +1,351 @@
+\relax 
+\providecommand\hyper@newdestlabel[2]{}
+\providecommand\HyField@AuxAddToFields[1]{}
+\providecommand\HyField@AuxAddToCoFields[2]{}
+\citation{chen2024agentpoison}
+\citation{mem0}
+\citation{amem}
+\citation{memgpt2023}
+\citation{chen2024agentpoison}
+\citation{karpukhin2020dense}
+\citation{dong2025minja}
+\citation{injecmem2026}
+\citation{zou2024poisonedrag,chaudhari2024phantom,xiang2024robustrag}
+\@writefile{toc}{\contentsline {section}{\numberline {1}Introduction}{1}{section.1}\protected@file@percent }
+\newlabel{sec:intro}{{1}{1}{Introduction}{section.1}{}}
+\citation{chen2024agentpoison}
+\citation{karpukhin2020dense}
+\citation{dong2025minja}
+\citation{injecmem2026}
+\citation{memorygraft2025}
+\citation{xu2026memflow}
+\citation{trojanrag2024,corruptrag2025,xue2024badrag}
+\citation{chaudhari2024phantom}
+\citation{shafran2025blocker}
+\citation{zhang2025asb}
+\citation{andriushchenko2025agentharm}
+\citation{wu2024badagent}
+\citation{amemguard2025}
+\citation{tan2025revprag}
+\citation{reliabilityrag2025}
+\citation{seconrag2025}
+\citation{zou2024poisonedrag}
+\citation{ebrahimi2018hotflip}
+\citation{xiang2024robustrag}
+\citation{ragdefender2025}
+\citation{hayase2021spectre}
+\citation{cohen2019certified,robey2023smoothllm}
+\citation{tramer2020adaptive,carlini2017evaluating}
+\@writefile{toc}{\contentsline {paragraph}{Contributions.}{2}{section*.2}\protected@file@percent }
+\@writefile{toc}{\contentsline {section}{\numberline {2}Related work}{2}{section.2}\protected@file@percent }
+\newlabel{sec:related}{{2}{2}{Related work}{section.2}{}}
+\@writefile{toc}{\contentsline {paragraph}{Memory poisoning attacks.}{2}{section*.3}\protected@file@percent }
+\@writefile{toc}{\contentsline {paragraph}{RAG corpus poisoning and certified defenses.}{2}{section*.4}\protected@file@percent }
+\@writefile{toc}{\contentsline {paragraph}{Game-theoretic security.}{2}{section*.5}\protected@file@percent }
+\@writefile{toc}{\contentsline {section}{\numberline {3}Formal threat model}{2}{section.3}\protected@file@percent }
+\newlabel{sec:threat}{{3}{2}{Formal threat model}{section.3}{}}
+\newlabel{def:agent}{{1}{2}{Memory-augmented agent}{theorem.1}{}}
+\citation{chen2024agentpoison}
+\@writefile{lof}{\contentsline {figure}{\numberline {1}{\ignorespaces Memory poisoning as a Stackelberg game (Definitions~\ref {def:threat_model}--\ref {def:stackelberg}). The defender commits to $\pi _{\mathcal  {D}}$; the adversary best-responds by injecting $p_{\mathrm  {adv}}$.}}{3}{figure.caption.6}\protected@file@percent }
+\providecommand*\caption@xref[2]{\@setref\relax\@undefined{#1}}
+\newlabel{fig:threat_model}{{1}{3}{Memory poisoning as a Stackelberg game (Definitions~\ref {def:threat_model}--\ref {def:stackelberg}). The defender commits to $\pi _{\cD }$; the adversary best-responds by injecting $\passage $}{figure.caption.6}{}}
+\@writefile{lot}{\contentsline {table}{\numberline {1}{\ignorespaces Attack threat-model comparison across deployment-relevant dimensions.}}{3}{table.caption.7}\protected@file@percent }
+\newlabel{tab:attack_properties}{{1}{3}{Attack threat-model comparison across deployment-relevant dimensions}{table.caption.7}{}}
+\newlabel{eq:retrieval}{{1}{3}{Memory-augmented agent}{equation.1}{}}
+\newlabel{def:threat_model}{{2}{3}{Memory poisoning threat model}{theorem.2}{}}
+\newlabel{eq:asrr}{{2}{3}{Memory poisoning threat model}{equation.2}{}}
+\newlabel{eq:asra}{{3}{3}{Memory poisoning threat model}{equation.3}{}}
+\newlabel{eq:asrt}{{4}{3}{Memory poisoning threat model}{equation.4}{}}
+\newlabel{def:stackelberg}{{3}{3}{Stackelberg game formulation}{theorem.3}{}}
+\newlabel{eq:leader}{{5}{3}{Stackelberg game formulation}{equation.5}{}}
+\newlabel{eq:follower}{{6}{3}{Stackelberg game formulation}{equation.6}{}}
+\newlabel{ass:encoder}{{4}{3}{Encoder regularity}{theorem.4}{}}
+\citation{lehmann1959testing}
+\citation{lehmann1959testing}
+\citation{lehmann1959testing}
+\@writefile{loa}{\contentsline {algorithm}{\numberline {1}{\ignorespaces \textnormal  {\textsc  {MemSAD}}{} pre-ingestion filtering}}{4}{algorithm.1}\protected@file@percent }
+\newlabel{alg:sad}{{1}{4}{\memsad {} pre-ingestion filtering}{algorithm.1}{}}
+\@writefile{toc}{\contentsline {section}{\numberline {4}\textnormal  {\textsc  {MemSAD}}{}: Semantic Anomaly Detection}{4}{section.4}\protected@file@percent }
+\newlabel{sec:sad}{{4}{4}{\texorpdfstring {\memsad {}}{MemSAD}: Semantic Anomaly Detection}{section.4}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {4.1}Algorithm and formal definition}{4}{subsection.4.1}\protected@file@percent }
+\newlabel{def:sad}{{5}{4}{\memsad {} detector}{theorem.5}{}}
+\newlabel{eq:sad_combined}{{7}{4}{\memsad {} detector}{equation.7}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {4.2}Gradient coupling theorem}{4}{subsection.4.2}\protected@file@percent }
+\newlabel{sec:gradient}{{4.2}{4}{Gradient coupling theorem}{subsection.4.2}{}}
+\newlabel{thm:gradient_coupling}{{6}{4}{Gradient coupling: necessity, sufficiency, and canonicity}{theorem.6}{}}
+\newlabel{eq:gradient}{{8}{4}{Gradient coupling: necessity, sufficiency, and canonicity}{equation.8}{}}
+\citation{amari2016information}
+\citation{lecam1973convergence}
+\@writefile{toc}{\contentsline {subsection}{\numberline {4.3}Certified detection guarantee}{5}{subsection.4.3}\protected@file@percent }
+\newlabel{sec:certified}{{4.3}{5}{Certified detection guarantee}{subsection.4.3}{}}
+\newlabel{lem:certified}{{7}{5}{Certified detection radius}{theorem.7}{}}
+\newlabel{eq:certified_radius}{{9}{5}{Certified detection radius}{equation.9}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {4.4}Theoretical foundations}{5}{subsection.4.4}\protected@file@percent }
+\newlabel{sec:lower_bound}{{4.4}{5}{Theoretical foundations}{subsection.4.4}{}}
+\newlabel{thm:minimax_lower}{{8}{5}{Minimax detection lower bound}{theorem.8}{}}
+\newlabel{thm:calibration_bound}{{9}{5}{Calibration bound}{theorem.9}{}}
+\newlabel{thm:regret}{{10}{5}{Online calibration regret}{theorem.10}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {4.5}The discrete synonym loophole}{5}{subsection.4.5}\protected@file@percent }
+\newlabel{prop:synonym}{{11}{5}{Synonym-invariance loophole}{theorem.11}{}}
+\newlabel{eq:synonym_bounds}{{10}{5}{Synonym-invariance loophole}{equation.10}{}}
+\citation{zhao2024watermark,kirchenbauer2023watermark}
+\newlabel{fig:coupling_mechanism}{{2a}{6}{Mechanism (schematic)}{figure.caption.8}{}}
+\newlabel{sub@fig:coupling_mechanism}{{a}{6}{Mechanism (schematic)}{figure.caption.8}{}}
+\newlabel{fig:coupling_trajectory}{{2b}{6}{Empirical confirmation (DPR-HotFlip)}{figure.caption.8}{}}
+\newlabel{sub@fig:coupling_trajectory}{{b}{6}{Empirical confirmation (DPR-HotFlip)}{figure.caption.8}{}}
+\@writefile{lof}{\contentsline {figure}{\numberline {2}{\ignorespaces \textbf  {Gradient coupling, visualized.} (\subref  {fig:coupling_mechanism}) 2-D projection: dashed contour marks the $\hat  \mu +\kappa \hat  \sigma $ firing region around $\mathcal  {Q}$; the adversary's gradient $\nabla _p\mathcal  {L}_{\mathrm  {ret}}$ pushes the poison into the firing region along the direction that raises $s$ (Thm.~\ref {thm:gradient_coupling}). (\subref  {fig:coupling_trajectory}) DPR-HotFlip: $\mathcal  {L}_{\mathrm  {ret}}$ and $s$ mirror; detection fires at $t=9$.}}{6}{figure.caption.8}\protected@file@percent }
+\newlabel{fig:coupling}{{2}{6}{\textbf {Gradient coupling, visualized.} (\subref {fig:coupling_mechanism}) 2-D projection: dashed contour marks the $\hat \mu +\kappa \hat \sigma $ firing region around $\cQ $; the adversary's gradient $\nabla _p\cL _{\mathrm {ret}}$ pushes the poison into the firing region along the direction that raises $s$ (Thm.~\ref {thm:gradient_coupling}). (\subref {fig:coupling_trajectory}) DPR-HotFlip: $\cL _{\mathrm {ret}}$ and $s$ mirror; detection fires at $t=9$}{figure.caption.8}{}}
+\@writefile{toc}{\contentsline {paragraph}{\textnormal  {\textsc  {MemSAD}}{}+.}{6}{section*.9}\protected@file@percent }
+\citation{chen2024agentpoison,dong2025minja}
+\citation{kwiatkowski2019natural}
+\citation{chen2024agentpoison}
+\@writefile{lot}{\contentsline {table}{\numberline {2}{\ignorespaces Attack results ($|\mathcal  {M}|=1{,}000$, 100 queries, 5 seeds, bootstrap 95\% CI). $\text  {ASR-A}^{\text  {GPT-2}}$: permissive model without safety alignment (high-compliance upper bound); $\text  {ASR-A}^{\text  {4o-mini}}$: production-aligned; $^\dagger $projected from original papers.}}{7}{table.caption.12}\protected@file@percent }
+\newlabel{tab:attack_results}{{2}{7}{Attack results ($|\cM |=1{,}000$, 100 queries, 5 seeds, bootstrap 95\% CI). $\asra ^{\text {GPT-2}}$: permissive model without safety alignment (high-compliance upper bound); $\asra ^{\text {4o-mini}}$: production-aligned; $^\dagger $projected from original papers}{table.caption.12}{}}
+\@writefile{toc}{\contentsline {section}{\numberline {5}Additional defenses}{7}{section.5}\protected@file@percent }
+\newlabel{sec:other_defenses}{{5}{7}{Additional defenses}{section.5}{}}
+\@writefile{toc}{\contentsline {section}{\numberline {6}Experiments}{7}{section.6}\protected@file@percent }
+\newlabel{sec:experiments}{{6}{7}{Experiments}{section.6}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {6.1}Setup}{7}{subsection.6.1}\protected@file@percent }
+\@writefile{toc}{\contentsline {paragraph}{Vector memory.}{7}{section*.10}\protected@file@percent }
+\@writefile{toc}{\contentsline {paragraph}{Attacks.}{7}{section*.11}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {6.2}Attack results}{7}{subsection.6.2}\protected@file@percent }
+\citation{tramer2020adaptive}
+\citation{liu2020energy}
+\citation{lee2018simple}
+\@writefile{lot}{\contentsline {table}{\numberline {3}{\ignorespaces Defense TPR/FPR at operating thresholds ($\kappa = 2.0$ for \textnormal  {\textsc  {MemSAD}}{}). AP = \textsc  {AgentPoison}{}, MJ = \textsc  {MINJA}{}, IM = \textsc  {InjecMEM}{}.}}{8}{table.caption.13}\protected@file@percent }
+\newlabel{tab:defense_tpr_fpr}{{3}{8}{Defense TPR/FPR at operating thresholds ($\kappa = 2.0$ for \memsad {}). AP = \agentpoison {}, MJ = \minja {}, IM = \injecmem {}}{table.caption.13}{}}
+\@writefile{lot}{\contentsline {table}{\numberline {4}{\ignorespaces Adaptive adversary: evasion vs.\ retrieval degradation (Proposition~\ref {prop:synonym}).}}{8}{table.caption.14}\protected@file@percent }
+\newlabel{tab:adaptive_sad}{{4}{8}{Adaptive adversary: evasion vs.\ retrieval degradation (Proposition~\ref {prop:synonym})}{table.caption.14}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {6.3}Attack-defense interaction matrix}{8}{subsection.6.3}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {6.4}Adaptive adversary analysis}{8}{subsection.6.4}\protected@file@percent }
+\newlabel{sec:adaptive_adversary}{{6.4}{8}{Adaptive adversary analysis}{subsection.6.4}{}}
+\newlabel{eq:adaptive_obj}{{11}{8}{Adaptive adversary analysis}{equation.11}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {6.5}Statistical validation}{8}{subsection.6.5}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {6.6}Ablation highlights}{8}{subsection.6.6}\protected@file@percent }
+\citation{mem0}
+\bibstyle{plainnat}
+\bibdata{references}
+\bibcite{amem}{{1}{2025}{{A-MEM Team}}{{}}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {6.7}Extended evaluations}{9}{subsection.6.7}\protected@file@percent }
+\@writefile{toc}{\contentsline {paragraph}{Compound exposure.}{9}{section*.15}\protected@file@percent }
+\@writefile{toc}{\contentsline {paragraph}{Tool-use agent.}{9}{section*.16}\protected@file@percent }
+\@writefile{toc}{\contentsline {paragraph}{Production validation.}{9}{section*.17}\protected@file@percent }
+\@writefile{toc}{\contentsline {section}{\numberline {7}Discussion and limitations}{9}{section.7}\protected@file@percent }
+\newlabel{sec:discussion}{{7}{9}{Discussion and limitations}{section.7}{}}
+\@writefile{toc}{\contentsline {paragraph}{Defense complementarity.}{9}{section*.18}\protected@file@percent }
+\@writefile{toc}{\contentsline {paragraph}{The synonym frontier.}{9}{section*.19}\protected@file@percent }
+\@writefile{toc}{\contentsline {paragraph}{Limitations.}{9}{section*.20}\protected@file@percent }
+\@writefile{toc}{\contentsline {section}{\numberline {8}Conclusion}{9}{section.8}\protected@file@percent }
+\bibcite{amari2016information}{{2}{2016}{{Amari}}{{}}}
+\bibcite{andriushchenko2025agentharm}{{3}{2025}{{Andriushchenko et~al.}}{{Andriushchenko, Croce, and Flammarion}}}
+\bibcite{corruptrag2025}{{4}{2025{a}}{{Anonymous}}{{}}}
+\bibcite{memorygraft2025}{{5}{2025{b}}{{Anonymous}}{{}}}
+\bibcite{ragdefender2025}{{6}{2025{c}}{{Anonymous}}{{}}}
+\bibcite{reliabilityrag2025}{{7}{2025{d}}{{Anonymous}}{{}}}
+\bibcite{seconrag2025}{{8}{2025{e}}{{Anonymous}}{{}}}
+\bibcite{injecmem2026}{{9}{2026}{{Anonymous}}{{}}}
+\bibcite{carlini2017evaluating}{{10}{2017}{{Carlini and Wagner}}{{}}}
+\bibcite{chaudhari2024phantom}{{11}{2024}{{Chaudhari et~al.}}{{Chaudhari, Severi, Abascal, Oprea, Vempala, and Melis}}}
+\bibcite{chen2024agentpoison}{{12}{2024}{{Chen et~al.}}{{Chen, Tan, Zhao, Cheng, Jiang, Zhang, et~al.}}}
+\bibcite{trojanrag2024}{{13}{2024}{{Cheng et~al.}}{{Cheng, Ding, Ju, et~al.}}}
+\bibcite{cohen2019certified}{{14}{2019}{{Cohen et~al.}}{{Cohen, Rosenfeld, and Kolter}}}
+\bibcite{dong2025minja}{{15}{2025}{{Dong et~al.}}{{}}}
+\bibcite{ebrahimi2018hotflip}{{16}{2018}{{Ebrahimi et~al.}}{{Ebrahimi, Rao, Lowd, and Dou}}}
+\bibcite{gu2024agentsmith}{{17}{2024}{{Gu et~al.}}{{Gu, Zheng, Pang, Du, Liu, Wang, Jiang, and Lin}}}
+\bibcite{hayase2021spectre}{{18}{2021}{{Hayase et~al.}}{{Hayase, Kong, Somani, and Oh}}}
+\bibcite{karpukhin2020dense}{{19}{2020}{{Karpukhin et~al.}}{{Karpukhin, Oguz, Min, Lewis, Wu, Edunov, Chen, and Yih}}}
+\bibcite{kermack1927sir}{{20}{1927}{{Kermack and McKendrick}}{{}}}
+\bibcite{kirchenbauer2023watermark}{{21}{2023}{{Kirchenbauer et~al.}}{{Kirchenbauer, Geiping, Wen, Katz, Miers, and Goldstein}}}
+\bibcite{kwiatkowski2019natural}{{22}{2019}{{Kwiatkowski et~al.}}{{Kwiatkowski, Palomaki, Redfield, Collins, Parikh, Alberti, Epstein, Polosukhin, Devlin, and Lee}}}
+\bibcite{laurentmassart2000}{{23}{2000}{{Laurent and Massart}}{{}}}
+\bibcite{lecam1973convergence}{{24}{1973}{{Le~Cam}}{{}}}
+\bibcite{lee2018simple}{{25}{2018}{{Lee et~al.}}{{Lee, Lee, Lee, and Shin}}}
+\bibcite{lehmann1959testing}{{26}{1959}{{Lehmann}}{{}}}
+\bibcite{amemguard2025}{{27}{2025}{{Li et~al.}}{{}}}
+\bibcite{liu2020energy}{{28}{2020}{{Liu et~al.}}{{Liu, Wang, Owens, and Li}}}
+\bibcite{mem0}{{29}{2024}{{Mem0 Team}}{{}}}
+\bibcite{micciancio2001hardness}{{30}{2002}{{Micciancio and Goldwasser}}{{}}}
+\bibcite{memgpt2023}{{31}{2023}{{Packer et~al.}}{{Packer, Fang, Patil, Zhang, Wooders, and Gonzalez}}}
+\bibcite{robey2023smoothllm}{{32}{2023}{{Robey et~al.}}{{Robey, Wong, Hassani, and Pappas}}}
+\bibcite{shafran2025blocker}{{33}{2025}{{Shafran et~al.}}{{Shafran, Peleg, and Schuster}}}
+\bibcite{tan2025revprag}{{34}{2025}{{Tan et~al.}}{{Tan, Luan, Luo, Sun, Chen, and Dai}}}
+\bibcite{tramer2020adaptive}{{35}{2020}{{Tram\`{e}r et~al.}}{{Tram\`{e}r, Carlini, Brendel, Madry, Kurakin, and Papernot}}}
+\bibcite{villani2009optimal}{{36}{2009}{{Villani}}{{}}}
+\bibcite{wainwright2019highdim}{{37}{2019}{{Wainwright}}{{}}}
+\bibcite{wu2024badagent}{{38}{2024}{{Wu et~al.}}{{Wu, Pi, Zheng, et~al.}}}
+\bibcite{xiang2024robustrag}{{39}{2024}{{Xiang et~al.}}{{Xiang, Tong, Sun, and Li}}}
+\bibcite{xu2026memflow}{{40}{2026}{{Xu et~al.}}{{}}}
+\bibcite{xue2024badrag}{{41}{2024}{{Xue et~al.}}{{Xue, Zheng, Hua, Shen, Liu, Zhao, and Lou}}}
+\bibcite{zhang2025asb}{{42}{2025}{{Zhang et~al.}}{{Zhang, Zheng, et~al.}}}
+\bibcite{zhao2024watermark}{{43}{2024}{{Zhao et~al.}}{{Zhao, Ananth, Li, and Wang}}}
+\bibcite{zou2024poisonedrag}{{44}{2024}{{Zou et~al.}}{{Zou, Geng, Wang, and Jia}}}
+\citation{wainwright2019highdim}
+\citation{laurentmassart2000}
+\@writefile{toc}{\contentsline {section}{\numberline {A}Write-time pipeline diagram}{13}{appendix.A}\protected@file@percent }
+\newlabel{app:pipeline}{{A}{13}{Write-time pipeline diagram}{appendix.A}{}}
+\@writefile{lof}{\contentsline {figure}{\numberline {3}{\ignorespaces \textbf  {\textsc  {MemSAD} write-time pipeline} (Def.~\ref {def:sad}, Alg.~\ref {alg:sad}). Every candidate~$c$ is embedded, scored against a rolling victim-query history~$\mathcal  {H}$ via the combined max--mean similarity (Eq.~\ref {eq:sad_combined}), and compared to the $\hat  \mu +\kappa \hat  \sigma $ threshold derived from the benign reference corpus~$\mathcal  {M}_{\text  {ref}}$. Rejection happens \emph  {before} the entry is committed to memory --- attacks are blocked at write time rather than filtered at retrieval.}}{13}{figure.caption.22}\protected@file@percent }
+\newlabel{fig:pipeline}{{3}{13}{\textbf {\textsc {MemSAD} write-time pipeline} (Def.~\ref {def:sad}, Alg.~\ref {alg:sad}). Every candidate~$c$ is embedded, scored against a rolling victim-query history~$\cH $ via the combined max--mean similarity (Eq.~\ref {eq:sad_combined}), and compared to the $\hat \mu +\kappa \hat \sigma $ threshold derived from the benign reference corpus~$\cM _{\text {ref}}$. Rejection happens \emph {before} the entry is committed to memory --- attacks are blocked at write time rather than filtered at retrieval}{figure.caption.22}{}}
+\@writefile{toc}{\contentsline {section}{\numberline {B}Proofs of main results}{13}{appendix.B}\protected@file@percent }
+\newlabel{app:proofs}{{B}{13}{Proofs of main results}{appendix.B}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {B.1}Proof of Theorem~\ref {thm:gradient_coupling} (geometric interpretation)}{13}{subsection.B.1}\protected@file@percent }
+\newlabel{app:proof_gradient}{{B.1}{13}{Proof of Theorem~\ref {thm:gradient_coupling} (geometric interpretation)}{subsection.B.1}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {B.2}Proof of Theorem~\ref {thm:minimax_lower} (detailed)}{13}{subsection.B.2}\protected@file@percent }
+\newlabel{app:proof_minimax}{{B.2}{13}{Proof of Theorem~\ref {thm:minimax_lower} (detailed)}{subsection.B.2}{}}
+\@writefile{toc}{\contentsline {paragraph}{Setup.}{13}{section*.23}\protected@file@percent }
+\@writefile{toc}{\contentsline {paragraph}{Application.}{13}{section*.24}\protected@file@percent }
+\@writefile{toc}{\contentsline {paragraph}{Alternative via Fano.}{13}{section*.25}\protected@file@percent }
+\@writefile{toc}{\contentsline {paragraph}{Tightness.}{13}{section*.26}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {B.3}Proof of Theorem~\ref {thm:calibration_bound}}{13}{subsection.B.3}\protected@file@percent }
+\newlabel{app:proof_calibration}{{B.3}{13}{Proof of Theorem~\ref {thm:calibration_bound}}{subsection.B.3}{}}
+\citation{micciancio2001hardness}
+\@writefile{toc}{\contentsline {subsection}{\numberline {B.4}Proof of Theorem~\ref {thm:regret}}{14}{subsection.B.4}\protected@file@percent }
+\newlabel{app:proof_regret}{{B.4}{14}{Proof of Theorem~\ref {thm:regret}}{subsection.B.4}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {B.5}Fisher-Rao detection-evasion metric}{14}{subsection.B.5}\protected@file@percent }
+\newlabel{app:proof_fisher_rao}{{B.5}{14}{Fisher-Rao detection-evasion metric}{subsection.B.5}{}}
+\newlabel{thm:fisher_rao}{{12}{14}{Fisher-Rao detection-evasion metric}{theorem.12}{}}
+\@writefile{toc}{\contentsline {paragraph}{Proof.}{14}{section*.27}\protected@file@percent }
+\@writefile{toc}{\contentsline {paragraph}{Geodesic lower bound.}{14}{section*.28}\protected@file@percent }
+\@writefile{toc}{\contentsline {paragraph}{Detection-retrieval coupling.}{14}{section*.29}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {B.6}Proof of Proposition~\ref {prop:hardness} (detailed)}{14}{subsection.B.6}\protected@file@percent }
+\newlabel{app:proof_hardness}{{B.6}{14}{Proof of Proposition~\ref {prop:hardness} (detailed)}{subsection.B.6}{}}
+\newlabel{prop:hardness}{{13}{14}{Hardness of optimal evasion}{theorem.13}{}}
+\@writefile{toc}{\contentsline {paragraph}{Reduction from CVP.}{14}{section*.30}\protected@file@percent }
+\citation{micciancio2001hardness}
+\@writefile{toc}{\contentsline {paragraph}{Encoder construction (explicit).}{15}{section*.31}\protected@file@percent }
+\@writefile{toc}{\contentsline {paragraph}{Feasible set.}{15}{section*.32}\protected@file@percent }
+\@writefile{toc}{\contentsline {paragraph}{Formal reduction.}{15}{section*.33}\protected@file@percent }
+\@writefile{toc}{\contentsline {paragraph}{Practical implication.}{15}{section*.34}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {B.7}Detection-evasion tradeoff surface}{15}{subsection.B.7}\protected@file@percent }
+\newlabel{app:tradeoff_surface}{{B.7}{15}{Detection-evasion tradeoff surface}{subsection.B.7}{}}
+\newlabel{cor:combined_coupling}{{14}{15}{Combined scoring preserves coupling}{theorem.14}{}}
+\citation{villani2009optimal}
+\@writefile{lof}{\contentsline {figure}{\numberline {4}{\ignorespaces Detection-evasion tradeoff. By gradient coupling, continuous perturbations cause identical degradation in detection score $\mathcal  {D}$ and retrieval score $\mathcal  {R}$ (overlapping curves). Synonym substitutions (orange) bypass this coupling via discrete jumps in token space (Proposition~\ref {prop:synonym}).}}{16}{figure.caption.35}\protected@file@percent }
+\newlabel{fig:tradeoff_curves}{{4}{16}{Detection-evasion tradeoff. By gradient coupling, continuous perturbations cause identical degradation in detection score $\cD $ and retrieval score $\cR $ (overlapping curves). Synonym substitutions (orange) bypass this coupling via discrete jumps in token space (Proposition~\ref {prop:synonym})}{figure.caption.35}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {B.8}Generalization bound}{16}{subsection.B.8}\protected@file@percent }
+\newlabel{app:proof_generalization}{{B.8}{16}{Generalization bound}{subsection.B.8}{}}
+\newlabel{thm:generalization}{{15}{16}{Generalization bound}{theorem.15}{}}
+\newlabel{rem:epsilon_w}{{16}{16}{Practical estimation of $\epsilon _W$}{theorem.16}{}}
+\@writefile{toc}{\contentsline {paragraph}{Proof setup.}{16}{section*.36}\protected@file@percent }
+\@writefile{toc}{\contentsline {paragraph}{Wasserstein coupling.}{16}{section*.37}\protected@file@percent }
+\@writefile{toc}{\contentsline {paragraph}{Threshold estimation.}{16}{section*.38}\protected@file@percent }
+\@writefile{toc}{\contentsline {paragraph}{Non-asymptotic convergence.}{16}{section*.39}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {B.9}Online regret bound visualization}{16}{subsection.B.9}\protected@file@percent }
+\newlabel{app:regret_viz}{{B.9}{16}{Online regret bound visualization}{subsection.B.9}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {B.10}Stackelberg equilibrium existence}{16}{subsection.B.10}\protected@file@percent }
+\newlabel{app:equilibrium}{{B.10}{16}{Stackelberg equilibrium existence}{subsection.B.10}{}}
+\newlabel{prop:equilibrium}{{17}{16}{Equilibrium existence}{theorem.17}{}}
+\@writefile{lof}{\contentsline {figure}{\numberline {5}{\ignorespaces Online calibration regret decomposition (Theorem~\ref {thm:regret}). Small windows suffer high estimation error; large windows accumulate drift. The optimal $m^* = \Theta ((\sigma /\Delta )^{2/3})$ balances both.}}{17}{figure.caption.40}\protected@file@percent }
+\newlabel{fig:regret_surface}{{5}{17}{Online calibration regret decomposition (Theorem~\ref {thm:regret}). Small windows suffer high estimation error; large windows accumulate drift. The optimal $m^* = \Theta ((\sigma /\Delta )^{2/3})$ balances both}{figure.caption.40}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {B.11}Finite-sample FPR concentration}{17}{subsection.B.11}\protected@file@percent }
+\newlabel{app:fpr_concentration}{{B.11}{17}{Finite-sample FPR concentration}{subsection.B.11}{}}
+\newlabel{prop:fpr_concentration}{{18}{17}{FPR concentration}{theorem.18}{}}
+\@writefile{toc}{\contentsline {section}{\numberline {C}Additional defense details}{17}{appendix.C}\protected@file@percent }
+\newlabel{app:defenses}{{C}{17}{Additional defense details}{appendix.C}{}}
+\@writefile{toc}{\contentsline {paragraph}{Watermark.}{17}{section*.41}\protected@file@percent }
+\@writefile{toc}{\contentsline {paragraph}{Proactive.}{17}{section*.42}\protected@file@percent }
+\@writefile{toc}{\contentsline {paragraph}{Composite defense.}{17}{section*.43}\protected@file@percent }
+\@writefile{toc}{\contentsline {paragraph}{Evaluation correction.}{17}{section*.44}\protected@file@percent }
+\citation{kermack1927sir,gu2024agentsmith}
+\@writefile{lot}{\contentsline {table}{\numberline {5}{\ignorespaces \textnormal  {\textsc  {MemSAD}}{} threshold sensitivity with combined scoring ($|\mathcal  {M}|=200$; see Table~\ref {tab:defense_tpr_fpr} for $|\mathcal  {M}|=1{,}000$ results).}}{18}{table.caption.45}\protected@file@percent }
+\newlabel{tab:ablation_threshold}{{5}{18}{\memsad {} threshold sensitivity with combined scoring ($|\cM |=200$; see Table~\ref {tab:defense_tpr_fpr} for $|\cM |=1{,}000$ results)}{table.caption.45}{}}
+\@writefile{lot}{\contentsline {table}{\numberline {6}{\ignorespaces Corpus size ablation: $\text  {ASR-R}$ across $|\mathcal  {M}|$ (triggered for AP).}}{18}{table.caption.46}\protected@file@percent }
+\newlabel{tab:ablation_corpus}{{6}{18}{Corpus size ablation: $\asrr $ across $|\cM |$ (triggered for AP)}{table.caption.46}{}}
+\@writefile{toc}{\contentsline {section}{\numberline {D}Ablation studies}{18}{appendix.D}\protected@file@percent }
+\newlabel{app:ablation}{{D}{18}{Ablation studies}{appendix.D}{}}
+\@writefile{toc}{\contentsline {section}{\numberline {E}Multi-encoder evaluation}{18}{appendix.E}\protected@file@percent }
+\newlabel{app:encoder_gen}{{E}{18}{Multi-encoder evaluation}{appendix.E}{}}
+\@writefile{toc}{\contentsline {section}{\numberline {F}Graph memory attacks}{18}{appendix.F}\protected@file@percent }
+\newlabel{app:graph}{{F}{18}{Graph memory attacks}{appendix.F}{}}
+\@writefile{toc}{\contentsline {section}{\numberline {G}Multi-agent propagation}{18}{appendix.G}\protected@file@percent }
+\newlabel{app:propagation}{{G}{18}{Multi-agent propagation}{appendix.G}{}}
+\@writefile{lot}{\contentsline {table}{\numberline {7}{\ignorespaces Poison count ablation: $\text  {ASR-R}$ vs.\ $n_{\text  {base}}$.}}{19}{table.caption.47}\protected@file@percent }
+\newlabel{tab:ablation_poison}{{7}{19}{Poison count ablation: $\asrr $ vs.\ $n_{\text {base}}$}{table.caption.47}{}}
+\@writefile{lot}{\contentsline {table}{\numberline {8}{\ignorespaces Calibration set size ablation: $|\tau _N - \tau ^*|$ vs.\ $N$ (theoretical bound from Theorem~\ref {thm:calibration_bound} vs.\ observed, $\delta =0.05$, \textsc  {MINJA}{}).}}{19}{table.caption.48}\protected@file@percent }
+\newlabel{tab:ablation_calibration}{{8}{19}{Calibration set size ablation: $|\tau _N - \tau ^*|$ vs.\ $N$ (theoretical bound from Theorem~\ref {thm:calibration_bound} vs.\ observed, $\delta =0.05$, \minja {})}{table.caption.48}{}}
+\@writefile{toc}{\contentsline {section}{\numberline {H}Statistical hypothesis tests}{19}{appendix.H}\protected@file@percent }
+\newlabel{app:hypothesis}{{H}{19}{Statistical hypothesis tests}{appendix.H}{}}
+\@writefile{toc}{\contentsline {section}{\numberline {I}FPR validation}{19}{appendix.I}\protected@file@percent }
+\newlabel{app:fpr}{{I}{19}{FPR validation}{appendix.I}{}}
+\@writefile{toc}{\contentsline {section}{\numberline {J}\textnormal  {\textsc  {MemSAD}}{} detection analysis}{19}{appendix.J}\protected@file@percent }
+\newlabel{app:sad_analysis}{{J}{19}{\memsad {} detection analysis}{appendix.J}{}}
+\@writefile{toc}{\contentsline {section}{\numberline {K}Sample complexity comparison}{19}{appendix.K}\protected@file@percent }
+\newlabel{app:sample_complexity}{{K}{19}{Sample complexity comparison}{appendix.K}{}}
+\@writefile{lot}{\contentsline {table}{\numberline {9}{\ignorespaces Encoder generalization: \textnormal  {\textsc  {MemSAD}}{} across 6 encoders at $|\mathcal  {M}|=1{,}000$ ($\kappa = 2.0$, combined scoring). AP uses triggered calibration. FPR omitted (0.000 for MiniLM/MPNet/Para/E5/Contriever; 0.086--0.138 for BGE-Large at this $\kappa $). TPR here measures detection over 5 poison passages per attack; main Table~\ref {tab:defense_tpr_fpr} uses $n=10$ \textsc  {MINJA}{} / $n=15$ \textsc  {InjecMEM}{} entries (different poison set, same encoder, same $\kappa $).}}{20}{table.caption.49}\protected@file@percent }
+\newlabel{tab:encoder_gen}{{9}{20}{Encoder generalization: \memsad {} across 6 encoders at $|\cM |=1{,}000$ ($\kappa = 2.0$, combined scoring). AP uses triggered calibration. FPR omitted (0.000 for MiniLM/MPNet/Para/E5/Contriever; 0.086--0.138 for BGE-Large at this $\kappa $). TPR here measures detection over 5 poison passages per attack; main Table~\ref {tab:defense_tpr_fpr} uses $n=10$ \minja {} / $n=15$ \injecmem {} entries (different poison set, same encoder, same $\kappa $)}{table.caption.49}{}}
+\@writefile{lot}{\contentsline {table}{\numberline {10}{\ignorespaces Multi-agent SIR propagation results ($N=20$, $p_{\text  {re-store}}=0.30$, $T=30$, 5 initial poison entries). Averaged over 5 independent seeds; timing columns show mean steps.}}{20}{table.caption.53}\protected@file@percent }
+\newlabel{tab:sir_propagation}{{10}{20}{Multi-agent SIR propagation results ($N=20$, $p_{\text {re-store}}=0.30$, $T=30$, 5 initial poison entries). Averaged over 5 independent seeds; timing columns show mean steps}{table.caption.53}{}}
+\@writefile{toc}{\contentsline {section}{\numberline {L}Computational complexity}{20}{appendix.L}\protected@file@percent }
+\newlabel{app:complexity}{{L}{20}{Computational complexity}{appendix.L}{}}
+\@writefile{toc}{\contentsline {section}{\numberline {M}Distributional robustness analysis}{20}{appendix.M}\protected@file@percent }
+\newlabel{app:dro}{{M}{20}{Distributional robustness analysis}{appendix.M}{}}
+\newlabel{prop:dro}{{21}{20}{Distributionally robust detection}{theorem.21}{}}
+\newlabel{prop:pac}{{22}{20}{PAC-style detection guarantee}{theorem.22}{}}
+\citation{amemguard2025}
+\citation{tan2025revprag}
+\citation{ragdefender2025}
+\citation{liu2020energy}
+\citation{lee2018simple}
+\@writefile{lof}{\contentsline {figure}{\numberline {6}{\ignorespaces Encoder generalization: \textnormal  {\textsc  {MemSAD}}{} TPR (top) and FPR (bottom) across 6 encoders at $\kappa =2.0$. Triggered \textsc  {AgentPoison}{} achieves TPR\,=\,1.00 on all encoders; \textsc  {InjecMEM}{} is more encoder-sensitive (TPR\,0.00--1.00).}}{21}{figure.caption.50}\protected@file@percent }
+\newlabel{fig:encoder_generalization}{{6}{21}{Encoder generalization: \memsad {} TPR (top) and FPR (bottom) across 6 encoders at $\kappa =2.0$. Triggered \agentpoison {} achieves TPR\,=\,1.00 on all encoders; \injecmem {} is more encoder-sensitive (TPR\,0.00--1.00)}{figure.caption.50}{}}
+\@writefile{lot}{\contentsline {table}{\numberline {11}{\ignorespaces Hypothesis tests ($H_0$: $\text  {TPR}= 0$, Bonferroni $\alpha ' = 0.003$).}}{21}{table.caption.54}\protected@file@percent }
+\newlabel{tab:hypothesis}{{11}{21}{Hypothesis tests ($H_0$: $\tpr = 0$, Bonferroni $\alpha ' = 0.003$)}{table.caption.54}{}}
+\@writefile{toc}{\contentsline {section}{\numberline {N}OOD detection baseline comparison}{21}{appendix.N}\protected@file@percent }
+\newlabel{app:ood}{{N}{21}{OOD detection baseline comparison}{appendix.N}{}}
+\@writefile{lof}{\contentsline {figure}{\numberline {7}{\ignorespaces Multi-agent SIR propagation (mean $\pm 1\sigma $ over 5 seeds). \textbf  {Top}: fraction of agents exposed over 30 steps. \textbf  {Bottom}: secondary poison entry growth. Composite ($\sigma =1.0$) prevents spread entirely; \textnormal  {\textsc  {MemSAD}}{} ($\sigma =2.0$) matches no-defense spread timing but reduces secondary entries by 22\%, as 4 of 5 initial entries pass the looser threshold and the composite is required to stop initial spread.}}{22}{figure.caption.52}\protected@file@percent }
+\newlabel{fig:sir_propagation}{{7}{22}{Multi-agent SIR propagation (mean $\pm 1\sigma $ over 5 seeds). \textbf {Top}: fraction of agents exposed over 30 steps. \textbf {Bottom}: secondary poison entry growth. Composite ($\sigma =1.0$) prevents spread entirely; \memsad {} ($\sigma =2.0$) matches no-defense spread timing but reduces secondary entries by 22\%, as 4 of 5 initial entries pass the looser threshold and the composite is required to stop initial spread}{figure.caption.52}{}}
+\@writefile{lot}{\contentsline {table}{\numberline {12}{\ignorespaces FPR validation: Clopper-Pearson 95\% CIs, 20 trials.}}{22}{table.caption.55}\protected@file@percent }
+\newlabel{tab:fpr_validation}{{12}{22}{FPR validation: Clopper-Pearson 95\% CIs, 20 trials}{table.caption.55}{}}
+\citation{kwiatkowski2019natural}
+\newlabel{fig:sad_roc}{{8a}{23}{ROC as $\kappa $ varies from 0.5 to 4.0}{figure.caption.56}{}}
+\newlabel{sub@fig:sad_roc}{{a}{23}{ROC as $\kappa $ varies from 0.5 to 4.0}{figure.caption.56}{}}
+\newlabel{fig:sad_calibration}{{8b}{23}{Plain vs.\ triggered calibration}{figure.caption.56}{}}
+\newlabel{sub@fig:sad_calibration}{{b}{23}{Plain vs.\ triggered calibration}{figure.caption.56}{}}
+\@writefile{lof}{\contentsline {figure}{\numberline {8}{\ignorespaces \textnormal  {\textsc  {MemSAD}}{} detection. (Top)~\textsc  {MINJA}{} traces near-ideal ROC; triggered calibration recovers $\text  {TPR}= 1.00$ for \textsc  {AgentPoison}{} at $\kappa = 2.0$ ($\star $). (Bottom)~Threshold shifts from 0.482 to 0.432.}}{23}{figure.caption.56}\protected@file@percent }
+\newlabel{fig:sad_analysis}{{8}{23}{\memsad {} detection. (Top)~\minja {} traces near-ideal ROC; triggered calibration recovers $\tpr = 1.00$ for \agentpoison {} at $\kappa = 2.0$ ($\star $). (Bottom)~Threshold shifts from 0.482 to 0.432}{figure.caption.56}{}}
+\@writefile{toc}{\contentsline {section}{\numberline {O}Calibration query sensitivity}{23}{appendix.O}\protected@file@percent }
+\newlabel{app:calibration_sensitivity}{{O}{23}{Calibration query sensitivity}{appendix.O}{}}
+\@writefile{toc}{\contentsline {section}{\numberline {P}Cross-corpus generalization: Natural Questions}{23}{appendix.P}\protected@file@percent }
+\newlabel{app:nq_eval}{{P}{23}{Cross-corpus generalization: Natural Questions}{appendix.P}{}}
+\@writefile{lot}{\contentsline {table}{\numberline {13}{\ignorespaces Sample complexity for reliable detection ($\text  {FPR}+ (1 - \text  {TPR}) \leq 0.05$) across calibration regimes.}}{24}{table.caption.57}\protected@file@percent }
+\newlabel{tab:sample_complexity}{{13}{24}{Sample complexity for reliable detection ($\fpr + (1 - \tpr ) \leq 0.05$) across calibration regimes}{table.caption.57}{}}
+\@writefile{lot}{\contentsline {table}{\numberline {14}{\ignorespaces Per-entry defense cost at write time.}}{24}{table.caption.58}\protected@file@percent }
+\newlabel{tab:complexity}{{14}{24}{Per-entry defense cost at write time}{table.caption.58}{}}
+\@writefile{toc}{\contentsline {section}{\numberline {Q}\textnormal  {\textsc  {MemSAD}}{}+ evaluation}{24}{appendix.Q}\protected@file@percent }
+\newlabel{app:memsad_plus}{{Q}{24}{\memsad {}+ evaluation}{appendix.Q}{}}
+\newlabel{prop:memsad_plus}{{23}{24}{\memsad {}+ combined detection}{theorem.23}{}}
+\newlabel{eq:memsad_plus}{{22}{24}{\memsad {}+ combined detection}{equation.22}{}}
+\@writefile{toc}{\contentsline {section}{\numberline {R}Compound exposure analysis}{24}{appendix.R}\protected@file@percent }
+\newlabel{app:compound}{{R}{24}{Compound exposure analysis}{appendix.R}{}}
+\@writefile{lot}{\contentsline {table}{\numberline {15}{\ignorespaces OOD detection baseline comparison at $|\mathcal  {M}|=1{,}000$. \textnormal  {\textsc  {MemSAD}}{} uses triggered calibration for \textsc  {AgentPoison}{}; baselines use standard calibration.}}{25}{table.caption.59}\protected@file@percent }
+\newlabel{tab:ood_comparison}{{15}{25}{OOD detection baseline comparison at $|\cM |=1{,}000$. \memsad {} uses triggered calibration for \agentpoison {}; baselines use standard calibration}{table.caption.59}{}}
+\@writefile{lot}{\contentsline {table}{\numberline {16}{\ignorespaces Calibration query sensitivity: \textnormal  {\textsc  {MemSAD}}{} AUROC across calibration regimes ($\kappa =2.0$, $|\mathcal  {M}|=1{,}000$). FPR here measures the rate at which benign entries exceed the threshold calibrated on the specified query regime; higher FPR in mismatched regimes reflects a poorly-positioned threshold, not a detector flaw. AUROC (threshold-independent) is stable; threshold-based TPR/FPR degrades with out-of-domain queries.}}{25}{table.caption.60}\protected@file@percent }
+\newlabel{tab:calibration_sensitivity}{{16}{25}{Calibration query sensitivity: \memsad {} AUROC across calibration regimes ($\kappa =2.0$, $|\cM |=1{,}000$). FPR here measures the rate at which benign entries exceed the threshold calibrated on the specified query regime; higher FPR in mismatched regimes reflects a poorly-positioned threshold, not a detector flaw. AUROC (threshold-independent) is stable; threshold-based TPR/FPR degrades with out-of-domain queries}{table.caption.60}{}}
+\@writefile{toc}{\contentsline {section}{\numberline {S}Tool-use agent evaluation}{25}{appendix.S}\protected@file@percent }
+\newlabel{app:tool_agent}{{S}{25}{Tool-use agent evaluation}{appendix.S}{}}
+\@writefile{toc}{\contentsline {section}{\numberline {T}Production memory system validation}{25}{appendix.T}\protected@file@percent }
+\newlabel{app:mem0}{{T}{25}{Production memory system validation}{appendix.T}{}}
+\@writefile{toc}{\contentsline {section}{\numberline {U}LLM sanitization baseline}{25}{appendix.U}\protected@file@percent }
+\newlabel{app:llm_sanitization}{{U}{25}{LLM sanitization baseline}{appendix.U}{}}
+\@writefile{lot}{\contentsline {table}{\numberline {17}{\ignorespaces Cross-corpus generalization: $\text  {ASR-R}$ on NQ-based corpus ($|\mathcal  {M}|=1{,}000$, 3 seeds). Synthetic results (Table~\ref {tab:attack_results}) shown for reference.}}{26}{table.caption.61}\protected@file@percent }
+\newlabel{tab:nq_eval}{{17}{26}{Cross-corpus generalization: $\asrr $ on NQ-based corpus ($|\cM |=1{,}000$, 3 seeds). Synthetic results (Table~\ref {tab:attack_results}) shown for reference}{table.caption.61}{}}
+\@writefile{lof}{\contentsline {figure}{\numberline {9}{\ignorespaces \textbf  {Synonym substitution is the only attack construction that evades \textsc  {MemSAD}.} \textsc  {MemSAD} combined scores for $n=60$ poison passages per condition, at the $\hat  \mu +2\hat  \sigma $ operating threshold (dashed). Original poisons are detected with TPR${=}1.00$; DPR-HotFlip optimization preserves attack utility and remains detected; greedy word-level synonym substitution (adaptive adversary, Sec.~\ref {sec:adaptive_adversary}) shifts the score distribution \emph  {below} the threshold, producing the paper's empirical 80--100\% evasion finding. This is the empirical face of Proposition~\ref {prop:synonym}: the coupling theorem holds against continuous perturbations but discrete synonym jumps have $\epsilon _{\text  {syn}}\approx 0$.}}{26}{figure.caption.62}\protected@file@percent }
+\newlabel{fig:synonym_loophole}{{9}{26}{\textbf {Synonym substitution is the only attack construction that evades \textsc {MemSAD}.} \textsc {MemSAD} combined scores for $n=60$ poison passages per condition, at the $\hat \mu +2\hat \sigma $ operating threshold (dashed). Original poisons are detected with TPR${=}1.00$; DPR-HotFlip optimization preserves attack utility and remains detected; greedy word-level synonym substitution (adaptive adversary, Sec.~\ref {sec:adaptive_adversary}) shifts the score distribution \emph {below} the threshold, producing the paper's empirical 80--100\% evasion finding. This is the empirical face of Proposition~\ref {prop:synonym}: the coupling theorem holds against continuous perturbations but discrete synonym jumps have $\epsilon _{\text {syn}}\approx 0$}{figure.caption.62}{}}
+\@writefile{toc}{\contentsline {section}{\numberline {V}Additional figures}{26}{appendix.V}\protected@file@percent }
+\newlabel{app:additional_figures}{{V}{26}{Additional figures}{appendix.V}{}}
+\@writefile{lot}{\contentsline {table}{\numberline {18}{\ignorespaces \textnormal  {\textsc  {MemSAD}}{}+ vs.\ \textnormal  {\textsc  {MemSAD}}{}: TPR comparison on original and synonym-substituted passages ($|\mathcal  {M}| = 1{,}000$, $\kappa = 2.0$).}}{27}{table.caption.63}\protected@file@percent }
+\newlabel{tab:memsad_plus}{{18}{27}{\memsad {}+ vs.\ \memsad {}: TPR comparison on original and synonym-substituted passages ($|\cM | = 1{,}000$, $\kappa = 2.0$)}{table.caption.63}{}}
+\@writefile{lot}{\contentsline {table}{\numberline {19}{\ignorespaces Compound exposure: cumulative compromise probability over agent sessions ($q = 5$ queries/session, $|\mathcal  {M}| = 1{,}000$).}}{27}{table.caption.64}\protected@file@percent }
+\newlabel{tab:compound_exposure}{{19}{27}{Compound exposure: cumulative compromise probability over agent sessions ($q = 5$ queries/session, $|\cM | = 1{,}000$)}{table.caption.64}{}}
+\@writefile{lot}{\contentsline {table}{\numberline {20}{\ignorespaces Tool-use agent evaluation: $\text  {ASR-A}$ measured with GPT-4o-mini function calling ($n = 50$ queries, Clopper-Pearson 95\% CI). The agent has access to 5 tools: email, calendar, credentials, file read, security policy.}}{27}{table.caption.65}\protected@file@percent }
+\newlabel{tab:tool_agent}{{20}{27}{Tool-use agent evaluation: $\asra $ measured with GPT-4o-mini function calling ($n = 50$ queries, Clopper-Pearson 95\% CI). The agent has access to 5 tools: email, calendar, credentials, file read, security policy}{table.caption.65}{}}
+\@writefile{lot}{\contentsline {table}{\numberline {21}{\ignorespaces Production validation: $\text  {ASR-R}$ on Mem0 (LLM-mediated) vs.\ FAISS (raw vector store) at $|\mathcal  {M}| = 1{,}000$.}}{27}{table.caption.66}\protected@file@percent }
+\newlabel{tab:mem0_validation}{{21}{27}{Production validation: $\asrr $ on Mem0 (LLM-mediated) vs.\ FAISS (raw vector store) at $|\cM | = 1{,}000$}{table.caption.66}{}}
+\@writefile{lot}{\contentsline {table}{\numberline {22}{\ignorespaces LLM sanitization baseline (GPT-4o-mini, zero-shot JSON classifier, threshold $\tau {=}0.5$). Evaluated on 20 poison + 50 benign entries per attack.}}{27}{table.caption.67}\protected@file@percent }
+\newlabel{tab:llm_sanitization}{{22}{27}{LLM sanitization baseline (GPT-4o-mini, zero-shot JSON classifier, threshold $\tau {=}0.5$). Evaluated on 20 poison + 50 benign entries per attack}{table.caption.67}{}}
+\@writefile{lof}{\contentsline {figure}{\numberline {10}{\ignorespaces Certified detection radius (Lemma~\ref {lem:certified}). When $\Delta _s > \kappa \hat  {\sigma } + \eta $, the adversarial distribution $P_1$ falls entirely within the certified region, guaranteeing $\text  {TPR}= 1$.}}{28}{figure.caption.68}\protected@file@percent }
+\newlabel{fig:certified_radius}{{10}{28}{Certified detection radius (Lemma~\ref {lem:certified}). When $\Delta _s > \kappa \hat {\sigma } + \eta $, the adversarial distribution $P_1$ falls entirely within the certified region, guaranteeing $\tpr = 1$}{figure.caption.68}{}}
+\@writefile{lof}{\contentsline {figure}{\numberline {11}{\ignorespaces Corpus scaling: $\text  {ASR-R}$ at $|\mathcal  {M}|=200$ vs.\ $|\mathcal  {M}|=1{,}000$. Trigger-optimized \textsc  {AgentPoison}{} is robust to dilution; \textsc  {MINJA}{} and \textsc  {InjecMEM}{} degrade $4$--$7\times $.}}{28}{figure.caption.69}\protected@file@percent }
+\newlabel{fig:corpus_scaling}{{11}{28}{Corpus scaling: $\asrr $ at $|\cM |=200$ vs.\ $|\cM |=1{,}000$. Trigger-optimized \agentpoison {} is robust to dilution; \minja {} and \injecmem {} degrade $4$--$7\times $}{figure.caption.69}{}}
+\@writefile{lof}{\contentsline {figure}{\numberline {12}{\ignorespaces Measured vs.\ modelled $\text  {ASR-A}$. GPT-2 (no safety alignment) provides an upper bound under maximal compliance; GPT-4o-mini reflects production safety alignment.}}{28}{figure.caption.70}\protected@file@percent }
+\newlabel{fig:measured_asr_a}{{12}{28}{Measured vs.\ modelled $\asra $. GPT-2 (no safety alignment) provides an upper bound under maximal compliance; GPT-4o-mini reflects production safety alignment}{figure.caption.70}{}}
+\gdef \@abspage@last{28}
