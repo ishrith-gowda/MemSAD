@@ -1,0 +1,162 @@
+/* memsad design tokens
+   research artifact — warm paper, quiet serif, mono for numerics
+*/
+
+:root {
+  /* colour — raw */
+  --ink-900: #1A1A1D;
+  --ink-700: #40434B;
+  --ink-500: #6B6F7A;
+  --paper: #FBFAF7;
+  --paper-raised: #F4F1EA;
+  --rule: #E5E2DA;
+  --accent-blue: #7EA6CF;
+  --accent-red: #C47070;
+  --accent-green: #8FBF7F;
+  --accent-lilac: #B5A8C9;
+  --flag-red: #A84A4A;
+  --flag-amber: #C4923F;
+
+  /* colour — semantic */
+  --surface: var(--paper);
+  --surface-raised: var(--paper-raised);
+  --border-subtle: var(--rule);
+  --text-primary: var(--ink-900);
+  --text-secondary: var(--ink-700);
+  --text-muted: var(--ink-500);
+  --accent-minja: var(--accent-blue);
+  --accent-agentpoison: var(--accent-red);
+  --accent-injecmem: var(--accent-lilac);
+  --accent-triggered: var(--accent-green);
+  --flag-hard: var(--flag-red);
+  --flag-soft: var(--flag-amber);
+
+  /* type */
+  --font-serif: "Source Serif 4", "Source Serif Pro", Charter, "Iowan Old Style", Georgia, serif;
+  --font-sans: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+  --font-mono: "JetBrains Mono", "Berkeley Mono", ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+
+  /* spacing scale */
+  --space-2: 2px;
+  --space-4: 4px;
+  --space-8: 8px;
+  --space-12: 12px;
+  --space-16: 16px;
+  --space-24: 24px;
+  --space-32: 32px;
+  --space-48: 48px;
+  --space-64: 64px;
+  --space-96: 96px;
+  --space-128: 128px;
+
+  /* radius */
+  --radius-4: 4px;
+  --radius-8: 8px;
+  --radius-12: 12px;
+  --radius-16: 16px;
+  --radius-24: 24px;
+
+  /* elevation */
+  --elevation-0: none;
+  --elevation-1: 0 2px 8px rgba(0, 0, 0, 0.04);
+
+  /* motion */
+  --duration-base: 180ms;
+  --duration-anomaly: 400ms;
+  --ease-standard: cubic-bezier(.22, 1, .36, 1);
+}
+
+* { box-sizing: border-box; }
+
+html, body {
+  margin: 0;
+  padding: 0;
+  background: var(--surface);
+  color: var(--text-primary);
+  font-family: var(--font-sans);
+  font-size: 16px;
+  line-height: 1.55;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  font-feature-settings: "ss01", "cv11";
+}
+
+/* type scale */
+.t-display-xl {
+  font-family: var(--font-serif);
+  font-size: 48px;
+  line-height: 1.2;
+  letter-spacing: -0.01em;
+  font-weight: 400;
+}
+.t-display-l {
+  font-family: var(--font-serif);
+  font-size: 32px;
+  line-height: 1.2;
+  letter-spacing: -0.005em;
+  font-weight: 400;
+}
+.t-display-m {
+  font-family: var(--font-serif);
+  font-size: 20px;
+  line-height: 1.3;
+  letter-spacing: 0;
+  font-weight: 500;
+}
+.t-body-l {
+  font-family: var(--font-sans);
+  font-size: 18px;
+  line-height: 1.55;
+  letter-spacing: -0.005em;
+  font-weight: 400;
+}
+.t-body {
+  font-family: var(--font-sans);
+  font-size: 16px;
+  line-height: 1.55;
+  letter-spacing: 0;
+  font-weight: 400;
+}
+.t-body-s {
+  font-family: var(--font-sans);
+  font-size: 14px;
+  line-height: 1.5;
+  letter-spacing: 0;
+  font-weight: 400;
+  color: var(--text-secondary);
+}
+.t-mono-m {
+  font-family: var(--font-mono);
+  font-size: 14px;
+  line-height: 1.5;
+  letter-spacing: 0;
+  font-weight: 400;
+  font-variant-ligatures: none;
+}
+.t-mono-s {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  line-height: 1.4;
+  letter-spacing: 0;
+  font-weight: 400;
+  font-variant-ligatures: none;
+}
+
+.sc {
+  font-variant: small-caps;
+  letter-spacing: 0.04em;
+}
+
+.caps {
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  font-size: 12px;
+  font-weight: 500;
+}
+
+a { color: var(--text-primary); text-decoration: underline; text-underline-offset: 3px; text-decoration-thickness: 1px; text-decoration-color: var(--border-subtle); }
+a:hover { text-decoration-color: var(--text-primary); }
+
+hr { border: 0; border-top: 1px solid var(--border-subtle); margin: 0; }
+
+::selection { background: #E7E2D1; }
