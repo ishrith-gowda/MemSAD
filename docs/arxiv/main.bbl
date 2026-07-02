@@ -1,4 +1,4 @@
-\begin{thebibliography}{44}
+\begin{thebibliography}{47}
 \providecommand{\natexlab}[1]{#1}
 \providecommand{\url}[1]{\texttt{#1}}
 \expandafter\ifx\csname urlstyle\endcsname\relax
@@ -112,6 +112,14 @@ Sicheng Dong et~al.
   (NeurIPS)}, 2025.
 \newblock URL \url{https://arxiv.org/abs/2503.03704}.
 
+\bibitem[Dvoretzky et~al.(1956)Dvoretzky, Kiefer, and
+  Wolfowitz]{dvoretzky1956asymptotic}
+Aryeh Dvoretzky, Jack Kiefer, and Jacob Wolfowitz.
+\newblock Asymptotic minimax character of the sample distribution function and
+  of the classical multinomial estimator.
+\newblock \emph{The Annals of Mathematical Statistics}, 27\penalty0
+  (3):\penalty0 642--669, 1956.
+
 \bibitem[Ebrahimi et~al.(2018)Ebrahimi, Rao, Lowd, and
   Dou]{ebrahimi2018hotflip}
 Javid Ebrahimi, Anyi Rao, Daniel Lowd, and Dejing Dou.
@@ -207,6 +215,18 @@ Weitang Liu, Xiaoyun Wang, John Owens, and Yixuan Li.
 \newblock Energy-based out-of-distribution detection.
 \newblock In \emph{Advances in Neural Information Processing Systems
   (NeurIPS)}, 2020.
+
+\bibitem[Massart(1990)]{massart1990tight}
+Pascal Massart.
+\newblock The tight constant in the {D}voretzky--{K}iefer--{W}olfowitz
+  inequality.
+\newblock \emph{The Annals of Probability}, 18\penalty0 (3):\penalty0
+  1269--1283, 1990.
+
+\bibitem[Maurer and Pontil(2009)]{maurer2009empirical}
+Andreas Maurer and Massimiliano Pontil.
+\newblock Empirical {B}ernstein bounds and sample-variance penalization.
+\newblock \emph{Conference on Learning Theory (COLT)}, 2009.
 
 \bibitem[{Mem0 Team}(2024)]{mem0}
 {Mem0 Team}.
