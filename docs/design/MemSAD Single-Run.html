@@ -1,0 +1,63 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>MemSAD — Single-run retrieval</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Source+Serif+4:ital,opsz,wght@0,8..60,300..700;1,8..60,300..700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="tokens.css" />
+  <style>
+    html, body { background: var(--paper); }
+
+    @keyframes msdFade {
+      from { opacity: 0; transform: translateY(2px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    .msd-slider {
+      -webkit-appearance: none; appearance: none;
+      background: transparent; height: 18px; cursor: pointer;
+    }
+    .msd-slider::-webkit-slider-runnable-track {
+      height: 3px; background: var(--paper-raised);
+      border-radius: 999px; border: 1px solid var(--border-subtle);
+    }
+    .msd-slider::-moz-range-track {
+      height: 3px; background: var(--paper-raised);
+      border-radius: 999px; border: 1px solid var(--border-subtle);
+    }
+    .msd-slider::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      width: 14px; height: 14px; border-radius: 50%;
+      background: var(--ink-900); margin-top: -7px;
+      border: 2px solid var(--paper); box-shadow: 0 0 0 1px var(--ink-900);
+    }
+    .msd-slider::-moz-range-thumb {
+      width: 14px; height: 14px; border-radius: 50%;
+      background: var(--ink-900); border: 2px solid var(--paper);
+      box-shadow: 0 0 0 1px var(--ink-900);
+    }
+
+    .msd-btn[data-variant="primary"]:not(:disabled):hover { background: #000; border-color: #000; }
+    .msd-btn[data-variant="secondary"]:not(:disabled):hover { border-color: var(--ink-700); }
+    .msd-btn[data-variant="ghost"]:not(:disabled):hover { color: var(--ink-900); background: var(--paper-raised); }
+
+    @media (max-width: 960px) {
+      .sr-grid { grid-template-columns: 1fr !important; row-gap: 40px; }
+      section#single-run { padding: 56px 24px !important; }
+    }
+  </style>
+</head>
+<body>
+  <div id="root"></div>
+
+  <script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+  <script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+  <script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+
+  <script type="text/babel" src="components_primitives.jsx"></script>
+  <script type="text/babel" src="single_run.jsx"></script>
+</body>
+</html>
