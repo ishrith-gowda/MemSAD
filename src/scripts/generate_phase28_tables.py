@@ -40,7 +40,7 @@ def generate_table1(results: dict) -> None:
         r"\small",
         r"\caption{Attack evaluation results on synthetic memory corpus",
         r"  ($|\mathcal{M}|=1000$, $k=5$, 100 victim queries, seed-averaged over 5 trials).",
-        r"  \asra{} columns: modelled (from prior work), GPT-2 lower bound, GPT-4o-mini.",
+        r"  \asra{} columns: modelled (from prior work), GPT-2 upper bound, GPT-4o-mini.",
         r"  95\% CI via percentile bootstrap.}",
         r"\label{tab:attack_results}",
         r"\begin{tabular}{lcccccc}",
@@ -105,11 +105,12 @@ def generate_scaling_figure(results: dict) -> None:
     fig_dir = Path("docs/neurips2026/figures")
     fig_dir.mkdir(parents=True, exist_ok=True)
 
-    # 200-entry baseline values (from phase 9 results)
+    # 200-entry baseline values (from phase 9 results; aligned with
+    # tab:ablation_corpus in the paper to keep cross-table values identical).
     baseline_200 = {
         "agent_poison": 1.000,
         "minja": 0.650,
-        "injecmem": 0.550,
+        "injecmem": 0.500,
     }
 
     # 1000-entry values from phase 28
@@ -281,7 +282,7 @@ def generate_asr_a_figure(results: dict) -> None:
         x,
         gpt2,
         width,
-        label=r"GPT-2 (lower bound)",
+        label=r"GPT-2 (upper bound)",
         color="#e8b88a",
         edgecolor="white",
         linewidth=0.6,
