@@ -295,7 +295,7 @@ For each verified deadline, update §3 and §4 inline (replace **VERIFY** / **ES
 | Merge PR #76 (fig 2 vertical) or close | by 2026-04-30 | ✓ CLOSED 2026-07-02 as superseded — both fig-2 commits (dcd67b1, 9ff4177) are contained in PR #77's branch | self |
 | arXiv announcement (Twitter + emails) | **re-targeted: within 72h of v2 upload** | ⏳ RESCHEDULED — v1 launch window burned; run smaller "v2 with corrected proofs" push; researcher emails don't expire | self |
 | Blog post (gradient coupling intuition) | **re-targeted 2026-07-15** | ⏳ RESCHEDULED | self |
-| Public reproduction repo (REPRODUCE.md, clean release) | staged by 2026-09-01 | ⏳ STARTED 2026-07-02 — REPRODUCE.md skeleton committed in-repo; public-repo split remains | self |
+| Public reproduction repo (clean release + replication guide) | staged by 2026-09-01 | ⏳ IN PROGRESS — README "Reproducing paper results" section serves as the in-repo guide; public-repo split remains | self |
 | NeurIPS 2026 workshop list published | ~2026-07-11 (workshop proposal acceptance date, **CONFIRMED**) | ⏳ UPCOMING — re-verified not yet posted as of 2026-07-02 | — |
 | Workshop choice (whichever NeurIPS 2026 satellites are accepted) | by 2026-07-20 | ⏳ UPCOMING — wait for list | self |
 | NeurIPS 2026 reviews released | NOT YET PUBLISHED on neurips.cc — estimate late July / early Aug from prior years | ⏳ UPCOMING — not yet released as of 2026-07-02 | — |
@@ -413,14 +413,14 @@ The paper is under review at NeurIPS until Sep 24. AAAI-27's paper deadline (Jul
 **Repo hygiene completed 2026-07-02:**
 - PR #77 (pat-feedback, 22 commits + final pending fixes) merged to main after green CI; PR #76 closed as superseded (its two commits are ancestors of #77's branch); issue #75 closed.
 - Pending working-tree changes committed: table 1 caption correction (GPT-2 **upper** bound, not lower), regenerated fig_corpus_scaling + fig_multi_encoder, arXiv build artifacts, this plan document.
-- Infra hardening PR: CodeQL scanning, .gitmodules entries for external/amem + external/mem0 (previously bare gitlinks that broke fresh clones), frontend demo + design assets tracked, REPRODUCE.md skeleton, npm dependabot ecosystem.
+- Infra hardening PR: CodeQL scanning, frontend demo + design assets tracked (design mockups relocated from repo root to docs/design), auto-checkpoint script, npm dependabot ecosystem. Follow-up flagged: external/amem and external/mem0 are bare gitlinks with no .gitmodules entries (fresh clones cannot resolve them); recording their upstream URLs needs a manual pass.
 - Branch protection enabled on main (required status checks; no merges on red).
 
 **Re-scheduled tracks (recoverable slips):**
 1. **arXiv v2 upload — 2026-07-03 (user action).** Everything needed is on main after the #77 merge; upload via arxiv.org "Replace" against 2605.03482. This is the single highest-leverage pending action: every current citer reads the buggier v1.
 2. **Announcement — within 72h of v2.** Reframed as a "v2 with corrected proofs" push (4-tweet thread + the 5–10 researcher emails, which do not expire in value).
 3. **Blog post — 2026-07-15.**
-4. **Reproduction repo — REPRODUCE.md skeleton committed 2026-07-02; public split staged by 2026-09-01** so a release can ship within a week of a Sep 24 accept.
+4. **Reproduction repo — the README's "Reproducing paper results" section already serves as the in-repo guide; public split staged by 2026-09-01** so a release can ship within a week of a Sep 24 accept.
 5. **Workshop triage — check list Jul 11–14, lock choice by Jul 20, short paper (4–6 pp) drafted by Aug 15 for the Aug 29 deadline.**
 6. **ICLR 2027 pre-stage — by Sep 15** (before NeurIPS reviews land), since the ICLR deadline has historically fallen within days of the NeurIPS notification date.
 
