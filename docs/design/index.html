@@ -1,0 +1,63 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>MemSAD — design preview</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Source+Serif+4:ital,opsz,wght@0,8..60,300..700;1,8..60,300..700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="tokens.css" />
+  <style>
+    body { padding: 96px 80px; max-width: 720px; margin: 0 auto; }
+    h1 { font-family: var(--font-serif); font-size: 32px; font-weight: 400; letter-spacing: -0.005em; margin: 0 0 6px 0; }
+    .eyebrow { color: var(--text-muted); font-size: 11px; font-weight: 600; letter-spacing: 0.14em; text-transform: uppercase; margin-bottom: 10px; font-family: var(--font-sans); }
+    p.lede { color: var(--text-secondary); font-size: 16px; line-height: 1.55; margin: 0 0 40px 0; max-width: 62ch; }
+    ol { list-style: none; padding: 0; margin: 0; border-top: 1px solid var(--border-subtle); }
+    li { border-bottom: 1px solid var(--border-subtle); padding: 18px 0; display: grid; grid-template-columns: 56px 1fr auto; align-items: baseline; gap: 20px; }
+    .num { font-family: var(--font-mono); font-size: 12px; color: var(--text-muted); font-variant-numeric: tabular-nums; }
+    .title { font-family: var(--font-serif); font-size: 20px; line-height: 1.3; color: var(--text-primary); text-decoration: none; }
+    .title:hover { text-decoration: underline; text-decoration-color: var(--text-primary); text-underline-offset: 4px; }
+    .meta { font-family: var(--font-mono); font-size: 11px; color: var(--text-muted); letter-spacing: 0.04em; }
+    footer { margin-top: 56px; font-family: var(--font-mono); font-size: 11px; color: var(--text-muted); line-height: 1.7; }
+  </style>
+</head>
+<body>
+  <div class="eyebrow">MemSAD · design preview</div>
+  <h1>Five pages, one stylesheet.</h1>
+  <p class="lede">These pages came out of Claude Design against the Prompt 1–5 spec. Each is a self-contained React+Babel render against <code style="font-family: var(--font-mono); font-size: 14px;">tokens.css</code>. Open them in order; each builds on the previous.</p>
+
+  <ol>
+    <li>
+      <span class="num">§0</span>
+      <a class="title" href="./MemSAD%20Design%20System.html">Design system</a>
+      <span class="meta">tokens · primitives · page shell</span>
+    </li>
+    <li>
+      <span class="num">§1</span>
+      <a class="title" href="./MemSAD%20Landing.html">Landing</a>
+      <span class="meta">hero · live passage feed</span>
+    </li>
+    <li>
+      <span class="num">§2</span>
+      <a class="title" href="./MemSAD%20Single-Run.html">Single-run retrieval</a>
+      <span class="meta">interactive · 5 passages · toggle MemSAD</span>
+    </li>
+    <li>
+      <span class="num">§3</span>
+      <a class="title" href="./MemSAD%20Threshold%20Sweep.html">Threshold sweep</a>
+      <span class="meta">ROC · vertical σ slider · live TPR/FPR</span>
+    </li>
+    <li>
+      <span class="num">§4–5</span>
+      <a class="title" href="./MemSAD%20Matrix%20+%20About.html">Attack–defense matrix &amp; About</a>
+      <span class="meta">3×5 heatmap · citation · reproducibility</span>
+    </li>
+  </ol>
+
+  <footer>
+    served locally from <code>claude_design/</code> on 127.0.0.1:8765.<br />
+    next: prompt 6 polish pass in claude design (pending credit reset), then integration decision.
+  </footer>
+</body>
+</html>

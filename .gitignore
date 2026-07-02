@@ -33,6 +33,13 @@ dist/
 *.egg-info/
 *.egg
 
+# node / frontend
+node_modules/
+.vite/
+.parcel-cache/
+src/frontend/dist/
+src/frontend/.vite/
+
 # model weights and large files
 *.pt
 *.pth
