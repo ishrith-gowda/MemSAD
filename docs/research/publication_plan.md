@@ -4,7 +4,7 @@
 **Author:** Ishrith Gowda (sole author)
 **Affiliation footnote:** Song Lab, Berkeley AI Research, UC Berkeley (approved by X. Zhao, 2026-04-27)
 **Format:** 28 pages, NeurIPS 2026 style, currently in `[preprint]` (de-anonymized) mode
-**Status as of 2026-05-01:** locked for submission; arxiv-ready
+**Status as of 2026-07-02:** NeurIPS 2026 submitted (May 5, confirmed via `f9941d5` baseline commit); **arXiv v1 live at https://arxiv.org/abs/2605.03482**; in NeurIPS review silence period (reviews est. late July, notification Sep 24 CONFIRMED); PR #77 (pat-feedback) merged and PR #76 closed as superseded 2026-07-02; arXiv v2 upload is the top pending user action (replace against 2605.03482); **AAAI 2027 fallback ruled out 2026-07-02 — dual-submission conflict (see §14)**; workshop list watch begins Jul 11; announcement/blog/reproduction tracks re-scheduled in §14
 
 ---
 
@@ -55,45 +55,50 @@ The Song-Lab footnote is the only institutional anchor. Do not overstate it else
 
 | Venue | Fit | Prestige (ML-Sec) | Deadline | Conference dates | Status |
 |---|---|---|---|---|---|
-| **NeurIPS 2026** main track | Excellent — theory-heavy ML-security paper, format already matches | A+ | Abstract ~mid-May 2026, paper ~May 22 2026 (**VERIFY** at neurips.cc) | December 2026, Sydney | **PRIMARY TARGET** |
+| **NeurIPS 2026** main track | Excellent — theory-heavy ML-security paper, format already matches | A+ | Abstract May 4 2026, paper May 6 2026 (**CONFIRMED — 2026-06-08** via neurips.cc/Conferences/2026/CallForPapers); notification Sep 24 2026 | Dec 6-12 2026, Sydney + Atlanta + Paris (multi-site, **CONFIRMED — 2026-06-08**) | **PRIMARY TARGET — SUBMITTED** |
 
 ### Tier 2 — Backup ML conferences (sequential, not parallel — no dual submission)
 
 | Venue | Fit | Prestige | Deadline | Status |
 |---|---|---|---|---|
-| **ICLR 2027** | Excellent — same audience as NeurIPS, slightly more theory-friendly | A+ | Late Sept 2026 (**ESTIMATE**) | First fallback if NeurIPS rejects |
-| **ICML 2027** | Excellent | A+ | Late Jan 2027 (**ESTIMATE**) | Second fallback |
-| **AAAI 2027** | Good but lower prestige | A | Aug 2026 (**ESTIMATE**) | Third fallback |
-| **COLM 2026** (Conference on Language Modeling) | Moderate — language-modeling-centric, but security/safety tracks accept this work | A- | March 2026 (**LIKELY PASSED**) | Probably out of cycle |
+| **ICLR 2027** | Excellent — same audience as NeurIPS, slightly more theory-friendly | A+ | Late Sept / Oct 2026 (**ESTIMATE — venue page 404 as of 2026-06-08**) | First fallback if NeurIPS rejects |
+| **ICML 2027** | Excellent | A+ | Late Jan 2027 (**ESTIMATE — venue page 404 as of 2026-06-08**) | Second fallback |
+| **AAAI 2027** | Good but lower prestige (h5 ~232) | A | Abstract Jul 21 2026 / paper **Jul 28 2026** (**CONFIRMED — 2026-06-08** via aaai.org/conference/aaai/aaai-27/); conf Feb 16-23 2027 Montréal | Third fallback — **earlier than originally estimated, ~7 weeks out** |
+| **COLM 2026** (Conference on Language Modeling) | Moderate — language-modeling-centric, but security/safety tracks accept this work | A- | Paper Mar 31 2026 (**CONFIRMED PASSED — 2026-06-08**); conf Oct 6-9 2026 SF | Out of cycle |
 
 ### Tier 3 — Security conferences (only if substantially restructured)
 
 | Venue | Fit | Prestige | Deadline | Status |
 |---|---|---|---|---|
-| **IEEE S&P 2027** | Moderate — would need rewrite emphasizing systems+empirical | A+ | Summer + fall cycles, ~June 2026 (**VERIFY**) | Skip for v1; consider for extended/v2 |
-| **USENIX Security 2027** | Moderate — same caveat | A+ | Multiple cycles (Feb/June/Oct) (**VERIFY**) | Skip — arXiv preprint may conflict with anonymity rules |
-| **ACM CCS 2026** | Moderate | A+ | Cycle 2 ~spring 2026 (**LIKELY PASSED OR IMMINENT — VERIFY**) | Skip for v1 |
-| **NDSS 2027** | Moderate | A | ~June 2026 (**VERIFY**) | Skip for v1 |
+| **IEEE S&P 2027** | Moderate — would need rewrite emphasizing systems+empirical | A+ | C1 abstract **Jun 4 2026** (passed), C1 paper **Jun 11 2026** (3 days out as of 2026-06-08); C2 paper **Nov 17 2026** (**CONFIRMED — 2026-06-08** via sp2027.ieee-security.org/cfpapers.html); conf Montréal TBA | Skip for v1; consider for extended/v2 — note arXiv during review permitted with "no widely advertising" caveat |
+| **USENIX Security 2027** | Moderate — same caveat | A+ | C1 abstract **Aug 18 2026** / paper **Aug 25 2026** (**CONFIRMED — 2026-06-08** via usenix.org/conference/usenixsecurity27); conf Aug 11-13 2027 Denver | Skip — anonymity/preprint policy not yet officially confirmed for arXiv'd manuscripts |
+| **ACM CCS 2026** | Moderate | A+ | Cycle 2 paper **Apr 29 2026** (**CONFIRMED PASSED — 2026-06-08**); conf Nov 15-19 2026 The Hague | Skip for v1 |
+| **NDSS 2027** | Moderate | A | C1 paper **May 6 2026** (passed); C2 paper **Aug 19 2026** (**CONFIRMED — 2026-06-08** via ndss-symposium.org/ndss2027); conf Mar 22-26 2027 Seoul; preprint "not encouraged" but permitted | Skip for v1 |
 
 ### Tier 4 — Specialty venues
 
 | Venue | Fit | Prestige | Notes |
 |---|---|---|---|
-| **SaTML 2027** (Conf. on Secure and Trustworthy ML) | Strong — IEEE-sponsored ML-security conference; perfect topical match | A- (rising) | Strong backup if NeurIPS+ICLR fail; emerging venue but high-quality |
-| **TMLR** | Strong — rolling submission, accepts thorough theory+empirical work, no length limit | A- (open access; high quality but no conference acceptance rate prestige) | Last resort or supplement |
+| **SaTML 2027** (Conf. on Secure and Trustworthy ML) | Strong topical match — but **DOES NOT YET EXIST as of 2026-06-08** | A- (rising) | satml.org says "looking for a host for SaTML 2027" — cannot rely on this as a backup until a host is announced and deadlines posted |
+| **TMLR** | Strong — rolling submission, accepts thorough theory+empirical work, no length limit | A- (open access; high quality but no conference acceptance rate prestige) | Last resort or supplement. "76-day decision / 62% acceptance" community lore — official stats not published. |
 | **ALT 2027 / COLT 2026** | Pure-theory only — paper is too applied | A | Not a fit |
 
 ### Tier 5 — Workshops (parallel to main submissions; non-archival)
 
 Workshops should run **in parallel** with the NeurIPS submission to maximize community visibility regardless of main-track outcome. Most NeurIPS workshops are non-archival, so they don't conflict with main-track or with later resubmission elsewhere.
 
-| Workshop | Co-located with | Deadline | Fit |
-|---|---|---|---|
-| **AdvML-Frontiers @ NeurIPS 2026** | NeurIPS 2026 | ~Sept 2026 (**ESTIMATE**) | Excellent |
-| **SafeGenAI @ NeurIPS 2026** | NeurIPS 2026 | ~Sept 2026 (**ESTIMATE**) | Excellent |
-| **ML Safety / Trustworthy ML @ NeurIPS 2026** | NeurIPS 2026 | ~Sept 2026 (**ESTIMATE**) | Excellent |
-| **AISec @ CCS 2026** | CCS 2026 | ~July 2026 (**ESTIMATE**) | Excellent — security workshop, accepts theory-applied papers |
-| **SatML / TrojAI** | Various | Varies | Specialty, good fit |
+**NeurIPS 2026 workshop track (CONFIRMED — 2026-06-08 via neurips.cc/Conferences/2026/CallForWorkshops):**
+- Workshop proposals due Jun 6 2026 (passed); proposal acceptance Jul 11 2026; **workshop paper-contribution deadline Aug 29 2026** (this is the date you care about).
+- **The list of accepted NeurIPS 2026 workshops is NOT yet posted** — it appears after Jul 11. Cannot pre-commit to specific workshops.
+
+| Workshop | Co-located with | Deadline | Fit | 2026 status |
+|---|---|---|---|---|
+| **AdvML-Frontiers** | Historically NeurIPS; AdvML-Frontiers 2026 is at **COLM 2026** | TBD | Excellent | NOT at NeurIPS 2026 — may resurface at NeurIPS 2027 |
+| **SafeGenAI** | Ran at NeurIPS 2024 | TBD | Excellent | **NeurIPS 2026 existence UNVERIFIED** — wait for workshop list |
+| **SoLaR** (Socially Responsible Language Modeling Research) | Historically NeurIPS / ICLR | TBD | Strong | **NeurIPS 2026 existence UNVERIFIED** |
+| **Generic "ML Safety / Trustworthy ML / Adversarial ML"** | NeurIPS 2026 | Aug 29 2026 once workshop is accepted | Excellent | Watch workshop list after Jul 11 |
+| **AISec @ CCS 2026** | CCS 2026 (Nov 15-19 The Hague) | ~July 2026 (**ESTIMATE**) | Excellent — security workshop, accepts theory-applied papers | Verify when CFP posts |
+| **TrojAI** | Various | Varies | Specialty, good fit | Verify current year |
 
 ---
 
@@ -282,11 +287,25 @@ For each verified deadline, update §3 and §4 inline (replace **VERIFY** / **ES
 | Switch to preprint mode | 2026-04-30 | ✓ DONE | — |
 | Supplementary zip prepared (anonymized, 444 KB) | 2026-05-04 | ✓ DONE | — |
 | NeurIPS 2026 submission | 2026-05-05 | ✓ DONE | — |
-| arXiv submission | within 72 hours | TODO — NEXT | self |
-| arXiv announcement (Twitter + emails) | within 1 week of arXiv ID | TODO | self |
-| NeurIPS workshop submissions | Aug–Oct 2026 | TODO | self |
-| Public GitHub repo prepared | during review window | TODO | self |
-| NeurIPS 2026 decision | end-Sept 2026 | TBD | — |
+| arXiv v1 submission | within 72 hours | ✓ DONE — live at https://arxiv.org/abs/2605.03482 (confirmed by author 2026-06-08) | self |
+| pat-feedback proof corrections | 2026-05-07 onward | ✓ DONE locally — **PR #77 open since 2026-05-06, NOT MERGED**. 20+ fix commits on `feat/phase-37-pat-feedback` + 4 uncommitted modified files | self |
+| arXiv v2 source bundle rebuilt | 2026-05-?? | ✓ DONE locally (commits a8ad623, 9ed8684) | self |
+| arXiv v2 UPLOAD as revision against 2605.03482 | **re-targeted 2026-07-03** | ⏳ TOP PENDING USER ACTION — upload via arxiv.org "Replace" against 2605.03482 (source bundle ready after PR #77 merge) | self |
+| Merge PR #77 (pat-feedback) to main + close | by 2026-05-15 | ✓ DONE 2026-07-02 (7.5 weeks late; all CI green at merge) | self |
+| Merge PR #76 (fig 2 vertical) or close | by 2026-04-30 | ✓ CLOSED 2026-07-02 as superseded — both fig-2 commits (dcd67b1, 9ff4177) are contained in PR #77's branch | self |
+| arXiv announcement (Twitter + emails) | **re-targeted: within 72h of v2 upload** | ⏳ RESCHEDULED — v1 launch window burned; run smaller "v2 with corrected proofs" push; researcher emails don't expire | self |
+| Blog post (gradient coupling intuition) | **re-targeted 2026-07-15** | ⏳ RESCHEDULED | self |
+| Public reproduction repo (REPRODUCE.md, clean release) | staged by 2026-09-01 | ⏳ STARTED 2026-07-02 — REPRODUCE.md skeleton committed in-repo; public-repo split remains | self |
+| NeurIPS 2026 workshop list published | ~2026-07-11 (workshop proposal acceptance date, **CONFIRMED**) | ⏳ UPCOMING — re-verified not yet posted as of 2026-07-02 | — |
+| Workshop choice (whichever NeurIPS 2026 satellites are accepted) | by 2026-07-20 | ⏳ UPCOMING — wait for list | self |
+| NeurIPS 2026 reviews released | NOT YET PUBLISHED on neurips.cc — estimate late July / early Aug from prior years | ⏳ UPCOMING — not yet released as of 2026-07-02 | — |
+| NeurIPS 2026 rebuttal | NOT YET PUBLISHED — estimate early-mid Aug | ⏳ UPCOMING | self |
+| AAAI 2027 fallback decision (submit ~Jul 28 or skip) | by 2026-07-15 | ✓ DECIDED 2026-07-02 — **SKIP** (dual-submission conflict, see §14; AAAI paper deadline Jul 28 precedes NeurIPS notification Sep 24) | self |
+| NeurIPS workshop paper deadline | **2026-08-29 CONFIRMED** | ⏳ UPCOMING | self |
+| NeurIPS 2026 notification | **2026-09-24 CONFIRMED** | ⏳ UPCOMING | — |
+| ICLR 2027 backup paper prep (incorporate NeurIPS reviewer feedback) | by 2026-09-30 | ⏳ NOT STARTED — must pre-stage before reviews land | self |
+| ICLR 2027 submission | ICLR 2027 venue page returns 404 as of 2026-06-08; expect ~Sept-Oct historically | ⏳ CONDITIONAL on NeurIPS outcome | self |
+| IEEE S&P 2027 C2 submission (if pivoting to security venue) | 2026-11-17 paper (**CONFIRMED**) | ⏳ CONDITIONAL — only if restructuring for systems-security audience | self |
 
 ---
 
@@ -298,4 +317,111 @@ For each verified deadline, update §3 and §4 inline (replace **VERIFY** / **ES
 
 ---
 
-*Last updated: 2026-05-01. Update this file as deadlines verify and milestones complete. When NeurIPS deadline is confirmed, replace all **VERIFY** tags in §3 and §4 with **CONFIRMED — [date]**.*
+*Last updated: 2026-06-08 (deadline re-verification pass via web research; corrections logged in §13). Update this file as deadlines verify and milestones complete.*
+
+---
+
+## 13. Deadline re-verification — 2026-06-08
+
+Full web-source pass against neurips.cc, aaai.org, sp2027.ieee-security.org, usenix.org, ndss-symposium.org, sigsac.org, satml.org, colmweb.org, jmlr.org, sec-deadlines.github.io, and Google Scholar Metrics.
+
+**Confirmed correct (no change needed):**
+- NeurIPS 2026: abstract May 4, paper May 6, conference Dec 6-12 — but note **multi-site (Sydney + Atlanta + Paris)**, not Sydney only. arXiv preprints permitted ("non-anonymous preprints will not result in rejection" per MainTrackHandbook).
+- CCS 2026 C2 (Apr 29) passed; conference Nov 15-19 The Hague.
+- USENIX Sec 2027 C1: abstract Aug 18 / paper Aug 25; conference Aug 11-13 Denver.
+- COLM 2026: paper Mar 31 passed.
+- TMLR: rolling, no length limit, double-blind. The "76-day / 62%" stats are community lore and not officially published — treat as estimates.
+- Top-3 ML h5-index: NeurIPS=371, ICLR=362, ICML=272.
+
+**Corrections from prior plan version:**
+1. NeurIPS 2026 **notification date is Sep 24 2026** (plan had "end-Sept" — pin it).
+2. NeurIPS 2026 conference is **multi-site** (Sydney + Atlanta + Paris).
+3. AAAI 2027 deadlines: **abstract Jul 21 / paper Jul 28 2026** (plan said "Aug 2026" — earlier than estimated). Conference Feb 16-23 2027 Montréal.
+4. AAAI h5-index is **~232** (plan said ~180 — stale by ~3 years).
+5. IEEE S&P 2027 C1: **abstract Jun 4 / paper Jun 11 2026** (plan said May 29 / Jun 5; off by ~6 days). As of 2026-06-08, **C1 paper deadline has NOT yet passed — three days out.**
+6. IEEE S&P 2027 C2: **paper Nov 17 2026** (plan said Nov 13).
+7. NDSS 2027 C1 paper was **May 6 2026** (plan said Apr 23). NDSS 2027 C2 paper is **Aug 19 2026** (plan said Aug 13). Conference is **Mar 22-26 2027 Seoul** (plan said Feb 23-27).
+8. **SaTML 2027 does not yet exist** — satml.org explicitly: "we are now looking for a host for SaTML 2027". Cannot rely on as backup.
+9. **NeurIPS 2026 workshop list is NOT yet published** — proposal acceptance is Jul 11; workshop paper deadline is Aug 29. AdvML-Frontiers 2026 is at **COLM 2026, not NeurIPS**. SafeGenAI / SoLaR at NeurIPS 2026 existence is **UNVERIFIED**.
+
+**Unverifiable from official sources as of 2026-06-08:**
+- ICLR 2027 venue page returns HTTP 404. "Late Sept / Oct 2026" deadline is a historical-pattern estimate only.
+- ICML 2027 venue page returns HTTP 404. "Late January 2027" is historical estimate.
+- NeurIPS 2026 review/rebuttal calendar — not published on the official site. "Late July / early Aug" is a historical-pattern guess.
+- AISec @ CCS 2026 deadline — workshop CFP not yet posted (verify when CFP is up).
+
+**arXiv v1 resolution (2026-06-08):**
+- arXiv v1 is confirmed live at **https://arxiv.org/abs/2605.03482**. The repo never recorded the ID — recommend adding `arxiv_id: 2605.03482` to a project-level README or to MEMORY.md so it isn't lost again.
+- Recovery path: upload v2 as a "Replace" against 2605.03482 once PR #77 is merged; do NOT submit as a new arXiv entry.
+
+**Decision implications:**
+- AAAI 2027 deadline (Jul 28) is much sooner than I previously stated — if you want a parallel fallback submission, the decision-to-submit window is ~7 weeks not ~10.
+- IEEE S&P 2027 C1 paper deadline is Jun 11 — three days from now. Plan still says skip Tier-3 security venues without restructuring, so this remains a skip absent a strategy pivot.
+- SaTML 2027 cannot be relied on as a backup; the contingency cascade in §5 effectively becomes NeurIPS → ICLR 2027 → ICML 2027 → AAAI 2027 → TMLR.
+
+---
+
+## 12. Slip review — 2026-06-08
+
+Five-week gap between paper submission (May 5) and this status update. Plan-Phase A (arXiv) launched on time; Phase B (NeurIPS) shipped on time; but everything downstream of submission silently slipped while the pat-feedback proof-correction cycle consumed cycles.
+
+**What slipped:**
+
+1. **arXiv v2 not uploaded.** Source bundle has been rebuilt locally (commits a8ad623, 9ed8684) with pat-feedback proof corrections — theorem 8 reframed as calibration sample complexity, theorem 9 Hoeffding interval fixed, prop 13 made discrete-token CVP, full lemma 7 proof added, Stackelberg eqs 5–6 aligned, kappa notation standardized, Maurer empirical-Bernstein + DKW tight constants added to bib. None of this is on arxiv.org. **The arXiv preprint is currently strictly weaker than the local v2.**
+2. **`feat/phase-37-pat-feedback` branch not merged.** main is at `acda258` (phase 36 doc sync). Uncommitted on this branch: `docs/arxiv/neurips_2026.tex`, `figures/fig_corpus_scaling.{pdf,png}`, `figures/fig_multi_encoder.pdf`, `results/tables/table1_attack_results.tex`. Untracked: `src/frontend/`, `external/mem0`, `claude_design/`.
+3. **arXiv announcement (Twitter thread + 5–10 researcher emails + blog post)** — Plan §7 said within 1 week of arXiv ID. Five weeks overdue. Has direct cost: paper visibility during the NeurIPS silence period was the entire point of the arXiv-first sequence, and that window is mostly burned.
+4. **Public reproduction repo not started.** Plan §6.3 said stage in parallel during review window. No REPRODUCE.md, no clean public release skeleton.
+5. **Workshop track triage not started.** CFPs typically drop ~July; nothing pre-staged.
+
+**Cost assessment:**
+
+| Slip | Cost | Recoverable? |
+|---|---|---|
+| arXiv v2 upload | Low — but cited version is buggier than your locked version | Yes, upload tonight |
+| Branch merge | Low — internal hygiene | Yes, merge + close PRs |
+| Announcement | Medium-high — visibility window mostly closed; can still do a smaller push tied to v2 release | Partially |
+| Reproduction repo | Low now, high if NeurIPS accepts and you have a week to ship a public release | Yes if started this month |
+| Workshop track | Low — CFPs haven't dropped yet | Fully |
+
+**What was NOT in the plan and consumed the time:**
+- pat-feedback proof-correction cycle: ~20 commits of substantive theorem-level corrections (theorem 8/9 calibration, prop 13 CVP discrete-token, lemma 7 full proof, Stackelberg formalization). This was reviewer-grade hardening, not cosmetics. **Net positive for the paper, but the plan didn't budget for it and downstream tracks slipped.**
+
+**Recovery sequence (next 7 days):**
+
+1. Decide: arXiv v2 upload now, or hold for a single bigger upload that bundles pat-feedback + any NeurIPS reviewer-informed edits in August. **Recommendation: upload v2 now** — five weeks of citers pointing at a buggier v1 is a direct cost, and waiting on NeurIPS reviews to gate the upload means another 8+ weeks of stale public version.
+2. Merge `feat/phase-37-pat-feedback` to main, commit the four modified files, decide what to do with the three untracked dirs (`src/frontend/`, `claude_design/`, `external/mem0` — figure out if any of this is the reproduction repo skeleton or a fork-and-modify experiment).
+3. Once v2 is on arxiv, do the smaller announcement push: a tight 4-tweet thread keyed to "v2 with corrected proofs is up" (lower-stakes than a launch thread, but recovers some visibility), plus the 5–10 researcher emails (these are still high-value — they don't expire).
+4. Start REPRODUCE.md and the clean public repo skeleton this week. Do not wait for NeurIPS notification.
+5. Workshop triage: pick AdvML-Frontiers OR SafeGenAI (not both — diminishing returns). Watch the NeurIPS site for the workshop list (expected mid-July).
+6. Pre-stage ICLR 2027 backup: identify which sections of the paper are most likely to need expansion vs which are most NeurIPS-reviewer-bait and prep two parallel revision branches before NeurIPS reviews land.
+
+---
+
+## 14. Status pass — 2026-07-02
+
+Three-and-a-half-week gap since the 2026-06-08 pass. Verification re-run against neurips.cc, aaai.org, iclr.cc, and the GitHub repo. Triage below follows the rule: dead deadlines get closed with rationale; recoverable ones get re-scheduled; upcoming ones get confirmed.
+
+**Verified as of 2026-07-02:**
+- NeurIPS 2026 reviews are NOT yet released; notification remains **Sep 24 2026 (CONFIRMED)**. No action was missed in the NeurIPS main-track pipeline.
+- NeurIPS 2026 accepted-workshop list is NOT yet posted (proposal acceptance Jul 11). The Jul 11–20 workshop-triage window is intact.
+- AAAI 2027: abstract **Jul 21** / paper **Jul 28 2026** re-confirmed via aaai.org; OpenReview submission site opened Jun 30 2026.
+- ICLR 2027: still unannounced (no venue page). Historical pattern says ~late-Sept 2026 deadline; keep the Oct 15 placeholder and verify monthly.
+
+**Decision: AAAI 2027 fallback is structurally impossible — SKIP (closed 2026-07-02).**
+The paper is under review at NeurIPS until Sep 24. AAAI-27's paper deadline (Jul 28) falls inside the NeurIPS review period, and both venues forbid concurrent submission of the same work. Submitting to AAAI would require withdrawing from NeurIPS, which is strictly dominated (NeurIPS is the stronger venue and the paper is already through the submission gate). The §5 contingency cascade therefore collapses to: **NeurIPS 2026 → ICLR 2027 → ICML 2027 → TMLR**, with the non-archival NeurIPS workshop track running in parallel. This was latent in §9's dual-submission constraint but never propagated to the §10 tracker — now resolved.
+
+**Repo hygiene completed 2026-07-02:**
+- PR #77 (pat-feedback, 22 commits + final pending fixes) merged to main after green CI; PR #76 closed as superseded (its two commits are ancestors of #77's branch); issue #75 closed.
+- Pending working-tree changes committed: table 1 caption correction (GPT-2 **upper** bound, not lower), regenerated fig_corpus_scaling + fig_multi_encoder, arXiv build artifacts, this plan document.
+- Infra hardening PR: CodeQL scanning, .gitmodules entries for external/amem + external/mem0 (previously bare gitlinks that broke fresh clones), frontend demo + design assets tracked, REPRODUCE.md skeleton, npm dependabot ecosystem.
+- Branch protection enabled on main (required status checks; no merges on red).
+
+**Re-scheduled tracks (recoverable slips):**
+1. **arXiv v2 upload — 2026-07-03 (user action).** Everything needed is on main after the #77 merge; upload via arxiv.org "Replace" against 2605.03482. This is the single highest-leverage pending action: every current citer reads the buggier v1.
+2. **Announcement — within 72h of v2.** Reframed as a "v2 with corrected proofs" push (4-tweet thread + the 5–10 researcher emails, which do not expire in value).
+3. **Blog post — 2026-07-15.**
+4. **Reproduction repo — REPRODUCE.md skeleton committed 2026-07-02; public split staged by 2026-09-01** so a release can ship within a week of a Sep 24 accept.
+5. **Workshop triage — check list Jul 11–14, lock choice by Jul 20, short paper (4–6 pp) drafted by Aug 15 for the Aug 29 deadline.**
+6. **ICLR 2027 pre-stage — by Sep 15** (before NeurIPS reviews land), since the ICLR deadline has historically fallen within days of the NeurIPS notification date.
+
+**Automation installed 2026-07-02** (to prevent a third silent slip): weekly scheduled deadline-watch (venue pages + review-release check + Notion sync), and a local git auto-checkpoint that snapshots uncommitted work to `refs/checkpoints/*` so nothing on the working tree can be lost between sessions.
