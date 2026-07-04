@@ -565,7 +565,7 @@ def plot_watermark_detection(
     ax.set_ylabel("Density")
     ax.set_title(
         "Unigram-Watermark Z-Score Distribution\n"
-        "(Zhao et al., arXiv:2306.17439, ICLR 2024)"
+        + "(Zhao et al., arXiv:2306.17439, ICLR 2024)"
     )
     ax.legend(framealpha=0.9)
 
@@ -818,7 +818,7 @@ def plot_watermark_ablation(
     ax.set_ylim(-0.02, 1.05)
     ax.set_title(
         "Ablation: Watermark Detection Performance vs Z-Score Threshold\n"
-        "(Unigram-Watermark, Zhao et al., ICLR 2024)"
+        + "(Unigram-Watermark, Zhao et al., ICLR 2024)"
     )
     ax.legend(framealpha=0.9)
     ax.yaxis.set_major_formatter(matplotlib.ticker.PercentFormatter(xmax=1.0))
@@ -2176,7 +2176,7 @@ class StatisticalAnalyzer:
             r"\begin{tabular}{llccc}",
             r"\toprule",
             r"\textbf{Type} & \textbf{Method} & \textbf{ASR-R} & "
-            r"\textbf{ASR-A} & \textbf{ASR-T} \\",
+            + r"\textbf{ASR-A} & \textbf{ASR-T} \\",
             r"\midrule",
         ]
 
@@ -2196,7 +2196,7 @@ class StatisticalAnalyzer:
 
         d_header = [
             r"\textbf{Type} & \textbf{Method} & \textbf{TPR} & "
-            r"\textbf{FPR} & \textbf{F1} \\",
+            + r"\textbf{FPR} & \textbf{F1} \\",
             r"\midrule",
         ]
         lines += d_header

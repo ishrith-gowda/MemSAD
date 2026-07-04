@@ -733,8 +733,8 @@ def generate_memsad_plus_table(
         r"  \centering",
         r"  \small",
         r"  \caption{\memsad{} vs.\ \memsad{}+ detection under synonym substitution"
-        r" ($\kappa=2.0$, $|\cM|=1{,}000$). \memsad{}+ adds character n-gram"
-        r" and domain vocabulary features that are not synonym-invariant.}",
+        + r" ($\kappa=2.0$, $|\cM|=1{,}000$). \memsad{}+ adds character n-gram"
+        + r" and domain vocabulary features that are not synonym-invariant.}",
         r"  \label{tab:memsad_plus}",
         r"  \vspace{2pt}",
         r"  \begin{tabular}{l l ccc ccc}",

@@ -280,10 +280,10 @@ class ComprehensiveEvaluator:
         # reference content (realistic memory entry length)
         _ref = (
             "the memory agent maintains a comprehensive record of user preferences "
-            "task history calendar events and interaction context across multiple "
-            "sessions for personalised response generation and contextual retrieval. "
-            "this entry covers scheduling preferences communication style guidelines "
-            "and historical decision patterns as observed in prior agent interactions."
+            + "task history calendar events and interaction context across multiple "
+            + "sessions for personalised response generation and contextual retrieval. "
+            + "this entry covers scheduling preferences communication style guidelines "
+            + "and historical decision patterns as observed in prior agent interactions."
         )
 
         n_samples = 10 if self._test else 30
@@ -665,9 +665,9 @@ class ComprehensiveEvaluator:
         if metric == "asr_r":
             caption = (
                 "Attack success rate (ASR-R) under each defense "
-                "(pre-ingestion filtering). Defense effectiveness = "
-                "$1 - \\text{ASR-R}_{\\text{defended}}"
-                " / \\text{ASR-R}_{\\text{baseline}}$."
+                + "(pre-ingestion filtering). Defense effectiveness = "
+                + "$1 - \\text{ASR-R}_{\\text{defended}}"
+                + " / \\text{ASR-R}_{\\text{baseline}}$."
             )
             label = "tab:attack_defense_matrix"
             col_headers = " & ".join(defense_labels.values())
@@ -705,7 +705,7 @@ class ComprehensiveEvaluator:
         else:  # tpr_fpr table
             caption = (
                 "Defense detection rates: TPR (true positive — poison flagged) and "
-                "FPR (false positive — benign flagged) per (attack, defense) pair."
+                + "FPR (false positive — benign flagged) per (attack, defense) pair."
             )
             label = "tab:defense_tpr_fpr"
             col_headers = " & ".join(
@@ -755,7 +755,7 @@ class ComprehensiveEvaluator:
             r"\centering",
             r"\small",
             r"\caption{Watermark evasion results. TPR before and after evasion, "
-            r"and fraction of samples where evasion succeeded ($z < z_{\text{thr}}$).}",
+            + r"and fraction of samples where evasion succeeded ($z < z_{\text{thr}}$).}",
             r"\label{tab:evasion}",
             r"\begin{tabular}{lccc}",
             r"\toprule",
@@ -793,14 +793,14 @@ class ComprehensiveEvaluator:
             r"\centering",
             r"\small",
             r"\caption{Adaptive adversary evaluation against SAD. "
-            r"The adversary applies greedy synonym substitution to craft passages "
-            r"below the detection threshold ($k=2$). Evasion Rate = fraction of "
-            r"poison entries below threshold; Retrieval Degradation = ASR-R loss.}",
+            + r"The adversary applies greedy synonym substitution to craft passages "
+            + r"below the detection threshold ($k=2$). Evasion Rate = fraction of "
+            + r"poison entries below threshold; Retrieval Degradation = ASR-R loss.}",
             r"\label{tab:adaptive_sad}",
             r"\begin{tabular}{lcccccc}",
             r"\toprule",
             r"Attack & \multicolumn{2}{c}{Standard} & "
-            r"\multicolumn{2}{c}{Adaptive} & Evasion & Ret. Degrad. \\",
+            + r"\multicolumn{2}{c}{Adaptive} & Evasion & Ret. Degrad. \\",
             r"\cmidrule(lr){2-3}\cmidrule(lr){4-5}",
             r" & ASR-R & SAD TPR & ASR-R & SAD TPR & Rate & $\Delta$ASR-R \\",
             r"\midrule",
@@ -838,14 +838,14 @@ class ComprehensiveEvaluator:
             r"\centering",
             r"\small",
             r"\caption{Hyperparameter ablation summary.  "
-            r"Each row corresponds to one setting of the ablated parameter.}",
+            + r"Each row corresponds to one setting of the ablated parameter.}",
             r"\label{tab:ablation}",
             r"\begin{tabular}{lc|lc|lcc|lcc}",
             r"\toprule",
             r"\multicolumn{2}{c|}{Corpus} & "
-            r"\multicolumn{2}{c|}{Top-K} & "
-            r"\multicolumn{3}{c|}{SAD $k$} & "
-            r"\multicolumn{3}{c}{WM $z$-thr} \\",
+            + r"\multicolumn{2}{c|}{Top-K} & "
+            + r"\multicolumn{3}{c|}{SAD $k$} & "
+            + r"\multicolumn{3}{c}{WM $z$-thr} \\",
             r"$N$ & ASR-R & $k$ & ASR-R & $k$ & TPR & FPR & $z$ & TPR & FPR \\",
             r"\midrule",
         ]

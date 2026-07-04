@@ -471,7 +471,7 @@ def generate_ood_comparison_table(
         r"  \centering",
         r"  \small",
         r"  \caption{OOD detection baseline comparison at $|\cM|=1{,}000$."
-        r" \memsad{} uses triggered calibration for \agentpoison{};",
+        + r" \memsad{} uses triggered calibration for \agentpoison{};",
         r"  baselines use standard calibration. AUROC reported.}",
         r"  \label{tab:ood_comparison}",
         r"  \begin{tabular}{l ccc ccc}",

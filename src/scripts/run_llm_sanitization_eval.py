@@ -162,7 +162,7 @@ def save_latex_table(results: dict, out_dir: Path) -> None:
         r"  \centering",
         r"  \small",
         r"  \caption{LLM sanitization baseline (GPT-4o-mini, zero-shot JSON classifier). "
-        r"Evaluated on "
+        + r"Evaluated on "
         + str(N_POISON_PER_ATTACK)
         + r" poison + "
         + str(N_BENIGN)
