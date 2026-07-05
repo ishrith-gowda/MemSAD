@@ -425,3 +425,17 @@ The paper is under review at NeurIPS until Sep 24. AAAI-27's paper deadline (Jul
 6. **ICLR 2027 pre-stage — by Sep 15** (before NeurIPS reviews land), since the ICLR deadline has historically fallen within days of the NeurIPS notification date.
 
 **Automation installed 2026-07-02** (to prevent a third silent slip): weekly scheduled deadline-watch (venue pages + review-release check + Notion sync), and a local git auto-checkpoint that snapshots uncommitted work to `refs/checkpoints/*` so nothing on the working tree can be lost between sessions.
+
+---
+
+## 15. Phase 38 — certified-synonym extension (started 2026-07-04, in progress)
+
+Pre-staging the ICLR 2027 / TMLR extension (and rebuttal insurance) per §14: attacking the paper's own §546 open direction "closing the synonym gap." Branch `feat/phase-38-synonym-hardening` (stacked on `fix/codeql-string-concat`), 5 commits, ~27 tests, **nothing pushed — held for author review** (see docs/research/phase38_findings.md).
+
+**Two confirmed findings:**
+1. **Paper attribution error (rebuttal/ICLR note, no arXiv v2 change).** MemSAD+'s character n-gram JSD component contributes zero detections on the paper's own poison; the InjecMEM lift is entirely domain-vocabulary concentration. The `app:memsad_plus` caption is unsupported by the code. Fold the corrected attribution into the NeurIPS rebuttal (if the loophole is raised) and the ICLR revision.
+2. **Synonym gap is margin geometry.** The semantic detector operates within one substitution's score-shift of its threshold → certified synonym radius r* = 0 on the default all-MiniLM encoder. Randomized smoothing (Cohen 2019) is rigorous but vacuous in 384-dim; the direct score-margin certificate is the working formulation.
+
+**Positive result (certificate-backed hardening):** all-mpnet-base-v2 achieves certified r* = 1 where all-MiniLM gives r* = 0. A concrete recommendation: switch the default encoder to mpnet.
+
+**Remaining before the phase-38 PR is review-ready:** max/coverage-weighted ensemble aggregation (naive mean failed); ANN-scaling deployment study (certified margin under HNSW/IVF vs exact — the §6.2 deployment study); scale to the 20-trial n=1000 protocol for CIs; finalize writeup + PR body.
