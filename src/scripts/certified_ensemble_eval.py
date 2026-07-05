@@ -63,96 +63,88 @@ def run(cal_size: int = 200, n_queries: int = 50) -> None:
 
     from attacks.adaptive_attack import _ADAPTIVE_SYNONYMS
     from data.synthetic_corpus import SyntheticCorpus
-    from defenses.certified_semantic import certified_radius_from_scores
+    from defenses.certified_semantic import (
+        aggregate_scores,
+        certified_radius_from_scores,
+    )
+    from evaluation.retrieval_sim import generate_centroid_agentpoison_passage
 
     corpus = SyntheticCorpus(seed=42)
     benign = [e["content"] for e in corpus.generate_benign_entries(cal_size)]
     victim_qs = [q["query"] for q in corpus.get_victim_queries_extended(n_queries)]
     trig_qs = [f"{_TRIGGER} {q}" for q in victim_qs]
-
-    from evaluation.retrieval_sim import generate_centroid_agentpoison_passage
-
     poison = [generate_centroid_agentpoison_passage(victim_qs, g) for g in _GOALS]
+    # pad each poison entry's substitution list to a common width so scores stack
     subs_per_poison = [_applicable_subs(p, _ADAPTIVE_SYNONYMS) for p in poison]
+    max_subs = max((len(s) for s in subs_per_poison), default=0)
 
-    # per-encoder score of each poison entry and its substitution variants
-    # scores[enc][i] = (s0, [sub scores]); tau[enc]
-    per_enc_scores: dict[str, tuple[list[float], list[list[float]], float]] = {}
+    k, n_p = len(_ENCODERS), len(poison)
+    # raw per-encoder max-cosine scores, encoded once per encoder
+    benign_scores = np.zeros((k, cal_size))
+    poison_scores = np.zeros((k, n_p))
+    sub_scores = np.full((k, n_p, max_subs), np.nan)  # nan = no substitution
+    per_encoder_sep = np.zeros(k)  # benign separation, used as weighted weights
 
     print(f"{'encoder':22s} {'flagged':>7s} {'marg':>6s} {'dscore':>7s} {'r*med':>6s}")
-    for name in _ENCODERS:
+    for ei, name in enumerate(_ENCODERS):
         enc = SentenceTransformer(name)
         q_embs = _encode(enc, trig_qs)
-        cal_scores = np.max(_encode(enc, benign) @ q_embs.T, axis=1)
-        tau = float(np.mean(cal_scores) + 2.0 * np.std(cal_scores))
-
-        s0s, sub_scores_all, radii, margins, dscores = [], [], [], [], []
+        bs = np.max(_encode(enc, benign) @ q_embs.T, axis=1)
+        benign_scores[ei] = bs
+        tau = float(np.mean(bs) + 2.0 * np.std(bs))
+        per_encoder_sep[ei] = max(np.std(bs), 1e-6)
+        radii, margins, dscores = [], [], []
         for i, p in enumerate(poison):
-            e0 = _encode(enc, [p])[0]
-            s0 = float(np.max(q_embs @ e0))
-            subs = subs_per_poison[i]
-            ss = list(np.max(_encode(enc, subs) @ q_embs.T, axis=1)) if subs else []
-            s0s.append(s0)
-            sub_scores_all.append([float(x) for x in ss])
-            if s0 > tau:
-                cert = certified_radius_from_scores(s0, tau, [float(x) for x in ss])
-                radii.append(cert.certified_radius)
-                margins.append(cert.margin)
-                dscores.append(cert.delta_score)
-        per_enc_scores[name] = (s0s, sub_scores_all, tau)
-        flagged = len(radii)
-        med_r = float(np.median(radii)) if radii else 0.0
-        mm = float(np.mean(margins)) if margins else 0.0
-        dd = float(np.mean(dscores)) if dscores else 0.0
-        short = name.split("/")[-1]
-        print(
-            f"{short:22s} {flagged}/{len(poison):>5} {mm:6.3f} {dd:7.3f} {med_r:6.1f}"
-        )
-
-    # ensemble: mean of per-encoder max-cosine scores, calibrated on benign mean
-    # (recompute tau on the ensemble benign scores)
-    print("\n--- ensemble (mean max-cosine across encoders) ---")
-    # rebuild benign ensemble scores for calibration
-    ens_cal = np.zeros(len(benign))
-    ens_poison_s0 = np.zeros(len(poison))
-    ens_poison_subs: list[list[float]] = [[] for _ in poison]
-    for name in _ENCODERS:
-        enc = SentenceTransformer(name)
-        q_embs = _encode(enc, trig_qs)
-        ens_cal += np.max(_encode(enc, benign) @ q_embs.T, axis=1)
-        for i, p in enumerate(poison):
-            ens_poison_s0[i] += float(np.max(q_embs @ _encode(enc, [p])[0]))
+            s0 = float(np.max(q_embs @ _encode(enc, [p])[0]))
+            poison_scores[ei, i] = s0
             subs = subs_per_poison[i]
             if subs:
                 ss = np.max(_encode(enc, subs) @ q_embs.T, axis=1)
-                if not ens_poison_subs[i]:
-                    ens_poison_subs[i] = [0.0] * len(ss)
-                for j, x in enumerate(ss):
-                    ens_poison_subs[i][j] += float(x)
-    k = len(_ENCODERS)
-    ens_cal /= k
-    ens_poison_s0 /= k
-    ens_poison_subs = [[x / k for x in row] for row in ens_poison_subs]
-    tau_ens = float(np.mean(ens_cal) + 2.0 * np.std(ens_cal))
-
-    radii = []
-    print(
-        f"{'entry':6s} {'score':>7s} {'tau':>6s} {'marg':>6s} {'dscore':>7s} {'r*':>4s}"
-    )
-    for i in range(len(poison)):
-        s0 = float(ens_poison_s0[i])
-        cert = certified_radius_from_scores(s0, tau_ens, ens_poison_subs[i])
-        if s0 > tau_ens:
-            radii.append(cert.certified_radius)
-        rs = ">=1e8" if cert.certified_radius >= 10**8 else str(cert.certified_radius)
+                sub_scores[ei, i, : len(ss)] = ss
+            if s0 > tau:
+                ss_list = [float(x) for x in sub_scores[ei, i] if not np.isnan(x)]
+                cert = certified_radius_from_scores(s0, tau, ss_list)
+                radii.append(cert.certified_radius)
+                margins.append(cert.margin)
+                dscores.append(cert.delta_score)
+        med_r = float(np.median(radii)) if radii else 0.0
+        mm = float(np.mean(margins)) if margins else 0.0
+        dd = float(np.mean(dscores)) if dscores else 0.0
         print(
-            f"p{i:<5d} {s0:7.3f} {tau_ens:6.3f} {cert.margin:6.3f} "
-            f"{cert.delta_score:7.3f} {rs:>4s}"
+            f"{name.split('/')[-1]:22s} {len(radii)}/{n_p:>5} {mm:6.3f} "
+            f"{dd:7.3f} {med_r:6.1f}"
         )
-    if radii:
+
+    # compare ensemble aggregations (fixed functions -> certificate carries over)
+    print("\n--- ensemble aggregations (certified synonym radius) ---")
+    print(
+        f"{'mode':10s} {'flagged':>7s} {'marg':>6s} {'dscore':>7s} {'r*med':>6s} "
+        f"{'r*max':>6s}"
+    )
+    weights = 1.0 / per_encoder_sep  # down-weight high-variance encoders
+    for mode in ["mean", "max", "weighted"]:
+        kw = {"weights": weights} if mode == "weighted" else {}
+        b_agg = aggregate_scores(benign_scores, mode, **kw)
+        tau = float(np.mean(b_agg) + 2.0 * np.std(b_agg))
+        p_agg = aggregate_scores(poison_scores, mode, **kw)
+        s_agg = aggregate_scores(sub_scores, mode, **kw)  # (n_p, max_subs)
+        radii, margins, dscores = [], [], []
+        for i in range(n_p):
+            s0 = float(p_agg[i])
+            if s0 <= tau:
+                continue
+            ss_list = [float(x) for x in s_agg[i] if not np.isnan(x)]
+            cert = certified_radius_from_scores(s0, tau, ss_list)
+            radii.append(cert.certified_radius)
+            margins.append(cert.margin)
+            dscores.append(cert.delta_score)
+        med_r = float(np.median(radii)) if radii else 0.0
+        mx_r = max(radii) if radii else 0
+        mm = float(np.mean(margins)) if margins else 0.0
+        dd = float(np.mean(dscores)) if dscores else 0.0
         print(
-            f"\nensemble: {len(radii)}/{len(poison)} flagged, "
-            f"median r* = {np.median(radii):.1f}, max r* = {max(radii)}"
+            f"{mode:10s} {len(radii)}/{n_p:>5} {mm:6.3f} {dd:7.3f} "
+            f"{med_r:6.1f} {mx_r:6d}"
         )
 
 

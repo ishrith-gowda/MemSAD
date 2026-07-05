@@ -131,13 +131,24 @@ radius (median r* = 1) where the paper's default all-MiniLM-L6-v2 yields r* = 0*
 -- its larger margin (0.125 vs 0.078) exceeds its per-substitution shift. swapping
 the default encoder to mpnet is a concrete, certificate-backed hardening.
 
-**ensemble finding (honest, nuanced):** the mean max-cosine ensemble improves
-detection *coverage* (5/5 flagged, vs bge/contriever which fail to flag at all)
-but its median r* is 0 -- the mean dilutes strong encoders (mpnet) with weak ones.
-naive mean-ensembling is therefore NOT the right widener; encoder *selection*
-(mpnet) dominates it. a coverage-weighted or max-based aggregation is the natural
-next iteration.
+**ensemble aggregation comparison (fixed aggregations -> certificate carries over):**
 
-**next:** (i) coverage-weighted / max ensemble aggregation; (ii) ANN-scaling
-deployment study -- how the certified margin degrades under approximate (HNSW/IVF)
-vs exact retrieval; (iii) scale to the 20-trial n=1000 protocol for CIs.
+| aggregation | flagged | mean margin | mean delta_score | median r* | max r* |
+|-------------|:-------:|:-----------:|:----------------:|:---------:|:------:|
+| mean        |   5/5   |    0.052    |      0.049       |    0      |   1    |
+| **max**     |   5/5   |    0.018    |      0.017       |  **1**    |   1    |
+| weighted (1/std) | 5/5 |   0.035    |      0.035       |    0      |   1    |
+
+**widening result (principled):** the **max aggregation achieves median r* = 1
+with full 5/5 coverage** -- it matches the best single encoder (mpnet) *without
+needing to know a priori which encoder is best*, because a synonym substitution
+must drop the maximum across ALL encoders simultaneously, collapsing the
+per-substitution shift to delta_score = 0.017. this is the correct widener: the
+mean dilutes (r* = 0) and weighting by inverse-variance does not help, but the max
+recovers the best-encoder radius robustly. honest ceiling: r* = 1 (certifiably
+robust to one substitution) -- the loophole is fundamentally tight; reaching
+r* >= 2 needs a different detector or wider margins, not a different aggregation.
+
+**next:** (i) ANN-scaling deployment study -- how the certified margin degrades
+under approximate (HNSW/IVF) vs exact retrieval; (ii) scale to the 20-trial
+n=1000 protocol for CIs.

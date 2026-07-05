@@ -14,6 +14,7 @@ from scipy.stats import norm
 
 from defenses.certified_semantic import (
     SemanticSmoothingCertifier,
+    aggregate_scores,
     certified_radius_from_scores,
     certified_score_margin_radius,
     make_max_cosine_score_fn,
@@ -232,3 +233,37 @@ class TestScoreMarginCertificate:
         assert score(e0) - r * delta > tau
         # r+1 worst-case reductions would reach or cross tau (tightness)
         assert score(e0) - (r + 1) * delta <= tau + 1e-12
+
+
+class TestAggregateScores:
+    def test_mean_max_weighted(self):
+        # 3 encoders, 2 entries
+        s = np.array([[0.6, 0.9], [0.2, 0.4], [0.8, 0.5]])
+        assert aggregate_scores(s, "mean") == pytest.approx(s.mean(axis=0))
+        assert aggregate_scores(s, "max") == pytest.approx([0.8, 0.9])
+        w = np.array([1.0, 0.0, 0.0])
+        assert aggregate_scores(s, "weighted", weights=w) == pytest.approx([0.6, 0.9])
+
+    def test_weighted_requires_weights(self):
+        with pytest.raises(ValueError):
+            aggregate_scores(np.ones((2, 2)), "weighted")
+
+    def test_unknown_mode_raises(self):
+        with pytest.raises(ValueError):
+            aggregate_scores(np.ones((2, 2)), "bogus")
+
+    def test_max_reduces_per_substitution_shift(self):
+        # decorrelated encoders: entry scores high in both; each substitution
+        # drops only ONE encoder. the max aggregation's per-substitution shift is
+        # therefore smaller than the mean's, giving a larger certified radius.
+        # encoder A: entry 0.9, sub drops it to 0.5 (shift 0.4)
+        # encoder B: entry 0.9, same sub leaves it at 0.9 (shift 0.0)
+        entry = np.array([0.9, 0.9])
+        sub = np.array([0.5, 0.9])
+        mean_entry = aggregate_scores(entry[:, None], "mean")[0]
+        mean_sub = aggregate_scores(sub[:, None], "mean")[0]
+        max_entry = aggregate_scores(entry[:, None], "max")[0]
+        max_sub = aggregate_scores(sub[:, None], "max")[0]
+        mean_shift = mean_entry - mean_sub  # 0.2
+        max_shift = max_entry - max_sub  # 0.0
+        assert max_shift < mean_shift

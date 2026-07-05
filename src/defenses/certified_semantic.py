@@ -279,3 +279,40 @@ def certified_radius_from_scores(
     else:
         radius = int((score - tau) // delta_score)
     return ScoreMarginCertificate(score, tau, delta_score, max(radius, 0), n)
+
+
+def aggregate_scores(
+    per_encoder_scores: np.ndarray,
+    mode: str = "mean",
+    weights: np.ndarray | None = None,
+) -> np.ndarray:
+    """aggregate per-encoder anomaly scores into a single ensemble score.
+
+    the aggregation must be a *fixed* function of the per-encoder scores (not an
+    entry-dependent encoder selection) for the score-margin certificate to remain
+    valid: with a fixed aggregation g, any r-substitution adversary reduces the
+    ensemble score g by at most r * delta_score, so the certified radius carries
+    over unchanged.
+
+    args:
+        per_encoder_scores: array with encoders on axis 0, shape (K, ...).
+        mode: "mean" (dilutes with weak encoders), "max" (evasion must drop the
+            most-confident encoder -> smaller per-substitution shift), or
+            "weighted" (fixed per-encoder weights, e.g. by benign separation).
+        weights: (K,) weights for mode="weighted"; normalized internally.
+    returns:
+        aggregated scores with axis 0 reduced.
+    """
+    a = np.asarray(per_encoder_scores, dtype=np.float64)
+    if mode == "mean":
+        return np.asarray(a.mean(axis=0), dtype=np.float64)
+    if mode == "max":
+        return np.asarray(a.max(axis=0), dtype=np.float64)
+    if mode == "weighted":
+        if weights is None:
+            raise ValueError("mode='weighted' requires weights")
+        w = np.asarray(weights, dtype=np.float64)
+        w = w / w.sum()
+        shape = [a.shape[0]] + [1] * (a.ndim - 1)
+        return np.asarray((w.reshape(shape) * a).sum(axis=0), dtype=np.float64)
+    raise ValueError(f"unknown aggregation mode: {mode!r}")
