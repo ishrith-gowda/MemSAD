@@ -131,23 +131,29 @@ radius (median r* = 1) where the paper's default all-MiniLM-L6-v2 yields r* = 0*
 -- its larger margin (0.125 vs 0.078) exceeds its per-substitution shift. swapping
 the default encoder to mpnet is a concrete, certificate-backed hardening.
 
-**ensemble aggregation comparison (fixed aggregations -> certificate carries over):**
+**ensemble aggregation comparison (n=12 poison, fixed aggregations -> certificate
+carries over; certified-robust rate = fraction with r* >= 1, exact clopper-pearson
+95% ci):**
 
-| aggregation | flagged | mean margin | mean delta_score | median r* | max r* |
-|-------------|:-------:|:-----------:|:----------------:|:---------:|:------:|
-| mean        |   5/5   |    0.052    |      0.049       |    0      |   1    |
-| **max**     |   5/5   |    0.018    |      0.017       |  **1**    |   1    |
-| weighted (1/std) | 5/5 |   0.035    |      0.035       |    0      |   1    |
+| aggregation | flagged | mean margin | mean delta_score | median r* | certified-robust rate (r*>=1) |
+|-------------|:-------:|:-----------:|:----------------:|:---------:|:-----------------------------:|
+| mean        |  12/12  |    0.050    |      0.048       |    0      | 5/12  [0.15, 0.72] |
+| **max**     |  12/12  |    0.018    |      0.018       |  **1**    | **7/12 [0.28, 0.85]** |
+| weighted (1/std) | 12/12 | 0.033    |      0.035       |    0      | 5/12  [0.15, 0.72] |
 
-**widening result (principled):** the **max aggregation achieves median r* = 1
-with full 5/5 coverage** -- it matches the best single encoder (mpnet) *without
-needing to know a priori which encoder is best*, because a synonym substitution
-must drop the maximum across ALL encoders simultaneously, collapsing the
-per-substitution shift to delta_score = 0.017. this is the correct widener: the
-mean dilutes (r* = 0) and weighting by inverse-variance does not help, but the max
-recovers the best-encoder radius robustly. honest ceiling: r* = 1 (certifiably
-robust to one substitution) -- the loophole is fundamentally tight; reaching
-r* >= 2 needs a different detector or wider margins, not a different aggregation.
+per-encoder (n=12): mpnet r* median = 1 (margin 0.123 > delta 0.083); MiniLM
+(default) r* = 0; e5-base r* = 1; para-MiniLM r* = 0; bge-base flags 1/12;
+contriever flags 0/12.
+
+**widening result (principled, CI-backed):** the **max aggregation is the best
+widener -- it certifies r* >= 1 for 7/12 poison (58%, 95% ci [0.28, 0.85]) with
+full 12/12 coverage**, matching the best single encoder (mpnet) *without needing
+to know a priori which encoder is best*: a synonym substitution must drop the
+maximum across ALL encoders simultaneously, collapsing the per-substitution shift
+to delta_score = 0.018. the mean dilutes (5/12) and inverse-variance weighting
+does not help. honest ceiling: r* = 1 -- the loophole is fundamentally tight;
+reaching r* >= 2 needs a different detector or wider margins, not a different
+aggregation.
 
 ## ANN-scaling deployment study (2026-07-05)
 
