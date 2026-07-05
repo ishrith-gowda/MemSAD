@@ -149,6 +149,40 @@ recovers the best-encoder radius robustly. honest ceiling: r* = 1 (certifiably
 robust to one substitution) -- the loophole is fundamentally tight; reaching
 r* >= 2 needs a different detector or wider margins, not a different aggregation.
 
-**next:** (i) ANN-scaling deployment study -- how the certified margin degrades
-under approximate (HNSW/IVF) vs exact retrieval; (ii) scale to the 20-trial
-n=1000 protocol for CIs.
+## ANN-scaling deployment study (2026-07-05)
+
+`src/scripts/ann_scaling_eval.py`; faiss exact (IndexFlatIP) vs HNSW (M=32,
+efSearch=64) vs IVF (nprobe<=16); poison inserted into the store; recall@5 =
+fraction of victim queries whose top-k contains poison.
+
+| \|M\| | index | poison recall@5 | cert margin |
+|------|-------|:---------------:|:-----------:|
+| 1000 | flat (exact) | 0.940 | 0.0802 |
+| 1000 | hnsw | 0.940 | 0.0802 |
+| 1000 | ivf  | 0.940 | 0.0802 |
+| 10000| flat (exact) | 0.780 | 0.1099 |
+| 10000| hnsw | 0.740 | 0.1099 |
+| 10000| ivf  | 0.720 | 0.1099 |
+
+**deployment findings:**
+1. **the certified margin is exactly index-independent** (identical across
+   flat/hnsw/ivf at each scale). the certificate is a *write-time* calibration
+   property scored against the fixed victim-query set, so read-time ANN
+   approximation cannot degrade it -- a clean deployment-robustness result.
+2. **ANN does not incidentally mitigate the threat.** poison recall under HNSW
+   (0.74) and IVF (0.72) tracks exact (0.78) at |M|=10k; poison crafted for
+   maximal query similarity survives approximate retrieval. the small recall drop
+   is the generic ANN recall gap (affecting benign and poison alike), not a
+   poison-specific defense.
+
+**caveat:** the 10k corpus is synthetically scaled from the 1k base by
+jitter-resampling (the synthetic generator emits ~1k distinct entries), so the
+*absolute* margin at 10k (0.110) reflects the resampled benign distribution and
+should be read as illustrative; the *index-independence* and the *poison-recall*
+comparisons are the robust conclusions. a genuinely diverse large corpus (e.g.
+NQ / MS-MARCO passages) is the follow-up for camera-ready.
+
+## remaining
+
+scale to the 20-trial n=1000 protocol for Clopper-Pearson CIs on the fraction of
+poison with r* >= 1 (certified-robust rate).
