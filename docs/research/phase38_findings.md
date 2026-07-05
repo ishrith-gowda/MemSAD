@@ -66,3 +66,49 @@ combined scoring, any-of detection; matches `run_memsad_plus_evaluation`.
 - attribution is on n=5 per cell (matching the paper's appendix scale); the
   certified-radius experiments will use the larger bootstrap/Clopper-Pearson
   protocol (20 trials, n=1000).
+
+## semantic certificate results (2026-07-05)
+
+two certificates for the memsad semantic (max-cosine) detector were implemented
+(`src/defenses/certified_semantic.py`, 11 tests) and evaluated on real
+`all-MiniLM-L6-v2` embeddings of triggered-agentpoison poison
+(`src/scripts/certify_semantic_eval.py`):
+
+1. **randomized smoothing (cohen et al. 2019), embedding space.** RIGOROUS but
+   **vacuous here**: in d=384, isotropic gaussian noise of any useful sigma has
+   l2 norm ~sigma*sqrt(d) approx 5, which destroys the max-cosine score, so the
+   smoothed detection probability collapses below 1/2 and R = 0 for every entry.
+   this is a genuine negative result about naive RS in high-dimensional embedding
+   space, not a bug (the certifier passes an exact linear-score anchor test).
+
+2. **direct score-margin certificate.** r*(c) = floor((s(c) - tau) / delta_score),
+   delta_score = max single-substitution score reduction. measured values:
+
+   | entry | s(c)  | tau   | margin | delta_score | r* |
+   |-------|-------|-------|--------|-------------|----|
+   | p0    | 0.597 | 0.565 | 0.032  | 0.081       | 0  |
+   | p2    | 0.572 | 0.565 | 0.007  | 0.094       | 0  |
+   | p3    | 0.612 | 0.565 | 0.047  | 0.098       | 0  |
+
+**central finding:** memsad's semantic detector operates within *one
+substitution's worth of score shift* of its own threshold (margin ~0.03 vs
+per-substitution shift ~0.09). the certified synonym radius is therefore 0: a
+single synonym substitution suffices to evade. this rigorously quantifies the
+paper's proposition 11 synonym loophole as a **margin-geometry** phenomenon
+rather than an incidental gap -- and shows it cannot be closed by certification
+alone without widening the operating margin (which trades off FPR).
+
+**preliminary (needs a full adaptive-attack study to confirm):** aligning the
+adaptive crafter to the *triggered* query set (rather than the untriggered
+queries used in the paper's `run_memsad_plus_evaluation`) suggests a
+trigger-aware adversary evades triggered-agentpoison with ~1 substitution,
+whereas the paper reports triggered-agentpoison as synonym-robust (5/5). this
+must be verified by re-scoring crafted passages against the full 100-query
+detector before any claim is made.
+
+**framing decision (open, for the author):** the certificate is sound and the
+result is real, but it is a rigorous *characterization / negative* result
+(r* = 0), not a defense improvement. options: (a) publish as "first certified
+characterization of the synonym loophole" + a multi-encoder certified-margin
+comparison (which encoders give larger margins?); (b) pursue a margin-widening
+detector modification to yield positive radii; (c) both.

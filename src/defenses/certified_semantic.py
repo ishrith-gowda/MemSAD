@@ -201,3 +201,66 @@ def make_max_cosine_score_fn(query_embeddings: np.ndarray) -> ScoreFn:
         return float(np.max(q @ e))
 
     return score
+
+
+@dataclass
+class ScoreMarginCertificate:
+    """direct score-margin certified synonym radius (modeled bounded-shift adversary).
+
+    unlike the randomized-smoothing certificate, this does not perturb the
+    embedding; it certifies directly on the anomaly score. it avoids the
+    high-dimensional smoothing pathology (isotropic gaussian noise of norm
+    ~sigma*sqrt(d) destroys the max-cosine score, collapsing the smoothing
+    radius to zero) and is the practical certificate for memsad's semantic
+    detector.
+    """
+
+    score: float
+    tau: float
+    delta_score: float
+    certified_radius: int
+    n_applicable_substitutions: int
+
+    @property
+    def margin(self) -> float:
+        return self.score - self.tau
+
+    @property
+    def flagged(self) -> bool:
+        return self.score > self.tau
+
+
+# an entry no dictionary substitution can push toward the boundary is
+# unconditionally robust within the modeled adversary; reported as this sentinel.
+_UNCONDITIONAL = 10**9
+
+
+def certified_score_margin_radius(
+    entry_emb: np.ndarray,
+    tau: float,
+    substitution_embeddings: list[np.ndarray],
+    score_fn: ScoreFn,
+) -> ScoreMarginCertificate:
+    """certify how many synonym substitutions keep the anomaly score above tau.
+
+    with s0 = score_fn(entry_emb) and per-substitution max score reduction
+    delta_score = max_j max(s0 - score_fn(c_j), 0) over single applicable
+    substitutions c_j, any r <= floor((s0 - tau) / delta_score) substitutions
+    provably keep the score above tau under a bounded-shift adversary (each step
+    reduces the score by at most delta_score). this is the semantic analog of the
+    empirical char-jsd certificate and inherits the same modeled-adversary caveat.
+    """
+    s0 = score_fn(entry_emb)
+    n_pairs = len(substitution_embeddings)
+    if s0 <= tau:
+        return ScoreMarginCertificate(s0, tau, 0.0, 0, n_pairs)
+    if n_pairs == 0:
+        return ScoreMarginCertificate(s0, tau, 0.0, _UNCONDITIONAL, 0)
+    delta_score = max(
+        max(s0 - score_fn(e_sub), 0.0) for e_sub in substitution_embeddings
+    )
+    if delta_score <= 0.0:
+        radius = _UNCONDITIONAL
+    else:
+        radius = int((s0 - tau) // delta_score)
+    return ScoreMarginCertificate(s0, tau, delta_score, max(radius, 0), n_pairs)

@@ -14,6 +14,7 @@ from scipy.stats import norm
 
 from defenses.certified_semantic import (
     SemanticSmoothingCertifier,
+    certified_score_margin_radius,
     make_max_cosine_score_fn,
 )
 
@@ -163,3 +164,54 @@ class TestSynonymReduction:
         syn = cert.certify_synonyms(e0, [])
         assert syn.certified_radius == 0
         assert syn.n_applicable_substitutions == 0
+
+
+class TestScoreMarginCertificate:
+    def _linear(self, w):
+        def score(e):
+            return float(w @ e)
+
+        return score
+
+    def test_abstains_below_threshold(self):
+        w = np.ones(4) / 2.0
+        score = self._linear(w)
+        e0 = np.zeros(4)  # score 0 < tau
+        cert = certified_score_margin_radius(e0, 0.5, [e0 + 0.1], score)
+        assert not cert.flagged
+        assert cert.certified_radius == 0
+
+    def test_unconditional_when_no_substitution_reduces_score(self):
+        w = np.array([1.0, 0.0])
+        score = self._linear(w)
+        e0 = np.array([1.0, 0.0])  # score 1.0 > tau
+        # substitutions that only move orthogonally -> never reduce the score
+        subs = [np.array([1.0, 0.3]), np.array([1.0, -0.2])]
+        cert = certified_score_margin_radius(e0, 0.5, subs, score)
+        assert cert.certified_radius >= 10**8  # unconditional sentinel
+
+    def test_radius_is_floor_margin_over_delta(self):
+        w = np.array([1.0, 0.0])
+        score = self._linear(w)
+        e0 = np.array([1.0, 0.0])  # score 1.0, tau 0.4 -> margin 0.6
+        # worst substitution reduces score by 0.2 (x-component 0.8)
+        subs = [np.array([0.8, 0.0]), np.array([0.9, 0.0])]
+        cert = certified_score_margin_radius(e0, 0.4, subs, score)
+        assert cert.delta_score == pytest.approx(0.2)
+        assert cert.certified_radius == 3  # floor(0.6 / 0.2)
+
+    def test_soundness_composed_substitutions_stay_flagged(self):
+        # a bounded-shift adversary applying r* substitutions each reducing the
+        # score by at most delta must not cross tau; r*+1 may.
+        w = np.array([1.0, 0.0])
+        score = self._linear(w)
+        e0 = np.array([1.0, 0.0])
+        tau = 0.4
+        step = 0.15  # per-substitution reduction
+        subs = [np.array([1.0 - step, 0.0])]
+        cert = certified_score_margin_radius(e0, tau, subs, score)
+        r, delta = cert.certified_radius, cert.delta_score
+        # r worst-case reductions keep the score strictly above tau (soundness)
+        assert score(e0) - r * delta > tau
+        # r+1 worst-case reductions would reach or cross tau (tightness)
+        assert score(e0) - (r + 1) * delta <= tau + 1e-12
