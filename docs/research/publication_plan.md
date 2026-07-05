@@ -438,4 +438,8 @@ Pre-staging the ICLR 2027 / TMLR extension (and rebuttal insurance) per §14: at
 
 **Positive result (certificate-backed hardening):** all-mpnet-base-v2 achieves certified r* = 1 where all-MiniLM gives r* = 0. A concrete recommendation: switch the default encoder to mpnet.
 
-**Remaining before the phase-38 PR is review-ready:** max/coverage-weighted ensemble aggregation (naive mean failed); ANN-scaling deployment study (certified margin under HNSW/IVF vs exact — the §6.2 deployment study); scale to the 20-trial n=1000 protocol for CIs; finalize writeup + PR body.
+**Phase 38 research complete (2026-07-05), held for review before push.** Additional results:
+- **Max-ensemble widening.** The max-aggregation over encoders certifies r* ≥ 1 for 7/12 poison (58%, Clopper-Pearson 95% CI [0.28, 0.85]) with full coverage — a synonym substitution must drop the max across all encoders. The mean/inverse-variance-weighted aggregations dilute to 5/12. Honest ceiling r* = 1.
+- **ANN-scaling deployment study.** The certified margin is exactly index-independent (identical across FAISS flat/HNSW/IVF) — it is a write-time calibration property. Poison survives approximate retrieval (recall 0.72–0.78 under HNSW/IVF at |M|=10k), so ANN does not incidentally mitigate the threat. (Caveat: the 10k corpus is synthetically jitter-scaled; a diverse large corpus is the camera-ready follow-up.)
+
+**Deliverable state:** two stacked PRs ready to open on approval — (1) `fix/codeql-string-concat` → main (hygiene, CodeQL), (2) `feat/phase-38-synonym-hardening` → main (9 commits, 31 new tests, all lint/mypy green). Nothing pushed.
