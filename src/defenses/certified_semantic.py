@@ -251,16 +251,31 @@ def certified_score_margin_radius(
     empirical char-jsd certificate and inherits the same modeled-adversary caveat.
     """
     s0 = score_fn(entry_emb)
-    n_pairs = len(substitution_embeddings)
-    if s0 <= tau:
-        return ScoreMarginCertificate(s0, tau, 0.0, 0, n_pairs)
-    if n_pairs == 0:
-        return ScoreMarginCertificate(s0, tau, 0.0, _UNCONDITIONAL, 0)
-    delta_score = max(
-        max(s0 - score_fn(e_sub), 0.0) for e_sub in substitution_embeddings
-    )
+    sub_scores = [score_fn(e_sub) for e_sub in substitution_embeddings]
+    return certified_radius_from_scores(s0, tau, sub_scores)
+
+
+def certified_radius_from_scores(
+    score: float, tau: float, substitution_scores: list[float]
+) -> ScoreMarginCertificate:
+    """score-level score-margin certificate (encoder- and ensemble-agnostic).
+
+    args:
+        score: anomaly score of the entry.
+        tau: detection threshold.
+        substitution_scores: anomaly score after each single applicable
+            substitution. any aggregate score (single encoder max-cosine, or an
+            ensemble mean over encoders) may be used, which is how the multi-
+            encoder ensemble certificate reuses this helper.
+    """
+    n = len(substitution_scores)
+    if score <= tau:
+        return ScoreMarginCertificate(score, tau, 0.0, 0, n)
+    if n == 0:
+        return ScoreMarginCertificate(score, tau, 0.0, _UNCONDITIONAL, 0)
+    delta_score = max(max(score - s, 0.0) for s in substitution_scores)
     if delta_score <= 0.0:
         radius = _UNCONDITIONAL
     else:
-        radius = int((s0 - tau) // delta_score)
-    return ScoreMarginCertificate(s0, tau, delta_score, max(radius, 0), n_pairs)
+        radius = int((score - tau) // delta_score)
+    return ScoreMarginCertificate(score, tau, delta_score, max(radius, 0), n)

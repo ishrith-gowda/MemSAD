@@ -106,9 +106,38 @@ whereas the paper reports triggered-agentpoison as synonym-robust (5/5). this
 must be verified by re-scoring crafted passages against the full 100-query
 detector before any claim is made.
 
-**framing decision (open, for the author):** the certificate is sound and the
-result is real, but it is a rigorous *characterization / negative* result
-(r* = 0), not a defense improvement. options: (a) publish as "first certified
-characterization of the synonym loophole" + a multi-encoder certified-margin
-comparison (which encoders give larger margins?); (b) pursue a margin-widening
-detector modification to yield positive radii; (c) both.
+**framing decision (resolved 2026-07-05): both -- characterize + attempt
+widening.** paper-caption fix handled as a rebuttal / iclr-revision note (no
+arxiv v2 change).
+
+## multi-encoder + ensemble certified margin (2026-07-05)
+
+`src/scripts/certified_ensemble_eval.py`; triggered-agentpoison poison, kappa=2,
+score-margin certificate reused via `certified_radius_from_scores`.
+
+| encoder                | flagged | mean margin | mean delta_score | median r* |
+|------------------------|:-------:|:-----------:|:----------------:|:---------:|
+| all-MiniLM-L6-v2 (paper default) | 5/5 | 0.078 | 0.100 | **0** |
+| **all-mpnet-base-v2**  |   5/5   |    0.125    |      0.081        |  **1**    |
+| paraphrase-MiniLM-L6-v2|   5/5   |    0.033    |      0.073        |   0       |
+| bge-base-en-v1.5       |   0/5   |     --      |       --         |   --      |
+| e5-base-v2             |   5/5   |    0.018    |      0.017        |  **1**    |
+| contriever             |   0/5   |     --      |       --         |   --      |
+| **mean-ensemble (6)**  |   5/5   |    0.050    |      0.048       |   0 (max 1) |
+
+**positive result (defense recommendation):** certified synonym robustness is
+strongly encoder-dependent. **all-mpnet-base-v2 achieves a positive certified
+radius (median r* = 1) where the paper's default all-MiniLM-L6-v2 yields r* = 0**
+-- its larger margin (0.125 vs 0.078) exceeds its per-substitution shift. swapping
+the default encoder to mpnet is a concrete, certificate-backed hardening.
+
+**ensemble finding (honest, nuanced):** the mean max-cosine ensemble improves
+detection *coverage* (5/5 flagged, vs bge/contriever which fail to flag at all)
+but its median r* is 0 -- the mean dilutes strong encoders (mpnet) with weak ones.
+naive mean-ensembling is therefore NOT the right widener; encoder *selection*
+(mpnet) dominates it. a coverage-weighted or max-based aggregation is the natural
+next iteration.
+
+**next:** (i) coverage-weighted / max ensemble aggregation; (ii) ANN-scaling
+deployment study -- how the certified margin degrades under approximate (HNSW/IVF)
+vs exact retrieval; (iii) scale to the 20-trial n=1000 protocol for CIs.

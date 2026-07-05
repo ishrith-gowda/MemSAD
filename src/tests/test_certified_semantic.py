@@ -14,6 +14,7 @@ from scipy.stats import norm
 
 from defenses.certified_semantic import (
     SemanticSmoothingCertifier,
+    certified_radius_from_scores,
     certified_score_margin_radius,
     make_max_cosine_score_fn,
 )
@@ -199,6 +200,22 @@ class TestScoreMarginCertificate:
         cert = certified_score_margin_radius(e0, 0.4, subs, score)
         assert cert.delta_score == pytest.approx(0.2)
         assert cert.certified_radius == 3  # floor(0.6 / 0.2)
+
+    def test_from_scores_matches_embedding_path(self):
+        # the scores-based helper (used by the ensemble certificate) agrees with
+        # the embedding-based path.
+        score = 0.8
+        subs = [0.7, 0.65, 0.72]  # max reduction 0.15
+        cert = certified_radius_from_scores(score, 0.5, subs)
+        assert cert.delta_score == pytest.approx(0.15)
+        assert cert.certified_radius == 2  # floor(0.3 / 0.15)
+        # abstains below threshold
+        assert certified_radius_from_scores(0.4, 0.5, subs).certified_radius == 0
+        # unconditional when no substitution reduces the score
+        assert (
+            certified_radius_from_scores(0.8, 0.5, [0.85, 0.9]).certified_radius
+            >= 10**8
+        )
 
     def test_soundness_composed_substitutions_stay_flagged(self):
         # a bounded-shift adversary applying r* substitutions each reducing the
