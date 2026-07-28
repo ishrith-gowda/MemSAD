@@ -74,3 +74,18 @@ Replacing the coupling-breaking *linear* s_comb with the **disjunction** D=1[s_m
 | injecmem | 0.00/0.01 | 0.50/0.02 | **0.00**/0.01 | **0.50**/0.03 |
 
 **Result (converts the counterexample into an improvement):** the disjunction (i) provably inherits Theorem 7 coupling — a retrieval-effective poison has high s_max, so it triggers the s_max branch, and evading that branch reduces retrieval; the s_mean branch only adds detections for low-max (low-retrieval, non-threatening) entries; and (ii) *strictly dominates* the linear combined score empirically (MINJA 0.06→0.38, INJECMEM 0.00→0.50) because it keeps the stronger branch rather than diluting. The small FPR increase (≈0.03–0.05 vs ≈0.01) is recovered at κ=2.5. So the fix for m2wH's counterexample is a detector that is both provably coupled *and* better — we deploy the disjunction (which is also the paper's composite philosophy).
+
+## E5 — empirical encoder regularity (reviewer n6dm W2)
+
+Per single-token synonym substitution (377 pairs), the induced embedding shift ‖E(c')−E(c)‖ across the six encoders (unit vectors; diameter 2.0):
+
+| encoder | mean | p95 | max |
+|---|---|---|---|
+| all-MiniLM-L6-v2 | 0.145 | 0.296 | 0.365 |
+| all-mpnet-base-v2 | 0.153 | 0.354 | 0.389 |
+| paraphrase-MiniLM-L6-v2 | 0.144 | 0.306 | 0.385 |
+| bge-base-en-v1.5 | 0.117 | 0.245 | 0.296 |
+| e5-base-v2 | 0.075 | 0.122 | 0.144 |
+| contriever | 0.124 | 0.236 | 0.264 |
+
+**Reading:** shifts are bounded and small-tailed for every encoder — a single-token edit moves the embedding by a bounded amount, evidencing local regularity. The per-encoder max is the Lipschitz constant entering the certified radius; Thm 7's coupling geometry applies without requiring encoder invertibility. (E5-base is the tightest, consistent with it giving the smallest per-substitution shift in the multi-encoder certified-margin study.)
