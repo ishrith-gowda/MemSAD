@@ -22,3 +22,19 @@ Gap `g(c) = s_adv(c) − τ`, τ = μ̂ + κσ̂. `det%` = fraction with g>0 (de
 - **Synonym substitution:** drives the gap negative across all attacks (evasion) — the stated Proposition-13 frontier.
 
 **Response framing:** the certified radius is informative precisely for the continuous/WRITE-access attacks it targets, and we honestly acknowledge it is tight (MINJA) or vacuous (INJECMEM-semantic, synonym) elsewhere — which coincides with the paper's stated scope. This directly answers "when is the certificate informative."
+
+## E2 — randomized-smoothing comparison (reviewer n6dm W5 + AC)
+
+Cohen (2019) randomized smoothing applied to the MEMSAD max-cosine detector on a *detected* AGENTPOISON entry (base score 0.783, gap +0.218). One synonym substitution's embedding shift for this entry: **δ_emb = 0.378**.
+
+| σ | noise norm ≈ σ√d | p_lower | R_cohen | R ≥ δ_emb? |
+|---|---|---|---|---|
+| 0.05 | 0.98 | 0.561 | **0.008** | no |
+| 0.10 | 1.96 | 0.000 | 0.000 | no |
+| 0.25 | 4.90 | 0.000 | 0.000 | no |
+| 0.50 | 9.80 | 0.000 | 0.000 | no |
+| 1.00 | 19.60 | 0.000 | 0.000 | no |
+
+**Reading:** at *no* σ does smoothing certify even one substitution's worth of embedding movement (best R=0.008 ≪ δ_emb=0.378). Small σ → tiny R; σ≥0.10 → isotropic noise of norm σ√384 destroys the max-cosine score, p_lower<½, R=0. **Randomized smoothing is vacuous for this detector in d=384.**
+
+**Mechanistic distinction (the answer to the AC):** smoothing certifies an L2 ball via *noise robustness* (R=σΦ⁻¹(p)); MEMSAD certifies via *detection–retrieval gradient coupling* — the evasion direction provably degrades the attacker's own retrieval objective (Thm 7), a constraint on the *attacker's utility*, not a noise-averaging argument. Gradient coupling is not a special case of smoothing, and (E2) smoothing does not yield a usable certificate here. This is a genuine, favorable distinction — not a weakness.
