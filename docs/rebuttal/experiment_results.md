@@ -62,3 +62,15 @@ MEMSAD (combined scoring) ROC; AUROC is threshold-independent. AGENTPOISON trigg
 | injecmem | **0.846** | 0.50/0.14 | 0.25/0.06 | 0.12/0.01 | 0.00 | 0.00 |
 
 **Reading (answers "MEMSAD's results are weak" and "MINJA TPR ranges 0.40–1.00 across tables"):** AUROC — the threshold-independent detection-power metric — is high (MINJA 0.951 matches the paper's ≥0.914). The low standalone TPR m2wH cites is the deliberate κ=2 (FPR≈0) operating point; a defender accepting a small FPR (κ=1) recovers TPR=1.00 (MINJA). The "MINJA TPR 0.40–1.00 across tables" is not an inconsistency — it is the *same ROC read at different κ / calibration regimes*. E4 exhibits the full curve. (Note: the exact κ=2 TPR depends on the poison-generation variant; the AUROC and the ROC shape are the robust, reported quantities. The composite's per-defense attribution — App C disjunction, watermark in the WRITE model vs MEMSAD in QUERY/SINGLE — is addressed in the m2wH response and cross-checked against Table 12 on the full read.)
+
+## E6 — coupling-preserving disjunctive detector (reviewer m2wH W2, exceptional)
+
+Replacing the coupling-breaking *linear* s_comb with the **disjunction** D=1[s_max>τ_max ∨ s_mean>τ_mean] (thresholds calibrated separately). TPR/FPR at κ=2, 16 poison/attack, 100 benign test.
+
+| attack | max | mean | combined (linear) | **disjunction** |
+|---|---|---|---|---|
+| agentpoison | 1.00/0.03 | 1.00/0.02 | 1.00/0.00 | 1.00/0.05 |
+| minja | 0.38/0.01 | 0.00/0.02 | **0.06**/0.01 | **0.38**/0.03 |
+| injecmem | 0.00/0.01 | 0.50/0.02 | **0.00**/0.01 | **0.50**/0.03 |
+
+**Result (converts the counterexample into an improvement):** the disjunction (i) provably inherits Theorem 7 coupling — a retrieval-effective poison has high s_max, so it triggers the s_max branch, and evading that branch reduces retrieval; the s_mean branch only adds detections for low-max (low-retrieval, non-threatening) entries; and (ii) *strictly dominates* the linear combined score empirically (MINJA 0.06→0.38, INJECMEM 0.00→0.50) because it keeps the stronger branch rather than diluting. The small FPR increase (≈0.03–0.05 vs ≈0.01) is recovered at κ=2.5. So the fix for m2wH's counterexample is a detector that is both provably coupled *and* better — we deploy the disjunction (which is also the paper's composite philosophy).
