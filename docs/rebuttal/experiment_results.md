@@ -50,3 +50,15 @@ We **concede Corollary 17 is stated too generally** (the acute-angle Assumption 
 | retrieval-optimal dir (+∇s_max) evades s_comb | **0/8** | the attacker's own objective never evades |
 
 **Reading:** the counterexample is a valid *continuous-space* observation, but on real poison the two gradients are strongly positively aligned (40.5°, far from 90°), the free-evasion wedge is narrow, and the retrieval-optimal direction never evades s_comb (0/8). Repair: (i) the rigorous certificate is Theorem 7 (pure **s_max**, zero wedge, unconditional); (ii) s_comb is an empirical enhancement whose coupling we now correctly characterize as conditional; (iii) realizing any free-evasion direction in token space is CVP-hard (Prop 15). We deploy the disjunctive composite with the s_max-coupled component to retain the guarantee.
+
+## E4 — "weak results" is a conservative operating point on a strong ROC (m2wH W4)
+
+MEMSAD (combined scoring) ROC; AUROC is threshold-independent. AGENTPOISON triggered calibration; MINJA/INJECMEM standard. 16 poison/attack, 100 benign test, |M|=1000.
+
+| attack | AUROC | κ=1: TPR/FPR | κ=1.5 | κ=2 | κ=2.5 | κ=3 |
+|---|---|---|---|---|---|---|
+| agentpoison | **1.000** | 1.00/0.13 | 1.00/0.06 | 1.00/0.02 | 1.00/0.00 | 1.00/0.00 |
+| minja | **0.951** | 1.00/0.14 | 0.62/0.06 | 0.12/0.01 | 0.00 | 0.00 |
+| injecmem | **0.846** | 0.50/0.14 | 0.25/0.06 | 0.12/0.01 | 0.00 | 0.00 |
+
+**Reading (answers "MEMSAD's results are weak" and "MINJA TPR ranges 0.40–1.00 across tables"):** AUROC — the threshold-independent detection-power metric — is high (MINJA 0.951 matches the paper's ≥0.914). The low standalone TPR m2wH cites is the deliberate κ=2 (FPR≈0) operating point; a defender accepting a small FPR (κ=1) recovers TPR=1.00 (MINJA). The "MINJA TPR 0.40–1.00 across tables" is not an inconsistency — it is the *same ROC read at different κ / calibration regimes*. E4 exhibits the full curve. (Note: the exact κ=2 TPR depends on the poison-generation variant; the AUROC and the ROC shape are the robust, reported quantities. The composite's per-defense attribution — App C disjunction, watermark in the WRITE model vs MEMSAD in QUERY/SINGLE — is addressed in the m2wH response and cross-checked against Table 12 on the full read.)
