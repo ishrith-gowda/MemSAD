@@ -355,7 +355,7 @@ def generate_exposure_table(
         r"  \centering",
         r"  \small",
         r"  \caption{Compound exposure: cumulative compromise probability over"
-        r" agent sessions ($q = "
+        + r" agent sessions ($q = "
         + str(analysis.queries_per_session)
         + r"$ queries/session, $|\cM| = 1{,}000$).}",
         r"  \label{tab:compound_exposure}",
@@ -363,7 +363,7 @@ def generate_exposure_table(
         r"  \begin{tabular}{l c cccc c}",
         r"    \toprule",
         r"    Attack & $\asrr$ & $N_{50\%}$ & $N_{90\%}$"
-        r" & $N_{95\%}$ & $\EE[N]$ & Defended \\",
+        + r" & $N_{95\%}$ & $\EE[N]$ & Defended \\",
         r"    \midrule",
     ]
 
@@ -387,8 +387,8 @@ def generate_exposure_table(
         r"  \end{tabular}",
         r"  \\[2pt]",
         r"  {\footnotesize $N_{p}$: sessions to reach $p$ compromise probability."
-        r" $\EE[N]$: expected sessions to first compromise."
-        r" Defended: residual $\asrr$ after composite portfolio.}",
+        + r" $\EE[N]$: expected sessions to first compromise."
+        + r" Defended: residual $\asrr$ after composite portfolio.}",
         r"  \vspace{-6pt}",
         r"\end{table}",
     ]

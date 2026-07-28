@@ -288,7 +288,7 @@ class StatisticalHypothesisTester:
         if not _SCIPY_AVAILABLE:
             raise RuntimeError(
                 "scipy is required for the wilcoxon test — "
-                "install it with: pip install scipy"
+                + "install it with: pip install scipy"
             )
         diffs = [x - y for x, y in zip(a, b)]
         stat, p = _scipy_stats.wilcoxon(diffs)
@@ -595,8 +595,8 @@ class LatexTableGenerator:
         summaries: dict[str, MultiTrialSummary],
         caption: str = (
             "Attack evaluation on synthetic agent memory corpus "
-            "(200 entries, 5 poison, top-$k$=5). "
-            "Results averaged over 5 random seeds with 95\\% bootstrap CIs."
+            + "(200 entries, 5 poison, top-$k$=5). "
+            + "Results averaged over 5 random seeds with 95\\% bootstrap CIs."
         ),
         label: str = "tab:attacks",
     ) -> str:
@@ -646,7 +646,7 @@ class LatexTableGenerator:
             "\\toprule",
             (
                 "\\multirow{2}{*}{Attack} & \\multicolumn{5}{c}{Attack Success Rate} "
-                "& \\multirow{2}{*}{Benign Acc} \\\\"
+                + "& \\multirow{2}{*}{Benign Acc} \\\\"
             ),
             "\\cmidrule(lr){2-6}",
             "& ASR-R & ASR-A & ASR-T & ISR & (95\\% CI) \\\\",
@@ -666,7 +666,7 @@ class LatexTableGenerator:
         defense_results: dict[str, dict[str, Any]],
         caption: str = (
             "Defense evaluation: detection rates on synthetic poisoned corpus. "
-            "TPR = true positive rate, FPR = false positive rate."
+            + "TPR = true positive rate, FPR = false positive rate."
         ),
         label: str = "tab:defenses",
     ) -> str:
@@ -715,7 +715,7 @@ class LatexTableGenerator:
             "\\begin{tabular}{lccccc}",
             "\\toprule",
             "Defense & TPR$\\uparrow$ & FPR$\\downarrow$ & F1$\\uparrow$ "
-            "& AUROC$\\uparrow$ & Latency (ms) \\\\",
+            + "& AUROC$\\uparrow$ & Latency (ms) \\\\",
             "\\midrule",
         ]
         for row in rows:

@@ -425,3 +425,39 @@ The paper is under review at NeurIPS until Sep 24. AAAI-27's paper deadline (Jul
 6. **ICLR 2027 pre-stage — by Sep 15** (before NeurIPS reviews land), since the ICLR deadline has historically fallen within days of the NeurIPS notification date.
 
 **Automation installed 2026-07-02** (to prevent a third silent slip): weekly scheduled deadline-watch (venue pages + review-release check + Notion sync), and a local git auto-checkpoint that snapshots uncommitted work to `refs/checkpoints/*` so nothing on the working tree can be lost between sessions.
+
+---
+
+## 15. Phase 38 — certified-synonym extension (started 2026-07-04, in progress)
+
+Pre-staging the ICLR 2027 / TMLR extension (and rebuttal insurance) per §14: attacking the paper's own §546 open direction "closing the synonym gap." Branch `feat/phase-38-synonym-hardening` (stacked on `fix/codeql-string-concat`), 5 commits, ~27 tests, **nothing pushed — held for author review** (see docs/research/phase38_findings.md).
+
+**Two confirmed findings:**
+1. **Paper attribution error (rebuttal/ICLR note, no arXiv v2 change).** MemSAD+'s character n-gram JSD component contributes zero detections on the paper's own poison; the InjecMEM lift is entirely domain-vocabulary concentration. The `app:memsad_plus` caption is unsupported by the code. Fold the corrected attribution into the NeurIPS rebuttal (if the loophole is raised) and the ICLR revision.
+2. **Synonym gap is margin geometry.** The semantic detector operates within one substitution's score-shift of its threshold → certified synonym radius r* = 0 on the default all-MiniLM encoder. Randomized smoothing (Cohen 2019) is rigorous but vacuous in 384-dim; the direct score-margin certificate is the working formulation.
+
+**Positive result (certificate-backed hardening):** all-mpnet-base-v2 achieves certified r* = 1 where all-MiniLM gives r* = 0. A concrete recommendation: switch the default encoder to mpnet.
+
+**Phase 38 research complete (2026-07-05), held for review before push.** Additional results:
+- **Max-ensemble widening.** The max-aggregation over encoders certifies r* ≥ 1 for 7/12 poison (58%, Clopper-Pearson 95% CI [0.28, 0.85]) with full coverage — a synonym substitution must drop the max across all encoders. The mean/inverse-variance-weighted aggregations dilute to 5/12. Honest ceiling r* = 1.
+- **ANN-scaling deployment study.** The certified margin is exactly index-independent (identical across FAISS flat/HNSW/IVF) — it is a write-time calibration property. Poison survives approximate retrieval (recall 0.72–0.78 under HNSW/IVF at |M|=10k), so ANN does not incidentally mitigate the threat. (Caveat: the 10k corpus is synthetically jitter-scaled; a diverse large corpus is the camera-ready follow-up.)
+
+**Deliverable state:** two stacked PRs ready to open on approval — (1) `fix/codeql-string-concat` → main (hygiene, CodeQL), (2) `feat/phase-38-synonym-hardening` → main (9 commits, 31 new tests, all lint/mypy green). Nothing pushed.
+
+---
+
+## 16. NeurIPS 2026 reviews RELEASED — rebuttal phase (2026-07-23)
+
+**Event:** reviews + initial meta-reviews released 2026-07-23; author response / discussion phase Jul 23 – Aug 7 (per program-chair email 2026-07-24).
+- **Phase 1 (Jul 23–27): author response only** — reviewers/ACs do not see responses until phase end. **Initial response effectively due ~Jul 27.** THIS IS THE ACTIVE WINDOW.
+- Phase 2 (Jul 27–Aug 3): author/reviewer/AC discussion (follow-ups).
+- Phase 3 (Aug 3–Aug 10): reviewer/AC only (authors cannot see).
+
+**Handbook constraints:** no paper/supplement revision during response; 10,000 char/review limit; plain text + markdown, NO file uploads, NO links (except an anonymized code link to the AC via Official Comment if a reviewer asks); maintain anonymity; use per-review "Rebuttal" buttons. The **initial meta-review is the primary guide** — focus the response on what would change the AC's view.
+
+**Rebuttal ammunition already staged (phase 38, docs/research/phase38_findings.md):**
+- *Synonym loophole* (the paper's own #1 stated frontier, Prop 11; MemSAD+ closes it only partially 0.00→0.40): new hardening results — mpnet encoder gives certified r*=1 vs MiniLM r*=0; the max-ensemble certifies r*≥1 for 58% of poison [0.28, 0.85]. Positions the loophole as a *characterized, partially-mitigable* frontier rather than an open hole. CAUTION: the phase-38 attribution finding (char-JSD contributes 0; the app:memsad_plus caption is unsupported) is NOT to be volunteered unprompted — it reveals a submitted-paper error the reviewers may not have caught. Use the new *hardening* results as engagement evidence; deploy the corrected attribution only if a reviewer directly challenges the char-JSD mechanism.
+- *|M|=1000 / scale* concern: ANN-scaling study to |M|=10k (certified margin index-independent; poison survives HNSW/IVF). Caveat: jitter-scaled corpus.
+- *A-MemGuard*: paper already states the no-direct-benchmark limitation and architectural complementarity (Appendix app:amemguard).
+
+**BLOCKER:** the actual review + meta-review text is on OpenReview (no tool access — double-blind, authenticated). Awaiting the author pasting review content to begin drafting per-review responses.

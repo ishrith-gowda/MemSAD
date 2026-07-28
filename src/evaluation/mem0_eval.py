@@ -436,7 +436,7 @@ def generate_mem0_table(
         r"  \centering",
         r"  \small",
         r"  \caption{Transfer validation: synthetic FAISS vs.\ real Mem0 memory system."
-        r" Rank ordering of attacks is preserved ($\rho = "
+        + r" Rank ordering of attacks is preserved ($\rho = "
         + f"{comparison.correlation:.2f}"
         + r"$, Spearman).}",
         r"  \label{tab:mem0_validation}",
@@ -463,8 +463,8 @@ def generate_mem0_table(
         r"  \end{tabular}",
         r"  \\[2pt]",
         r"  {\footnotesize Synthetic: FAISS IndexFlatIP, $|\cM|=1{,}000$."
-        r" Mem0: production memory system with $|\cM|=50$"
-        r" realistic conversational entries.}",
+        + r" Mem0: production memory system with $|\cM|=50$"
+        + r" realistic conversational entries.}",
         r"  \vspace{-6pt}",
         r"\end{table}",
     ]

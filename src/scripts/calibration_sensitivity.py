@@ -161,7 +161,7 @@ def generate_sensitivity_table(results: dict) -> str:
         r"  \centering",
         r"  \small",
         r"  \caption{Calibration query sensitivity: \memsad{} AUROC across"
-        r" calibration regimes ($\kappa=2.0$, $|\cM|=1{,}000$).}",
+        + r" calibration regimes ($\kappa=2.0$, $|\cM|=1{,}000$).}",
         r"  \label{tab:calibration_sensitivity}",
         r"  \begin{tabular}{l ccc}",
         r"    \toprule",

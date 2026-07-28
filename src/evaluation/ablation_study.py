@@ -532,11 +532,11 @@ class AblationStudy:
                     # reference content pool (realistic memory entry length)
                     _ref = (
                         "the memory agent maintains a record of user preferences "
-                        "task history calendar events and conversation context "
-                        "across multiple interaction sessions for personalised "
-                        "response generation and contextual retrieval of relevant "
-                        "information. this entry covers scheduling preferences and "
-                        "communication style guidelines from prior interactions."
+                        + "task history calendar events and conversation context "
+                        + "across multiple interaction sessions for personalised "
+                        + "response generation and contextual retrieval of relevant "
+                        + "information. this entry covers scheduling preferences and "
+                        + "communication style guidelines from prior interactions."
                     )
 
                     # generate watermarked samples
@@ -1065,7 +1065,7 @@ class AblationStudy:
             r"\begin{tabular}{cc|cc|cc|cc}",
             r"\toprule",
             r"\multicolumn{2}{c|}{Corpus Size} & \multicolumn{2}{c|}{Top-K} "
-            r"& \multicolumn{2}{c|}{Poison Count} & \multicolumn{2}{c}{SAD $k$} \\",
+            + r"& \multicolumn{2}{c|}{Poison Count} & \multicolumn{2}{c}{SAD $k$} \\",
             r"$N$ & ASR-R & $k$ & ASR-R & $n_p$ & ASR-R & $k$ & TPR / FPR \\",
             r"\midrule",
         ]
