@@ -145,3 +145,19 @@ All produce plain-text numbers/tables (no file uploads allowed in the response; 
 - **Compute:** none needed — all experiments CPU-local; encoders/faiss/gpt2 cached. No Chameleon required.
 - **Session/usage:** deep-analysis agents hit the account session limit (resets 10pm CT); the appendix-level audit (Le Cam Eq 12, Tables 13/16/18, Appendix C) completes after reset.
 - **OpenReview:** author posts the final responses (no tool access). I draft; author reviews + posts.
+
+---
+
+## 17. Execution status — 2026-07-27 (ready for author review)
+
+**All four responses drafted, ≤10k chars, committed on `rebuttal/neurips2026` (nothing pushed):** response_n6dm.md (~7.1k), response_m2wH.md (~7.2k), response_u2M8.md (~4.5k), response_AC.md (~4.7k).
+
+**Four new experiments run + committed** (CPU-local, reproducible, lint+mypy green; results in experiment_results.md):
+- E1 gap-distribution (n6dm Q1): AGENTPOISON gap +0.21, 100% detected, 38% certified → informative; MINJA boundary, INJECMEM-semantic vacuous.
+- E2 smoothing comparison (n6dm W5, AC): Cohen smoothing vacuous in d=384 (best R=0.008 vs δ_emb=0.378).
+- E3 coupling condition (m2wH W2): gradients acute (40.5°), retrieval-optimal dir evades s_comb 0/8 → counterexample not reachable.
+- E4 ROC/AUROC (m2wH W4): AUROC AP 1.00 / MJ 0.951 / IM 0.846 → low TPR is the FPR=0 operating point, not weak detection.
+
+**Full appendix verified (pp.13–28):** the 3 genuine errors (Cor 17, Eq 12, Lemma 8 q*∈H) are conceded+repaired; the already-fixed set grew to include Table 15 (identical baseline calibration). Two additional genuine table issues found and conceded: Table 13 caption (excess-vs-absolute) and Table 16 FPR mislabel (BGE-Large FPR shown as primary; validated held-out FPR is 0.000, Table 12).
+
+**Remaining before posting:** (1) author review of all four drafts; (2) anonymized repo for the AC (last, per author); (3) optional E5/E6 (encoder-Lipschitz check for n6dm W2). Post initial responses ~Jul 28, iterate through Aug 3.
