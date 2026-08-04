@@ -1,10 +1,10 @@
 # PASTE-READY rebuttal responses — Submission 30963 (post by AoE Aug 3)
 
-**HOW TO POST (~5 min):** paste each block under that reviewer's **Rebuttal** button; the AC block goes under **Author-AC Confidential Comment**. If the Rebuttal button is closed, use **Official Comment** (equivalent through Aug 3). All ≤10k chars, no identity, no links.
+**HOW TO POST (~5 min):** the per-review Rebuttal button is closed after Jul 27 — use **Official Comment** (the PC confirmed Official Comment is treated as equivalent through Aug 3). Post ONE Official Comment per reviewer with the title shown below; post the AC block as an **Author-AC Confidential Comment**. If a "readers" field appears, keep the default (reviewers + ACs). All ≤10k chars, no identity, no links. Ignore the PAT/LLM feedback — it is author-only and not used in review.
 
 ---
 
-## ►► REVIEWER n6dm — Rebuttal button
+## ►► REVIEWER n6dm — Official Comment, title: "Response to Reviewer n6dm"
 
 We ran both requested analyses.
 
@@ -28,7 +28,7 @@ So the certificate is informative for AGENTPOISON (its design regime, large posi
 
 ---
 
-## ►► REVIEWER m2wH — Rebuttal button
+## ►► REVIEWER m2wH — Official Comment, title: "Response to Reviewer m2wH"
 
 Correctness points are conceded and repaired below; already-revised items are quoted.
 
@@ -52,7 +52,7 @@ Correctness points are conceded and repaired below; already-revised items are qu
 
 ---
 
-## ►► REVIEWER u2M8 — Rebuttal button
+## ►► REVIEWER u2M8 — Official Comment, title: "Response to Reviewer u2M8"
 
 **W1 — threat model.** Agreed the meaningful threat is cross-principal; we will lead with it. Cases: (1) shared/multi-tenant memory — one principal (or a compromised account) writes entries a different principal's session retrieves; (2) tool-output ingestion — the agent writes untrusted web/email/document content into memory; the attacker controls the content, not the agent (the dominant vector, no write access needed); (3) MINJA (query-only) and INJECMEM (single-interaction) are different-principal by construction. WRITE (Def 2–3) is the worst-case adversary used to state the strongest guarantee; we will label it as such. The certificate is deterministic precisely in the cross-principal case (a legitimate victim issues in-distribution queries) and weakens only for same-principal self-poisoning — which, as you note, is not a meaningful threat. So the assumption holds where the threat is real.
 
@@ -64,7 +64,7 @@ Correctness points are conceded and repaired below; already-revised items are qu
 
 ---
 
-## ►► AREA CHAIR — Author-AC Confidential Comment
+## ►► AREA CHAIR d5Ze — Author-AC Confidential Comment, title: "Author response to the meta-review"
 
 Corrections and new analyses addressing the meta-review.
 
